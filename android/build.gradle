@@ -4,6 +4,11 @@ ext {
     androidxJunitVersion = project.hasProperty('androidxJunitVersion') ? rootProject.ext.androidxJunitVersion : '1.3.0'
     androidxEspressoCoreVersion = project.hasProperty('androidxEspressoCoreVersion') ? rootProject.ext.androidxEspressoCoreVersion : '3.7.0'
     androidxCoreKTXVersion = project.hasProperty('androidxCoreKTXVersion') ? rootProject.ext.androidxCoreKTXVersion : '1.17.0'
+    // Health Connect. 1.2.x alphas need compileSdk 37 / AGP 9.1; see docs/decisions.md #8.
+    androidxHealthConnectVersion = project.hasProperty('androidxHealthConnectVersion') ? rootProject.ext.androidxHealthConnectVersion : '1.1.0'
+    // connect-testing pins a connect-client version; alpha03 is the last on the 1.1 line (alpha04 pulls 1.2.0-alpha05).
+    androidxHealthConnectTestingVersion = project.hasProperty('androidxHealthConnectTestingVersion') ? rootProject.ext.androidxHealthConnectTestingVersion : '1.0.0-alpha03'
+    kotlinxCoroutinesVersion = project.hasProperty('kotlinxCoroutinesVersion') ? rootProject.ext.kotlinxCoroutinesVersion : '1.10.2'
 }
 
 buildscript {
@@ -25,7 +30,7 @@ android {
     namespace = "com.caplugins.health"
     compileSdk = project.hasProperty('compileSdkVersion') ? rootProject.ext.compileSdkVersion : 36
     defaultConfig {
-        minSdkVersion project.hasProperty('minSdkVersion') ? rootProject.ext.minSdkVersion : 24
+        minSdkVersion project.hasProperty('minSdkVersion') ? rootProject.ext.minSdkVersion : 26
         targetSdkVersion project.hasProperty('targetSdkVersion') ? rootProject.ext.targetSdkVersion : 36
         versionCode 1
         versionName "1.0"
@@ -61,7 +66,11 @@ dependencies {
     implementation project(':capacitor-android')
     implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
     implementation "androidx.core:core-ktx:$androidxCoreKTXVersion"
+    implementation "androidx.health.connect:connect-client:$androidxHealthConnectVersion"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$kotlinxCoroutinesVersion"
     testImplementation "junit:junit:$junitVersion"
+    testImplementation "androidx.health.connect:connect-testing:$androidxHealthConnectTestingVersion"
+    testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$kotlinxCoroutinesVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
 }

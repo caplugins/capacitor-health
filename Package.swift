@@ -19,7 +19,8 @@ let package = Package(
                 .product(name: "Capacitor", package: "capacitor-swift-pm"),
                 .product(name: "Cordova", package: "capacitor-swift-pm")
             ],
-            path: "ios/Sources/CapacitorHealthPlugin"),
+            path: "ios/Sources/CapacitorHealthPlugin",
+            linkerSettings: [.linkedFramework("HealthKit")]),
         .testTarget(
             name: "CapacitorHealthPluginTests",
             dependencies: ["CapacitorHealthPlugin"],

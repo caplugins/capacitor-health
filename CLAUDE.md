@@ -68,8 +68,13 @@ unchecked task in [docs/tasks.md](docs/tasks.md) (currently T01, scaffold).
 
 - Xcode with the **iOS 27.0 SDK** is installed. Regenerate the HealthKit catalog with
   `python3 scripts/healthkit-catalog.py "$(xcrun --sdk iphoneos --show-sdk-path)/System/Library/Frameworks/HealthKit.framework/Headers"`.
-- iOS simulator used before: iPhone 17 Pro (iOS 26.5). Android AVD: `Pixel_7_Pro_API_34` (has a PIN;
-  start it with a window). More recipes in [docs/06-testing.md](docs/06-testing.md).
+- iOS simulators: iPhone 17 Pro on iOS 27.0 (`npm run test:ios` default) and on iOS 26.5. Android
+  AVD: `Pixel_7_Pro_API_34` (has a PIN; start it with a window). More recipes in
+  [docs/06-testing.md](docs/06-testing.md).
+- Gradle needs JDK 21: `export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"`
+  and `ANDROID_HOME=~/Library/Android/sdk` (the shell default is JDK 17).
+- `xcodebuild` without `-packageAuthorizationProvider netrc` hangs at "Resolve Package Graph" on a
+  github.com keychain prompt. The npm iOS scripts pass the flag; pass it in ad-hoc commands too.
 - To try the plugin inside a real app, install it from an `npm pack` tarball, not a link (links
   confuse Capacitor's native project resolution).
 - `~/Downloads` is blocked by macOS privacy even unsandboxed: ask the user to move files into the
