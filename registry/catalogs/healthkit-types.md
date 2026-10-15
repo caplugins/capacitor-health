@@ -309,6 +309,8 @@ Also outside `HKTypeIdentifiers.h`: `HKElectrocardiogramType` (ECG, read-only), 
 
 ## Metadata keys we rely on
 
+The constants' **runtime string values differ from their symbol names** (`HKMetadataKeyMenstrualCycleStart` is `"HKMenstrualCycleStart"`, per cordova-plugin-health's `normalizeMetadata`). Always use the Swift constant, never the symbol name as a string. T06 records the raw values.
+
 | Key | iOS | Why it matters |
 |---|---|---|
 | `HKMetadataKeyMenstrualCycleStart` | 9.0 | Bool on `menstrualFlow` samples: marks day 1 of a period. Apple Health uses it to group flow days into periods. Required when writing flow samples |
