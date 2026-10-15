@@ -50,7 +50,7 @@ unchecked task in [docs/tasks.md](docs/tasks.md) (currently T01, scaffold).
 ## Conventions (match `~/opensource/capacitor-clevertap`, the newest @caplugins plugin)
 
 - Layout: `src/` (TS + `definitions.ts` as docgen source), `ios/Sources/CapacitorHealthPlugin`,
-  `ios/Tests/…`, `android/src/main/java/com/caplugins/health`, `example-app/`.
+  `ios/Tests/…`, `android/src/main/kotlin/com/caplugins/health`, `example-app/`.
 - iOS ships **both** `Package.swift` (SPM) and `CapluginsCapacitorHealth.podspec` (CocoaPods
   is still common in existing Capacitor apps; new Capacitor 8 apps default to SPM).
 - Android in **Kotlin** (scaffold with `--android-lang kotlin`), coroutines, never `runBlocking`.
