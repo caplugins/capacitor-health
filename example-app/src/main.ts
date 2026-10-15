@@ -16,3 +16,4 @@ async function checkAvailability(): Promise<void> {
 
 document.getElementById('check-availability')?.addEventListener('click', () => void checkAvailability());
 void checkAvailability();
+import './spike';

@@ -37,6 +37,16 @@
       pre[data-status='available'] {
         color: #1a7f37;
       }
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      #spike-output {
+        font-size: 11px;
+        max-height: 50vh;
+        overflow: auto;
+      }
       button {
         font: inherit;
         padding: 8px 14px;
@@ -50,6 +60,23 @@
         <h2>Availability</h2>
         <button id="check-availability" type="button">isAvailable()</button>
         <pre id="availability"></pre>
+      </section>
+      <!-- M0 spike (removed in T10) -->
+      <section id="spike">
+        <h2>M0 spike: menstrualFlow</h2>
+        <div class="grid">
+          <button type="button" data-spike="auth">1 Request auth</button>
+          <button type="button" data-spike="write5">2 Write 5 days</button>
+          <button type="button" data-spike="rewrite5">3 Rewrite same 5</button>
+          <button type="button" data-spike="bump">4 Day 3 → heavy v2</button>
+          <button type="button" data-spike="read">5 Read all</button>
+          <button type="button" data-spike="changes">6 Changes</button>
+          <button type="button" data-spike="write6">7 Write day 6</button>
+          <button type="button" data-spike="deleteLast">8 Delete last write</button>
+          <button type="button" data-spike="raw">9 Raw values</button>
+          <button type="button" data-spike="resetCursor">0 Reset cursor</button>
+        </div>
+        <pre id="spike-output"></pre>
       </section>
     </main>
     <script src="./main.ts" type="module"></script>

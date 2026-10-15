@@ -16,6 +16,10 @@ final class AvailabilityTests: XCTestCase {
 
     func testPluginExposesEveryMethod() {
         let names = Set(CapacitorHealthPlugin().pluginMethods.map(\.name))
-        XCTAssertEqual(names, ["isAvailable"])
+        XCTAssertEqual(names, [
+            "isAvailable",
+            // M0 spike, removed in T10.
+            "spikeRequestAuth", "spikeWrite", "spikeRead", "spikeChanges", "spikeDelete", "spikeRawValues"
+        ])
     }
 }
