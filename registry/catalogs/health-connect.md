@@ -76,7 +76,7 @@ Researched 2026-10-15 by a research agent in the planning session. Method: npm r
 - Android 14+: HC is a framework module (it cannot be uninstalled).
 - Android 9–13: HC is the Play app `com.google.android.apps.healthdata` (released 2022-11-11).
 - Work profiles are not supported.
-- `HealthConnectClient.getSdkStatus(context)` returns one of `SDK_UNAVAILABLE`, `SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED` or `SDK_AVAILABLE` (constants confirmed in the jar; their int values are **[unverified]**).
+- `HealthConnectClient.getSdkStatus(context)` returns one of `SDK_UNAVAILABLE`, `SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED` or `SDK_AVAILABLE` (`SDK_UNAVAILABLE = 1`, `SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED = 2`, `SDK_AVAILABLE = 3`; read with `javap -constants` from the 1.1.0 AAR on 2026-10-15). `DEFAULT_PROVIDER_PACKAGE_NAME` (`com.google.android.apps.healthdata`) is `internal` in Kotlin, so the plugin keeps its own copy.
 - On `PROVIDER_UPDATE_REQUIRED`, Google's sample opens `market://details?id=com.google.android.apps.healthdata&url=healthconnect%3A%2F%2Fonboarding` with `setPackage("com.android.vending")` and `putExtra("overlay", true)` / `putExtra("callerId", packageName)` (found via search of the get-started doc; **[unverified verbatim]**).
 - Sources: https://developer.android.com/health-and-fitness/guides/health-connect/plan/availability, https://developer.android.com/health-and-fitness/health-connect/get-started
 

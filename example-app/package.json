@@ -1,27 +1,26 @@
 {
-  "name": "capacitor-app",
-  "version": "1.0.0",
-  "description": "An Amazing Capacitor App",
+  "name": "capacitor-health-example",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Example app for @caplugins/capacitor-health",
   "type": "module",
-  "keywords": [
-    "capacitor",
-    "mobile"
-  ],
   "scripts": {
     "start": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "build": "tsc && vite build",
+    "sync": "npm run build && cap sync",
+    "ios": "npm run sync && cap run ios",
+    "android": "npm run sync && cap run android"
   },
   "dependencies": {
-    "@capacitor/core": "latest",
-    "@caplugins/capacitor-health": "file:..",
+    "@capacitor/android": "^8.0.0",
+    "@capacitor/core": "^8.0.0",
     "@capacitor/ios": "^8.0.0",
-    "@capacitor/android": "^8.0.0"
+    "@caplugins/capacitor-health": "file:.."
   },
   "devDependencies": {
-    "@capacitor/cli": "latest",
+    "@capacitor/cli": "^8.0.0",
+    "typescript": "^5.9.3",
     "vite": "^7.3.1"
   },
-  "author": "",
-  "license": "ISC"
+  "license": "MIT"
 }

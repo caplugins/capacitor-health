@@ -1,4 +1,4 @@
-package com.example.plugin;
+package com.caplugins.health.example;
 
 import com.getcapacitor.BridgeActivity;
 
