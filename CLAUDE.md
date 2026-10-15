@@ -6,8 +6,8 @@ first-class citizen. Public MIT package on npm under `@caplugins` (same scope as
 `@caplugins/capacitor-meta-sdk` and `@caplugins/capacitor-clevertap`); repo
 `caplugins/capacitor-health` on GitHub.
 
-**Status (2026-10-15): planning only. No code yet.** Start with milestone M0 in
-[docs/05-roadmap.md](docs/05-roadmap.md).
+**Status (2026-10-15): planning done, no code yet.** The next piece of work is always the first
+unchecked task in [docs/tasks.md](docs/tasks.md) (currently T01, scaffold).
 
 ## Read first
 
@@ -17,7 +17,8 @@ first-class citizen. Public MIT package on npm under `@caplugins` (same scope as
 | [docs/02-requirements.md](docs/02-requirements.md) | you're deciding scope: product decisions D1–D5, requirements R1–R18, open questions |
 | [docs/03-architecture.md](docs/03-architecture.md) | you're writing code: registry, data model, API draft, per-platform notes |
 | [docs/04-type-mapping.md](docs/04-type-mapping.md) | you're adding or mapping a type (HealthKit ⇄ Health Connect) |
-| [docs/05-roadmap.md](docs/05-roadmap.md) | you're picking the next piece of work (M0 → M4) |
+| [docs/tasks.md](docs/tasks.md) | you're picking the next piece of work: the first unchecked task |
+| [docs/05-roadmap.md](docs/05-roadmap.md) | you need a milestone's scope (M0 → M4) |
 | [docs/06-testing.md](docs/06-testing.md) | you're testing: unit, fixtures, simulator/emulator recipes, testing inside a real app |
 | [docs/07-store-compliance.md](docs/07-store-compliance.md) | you're writing setup docs or touching permissions, entitlements, manifests |
 | [docs/decisions.md](docs/decisions.md) | before re-opening a design question. Append every decision you make |
