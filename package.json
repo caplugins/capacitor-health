@@ -45,6 +45,9 @@
     "verify:ios": "xcodebuild -scheme CapluginsCapacitorHealth -destination generic/platform=iOS -packageAuthorizationProvider netrc",
     "verify:android": "cd android && ./gradlew clean build test && cd ..",
     "verify:web": "npm run build",
+    "test": "vitest run",
+    "test:ios": "xcodebuild test -scheme CapluginsCapacitorHealth -destination \"${IOS_DESTINATION:-platform=iOS Simulator,name=iPhone 17 Pro}\" -packageAuthorizationProvider netrc",
+    "test:android": "cd android && ./gradlew test && cd ..",
     "lint": "npm run eslint && npm run prettier -- --check && npm run swiftlint -- lint",
     "fmt": "npm run eslint -- --fix && npm run prettier -- --write && npm run swiftlint -- --fix --format",
     "eslint": "eslint . --ext ts",
@@ -70,7 +73,8 @@
     "rimraf": "^6.1.0",
     "rollup": "^4.53.2",
     "swiftlint": "^2.0.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.4"
   },
   "peerDependencies": {
     "@capacitor/core": "^8.0.0"
