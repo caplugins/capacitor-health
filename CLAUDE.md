@@ -69,7 +69,7 @@ unchecked task in [docs/tasks.md](docs/tasks.md) (currently T01, scaffold).
 - Xcode with the **iOS 27.0 SDK** is installed. Regenerate the HealthKit catalog with
   `python3 scripts/healthkit-catalog.py "$(xcrun --sdk iphoneos --show-sdk-path)/System/Library/Frameworks/HealthKit.framework/Headers"`.
 - iOS simulators: iPhone 17 Pro on iOS 27.0 (`npm run test:ios` default) and on iOS 26.5. Android
-  AVD: `Pixel_7_Pro_API_34` (has a PIN; start it with a window). More recipes in
+  AVD: `Pixel_7_Pro_API_34` (no lock screen; start it with a window). More recipes in
   [docs/06-testing.md](docs/06-testing.md).
 - Gradle needs JDK 21: `export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"`
   and `ANDROID_HOME=~/Library/Android/sdk` (the shell default is JDK 17).

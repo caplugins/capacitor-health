@@ -1,5 +1,6 @@
 // M0 spike (decision #25): calls the temporary spike* bridge methods. Removed in T10.
 import { CapacitorHealth } from '@caplugins/capacitor-health';
+import { Capacitor } from '@capacitor/core';
 
 type Result = Record<string, unknown>;
 type SpikeMethods = Record<string, (options?: Result) => Promise<Result>>;
@@ -8,6 +9,11 @@ type SpikeMethods = Record<string, (options?: Result) => Promise<Result>>;
 const spike = CapacitorHealth as unknown as SpikeMethods;
 const CURSOR_KEY = 'spikeCursor';
 let lastIds: string[] = [];
+const android = Capacitor.getPlatform() === 'android';
+// Flow values: iOS HKCategoryValueVaginalBleeding medium = 3 / heavy = 4; Health Connect FLOW_MEDIUM = 2 / FLOW_HEAVY = 3.
+const MEDIUM = android ? 2 : 3;
+const HEAVY = android ? 3 : 4;
+const LIGHT = android ? 1 : 2;
 
 function show(label: string, result: unknown): void {
   const text = JSON.stringify(result, null, 2);
@@ -28,10 +34,18 @@ async function write(options: Result): Promise<Result> {
 
 const actions: Record<string, () => Promise<unknown>> = {
   auth: () => spike.spikeRequestAuth(),
-  write5: () => write({ startDay: '2026-10-01', days: 5, value: 3, syncPrefix: 'spike-p1', version: 1 }),
-  rewrite5: () => write({ startDay: '2026-10-01', days: 5, value: 3, syncPrefix: 'spike-p1', version: 1 }),
+  write5: () => write({ startDay: '2026-10-01', days: 5, value: MEDIUM, syncPrefix: 'spike-p1', version: 1 }),
+  rewrite5: () => write({ startDay: '2026-10-01', days: 5, value: MEDIUM, syncPrefix: 'spike-p1', version: 1 }),
   bump: () =>
-    write({ startDay: '2026-10-03', days: 1, value: 4, syncPrefix: 'spike-p1', version: 2, firstDayIsCycleStart: false }),
+    write({
+      startDay: '2026-10-03',
+      days: 1,
+      value: HEAVY,
+      syncPrefix: 'spike-p1',
+      version: 2,
+      firstDayIsCycleStart: false,
+      withPeriod: false,
+    }),
   read: () => spike.spikeRead(),
   changes: async () => {
     const cursor = localStorage.getItem(CURSOR_KEY) ?? undefined;
@@ -40,8 +54,33 @@ const actions: Record<string, () => Promise<unknown>> = {
     return { usedCursor: Boolean(cursor), ...result };
   },
   write6: () =>
-    write({ startDay: '2026-10-06', days: 1, value: 2, syncPrefix: 'spike-p1', version: 1, firstDayIsCycleStart: false }),
+    write({
+      startDay: '2026-10-06',
+      days: 1,
+      value: LIGHT,
+      syncPrefix: 'spike-p1',
+      version: 1,
+      firstDayIsCycleStart: false,
+      withPeriod: false,
+    }),
   deleteLast: () => spike.spikeDelete({ ids: lastIds }),
+  // Android only.
+  granted: () => spike.spikeGranted(),
+  lowerVersion: () =>
+    write({ startDay: '2026-10-03', days: 1, value: LIGHT, syncPrefix: 'spike-p1', version: 1, withPeriod: false }),
+  sameVersion: () =>
+    write({ startDay: '2026-10-03', days: 1, value: HEAVY, syncPrefix: 'spike-p1', version: 2, withPeriod: false }),
+  deleteByClientId: () => spike.spikeDelete({ type: 'flow', clientIds: ['spike-p1:flow:2026-10-02'] }),
+  undeclared: () =>
+    spike.spikeRequestAuth({ permissions: ['android.permission.health.READ_OVULATION_TEST'] }),
+  undeclaredSkip: () =>
+    spike.spikeRequestAuth({ permissions: ['android.permission.health.READ_OVULATION_TEST'], skipCheck: true }),
+  periodLimit: () => spike.spikePeriodLimit(),
+  revokeAll: () => spike.spikeRevokeAll(),
+  periodEndOfDay: () =>
+    write({ startDay: '2026-09-01', days: 5, syncPrefix: 'spike-eod', withFlows: false, periodEnd: 'endOfDay' }),
+  periodLastNoon: () =>
+    write({ startDay: '2026-09-10', days: 5, syncPrefix: 'spike-noon', withFlows: false, periodEnd: 'lastNoon' }),
   raw: () => spike.spikeRawValues(),
   resetCursor: async () => {
     localStorage.removeItem(CURSOR_KEY);

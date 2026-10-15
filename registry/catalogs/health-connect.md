@@ -30,7 +30,7 @@ Researched 2026-10-15 by a research agent in the planning session. Method: npm r
 | Record | Kind | Key fields / constants | Read permission | Write permission |
 |---|---|---|---|---|
 | `MenstruationFlowRecord` | Instantaneous | `flow`: FLOW_UNKNOWN, FLOW_LIGHT, FLOW_MEDIUM, FLOW_HEAVY (**no "none"/spotting**) | `android.permission.health.READ_MENSTRUATION` | `android.permission.health.WRITE_MENSTRUATION` |
-| `MenstruationPeriodRecord` | Interval | start/end only. The class has a `MAX_DURATION` limit (**[unverified]**, believed to be 31 days) | `READ_MENSTRUATION` (shared) | `WRITE_MENSTRUATION` |
+| `MenstruationPeriodRecord` | Interval | start/end only. `MAX_DURATION = Duration.ofDays(31)` (inclusive) and start strictly before end, enforced in the 1.1.0 constructor (`javap -c` on the AAR, confirmed at runtime in T08) | `READ_MENSTRUATION` (shared) | `WRITE_MENSTRUATION` |
 | `IntermenstrualBleedingRecord` | Instantaneous | time only | `…READ_INTERMENSTRUAL_BLEEDING` | `…WRITE_INTERMENSTRUAL_BLEEDING` |
 | `CervicalMucusRecord` | Instantaneous | `appearance`: UNKNOWN/DRY/STICKY/CREAMY/WATERY/EGG_WHITE/UNUSUAL; `sensation`: UNKNOWN/LIGHT/MEDIUM/HEAVY | `…READ_CERVICAL_MUCUS` | `…WRITE_CERVICAL_MUCUS` |
 | `OvulationTestRecord` | Instantaneous | `result`: POSITIVE/HIGH/NEGATIVE/INCONCLUSIVE | `…READ_OVULATION_TEST` | `…WRITE_OVULATION_TEST` |
@@ -69,7 +69,7 @@ Researched 2026-10-15 by a research agent in the planning session. Method: npm r
   - `DeletionChange` carries **only the id, not the type**. Store HC ids, or use single-type tokens.
 - **An unused token expires within 30 days.** Recovery: re-read the last 30 days and dedupe by id or `clientRecordId`.
 - `getChanges(token, pageSize)` was added in 1.2.0-alpha03.
-- Writes use `clientRecordId` + `clientRecordVersion` for idempotent upserts. A higher version overwrites the existing record.
+- Writes use `clientRecordId` + `clientRecordVersion` for idempotent upserts. A higher version overwrites the existing record. T08 (API 34): an equal version also overwrites, a lower one is ignored silently, and the record id stays the same throughout (it's derived from `clientRecordId`). A delete by `clientRecordId` arrives as a `DeletionChange` with the record id only.
 - Source: https://developer.android.com/health-and-fitness/guides/health-connect/develop/sync-data
 
 ### C6. Availability
