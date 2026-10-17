@@ -70,6 +70,12 @@ async function renderTypeScript(registry) {
     }),
   );
 
+  const idsOfKind = (kind) =>
+    registry.types
+      .filter((t) => t.kind === kind)
+      .map((t) => q(t.id))
+      .join(' | ') || 'never';
+
   const source = `// ${HEADER}
 
 /** Every unified type id, in registry order. */
@@ -81,6 +87,27 @@ export const HEALTH_TYPES = ${JSON.stringify(registry.types.map((t) => t.id))} a
  * @since 0.1.0
  */
 export type HealthType = (typeof HEALTH_TYPES)[number];
+
+/**
+ * Types whose samples are a number with a unit.
+ *
+ * @since 0.1.0
+ */
+export type QuantityHealthType = ${idsOfKind('quantity')};
+
+/**
+ * Types whose samples hold one value from a fixed set (flow level, test result, severity…).
+ *
+ * @since 0.1.0
+ */
+export type CategoryHealthType = ${idsOfKind('category')};
+
+/**
+ * Types whose samples have no value, only a time range (the event happened).
+ *
+ * @since 0.1.0
+ */
+export type EventHealthType = ${idsOfKind('event')};
 
 export type RegistryKind = 'quantity' | 'category' | 'event' | 'special';
 export type RegistryGroup = 'reproductiveHealth' | 'symptoms';

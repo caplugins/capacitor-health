@@ -55,6 +55,67 @@ export const HEALTH_TYPES = [
  */
 export type HealthType = (typeof HEALTH_TYPES)[number];
 
+/**
+ * Types whose samples are a number with a unit.
+ *
+ * @since 0.1.0
+ */
+export type QuantityHealthType = 'basalBodyTemperature' | 'wristTemperature';
+
+/**
+ * Types whose samples hold one value from a fixed set (flow level, test result, severity…).
+ *
+ * @since 0.1.0
+ */
+export type CategoryHealthType =
+  | 'menstrualFlow'
+  | 'cervicalMucus'
+  | 'ovulationTest'
+  | 'pregnancyTest'
+  | 'progesteroneTest'
+  | 'contraceptive'
+  | 'bleedingDuringPregnancy'
+  | 'bleedingAfterPregnancy'
+  | 'bleedingAfterMenopause'
+  | 'menopausalState'
+  | 'abdominalCramps'
+  | 'acne'
+  | 'appetiteChanges'
+  | 'bladderIncontinence'
+  | 'bloating'
+  | 'breastPain'
+  | 'chills'
+  | 'constipation'
+  | 'diarrhea'
+  | 'drySkin'
+  | 'fatigue'
+  | 'hairLoss'
+  | 'headache'
+  | 'hotFlashes'
+  | 'lowerBackPain'
+  | 'memoryLapse'
+  | 'moodChanges'
+  | 'nausea'
+  | 'nightSweats'
+  | 'pelvicPain'
+  | 'sleepChanges'
+  | 'vaginalDryness';
+
+/**
+ * Types whose samples have no value, only a time range (the event happened).
+ *
+ * @since 0.1.0
+ */
+export type EventHealthType =
+  | 'intermenstrualBleeding'
+  | 'sexualActivity'
+  | 'pregnancy'
+  | 'lactation'
+  | 'infrequentMenstrualCycles'
+  | 'irregularMenstrualCycles'
+  | 'persistentIntermenstrualBleeding'
+  | 'prolongedMenstrualPeriods';
+
 export type RegistryKind = 'quantity' | 'category' | 'event' | 'special';
 export type RegistryGroup = 'reproductiveHealth' | 'symptoms';
 
