@@ -714,7 +714,44 @@ export interface SkinTemperatureSample extends SampleBase {
  *
  * @since 0.1.0
  */
-export type Sample = QuantitySample | CategorySample | EventSample | MenstruationPeriodSample | SkinTemperatureSample;
+/**
+ * A blood pressure reading. iOS stores it as a correlation of a systolic and a diastolic sample
+ * (what Apple Health shows as one reading), Android as a `BloodPressureRecord`.
+ *
+ * @since 0.2.0
+ */
+export interface BloodPressureSample extends SampleBase {
+  /** @since 0.2.0 */
+  kind: 'special';
+  /** @since 0.2.0 */
+  type: 'bloodPressure';
+  /** @since 0.2.0 */
+  systolic: number;
+  /** @since 0.2.0 */
+  diastolic: number;
+  /** @since 0.2.0 */
+  unit: 'mmHg';
+  /**
+   * Android: `standingUp`, `sittingDown`, `lyingDown` or `reclining`. Absent when not recorded.
+   *
+   * @since 0.2.0
+   */
+  bodyPosition?: string;
+  /**
+   * Android: `leftWrist`, `rightWrist`, `leftUpperArm` or `rightUpperArm`. Absent when not recorded.
+   *
+   * @since 0.2.0
+   */
+  measurementLocation?: string;
+}
+
+export type Sample =
+  | QuantitySample
+  | CategorySample
+  | EventSample
+  | MenstruationPeriodSample
+  | SkinTemperatureSample
+  | BloodPressureSample;
 
 // ------------------------------------------------------------------ writing
 
@@ -902,8 +939,34 @@ export interface NewSkinTemperatureSample extends NewSampleBase {
  *
  * @since 0.1.0
  */
+/**
+ * A blood pressure reading, in mmHg. Android takes a single moment (`endDate` equal to `startDate`
+ * or absent).
+ *
+ * @since 0.2.0
+ */
+export interface NewBloodPressureSample extends NewSampleBase {
+  /** @since 0.2.0 */
+  type: 'bloodPressure';
+  /** @since 0.2.0 */
+  systolic: number;
+  /** @since 0.2.0 */
+  diastolic: number;
+  /** @since 0.2.0 */
+  unit?: 'mmHg';
+  /** @since 0.2.0 */
+  bodyPosition?: string;
+  /** @since 0.2.0 */
+  measurementLocation?: string;
+}
+
 export type NewSample =
-  NewQuantitySample | NewCategorySample | NewEventSample | NewMenstruationPeriod | NewSkinTemperatureSample;
+  | NewQuantitySample
+  | NewCategorySample
+  | NewEventSample
+  | NewMenstruationPeriod
+  | NewSkinTemperatureSample
+  | NewBloodPressureSample;
 
 // ------------------------------------------------------------------ method options and results
 

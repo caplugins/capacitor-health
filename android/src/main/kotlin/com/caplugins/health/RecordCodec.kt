@@ -1,5 +1,6 @@
 package com.caplugins.health
 
+import androidx.health.connect.client.records.BloodPressureRecord
 import androidx.health.connect.client.records.CervicalMucusRecord
 import androidx.health.connect.client.records.IntermenstrualBleedingRecord
 import androidx.health.connect.client.records.MenstruationFlowRecord
@@ -10,6 +11,7 @@ import androidx.health.connect.client.records.SexualActivityRecord
 import androidx.health.connect.client.records.SkinTemperatureRecord
 import androidx.health.connect.client.records.metadata.Device
 import androidx.health.connect.client.records.metadata.Metadata
+import androidx.health.connect.client.units.Pressure
 import androidx.health.connect.client.units.Temperature
 import androidx.health.connect.client.units.TemperatureDelta
 import com.caplugins.health.generated.QuantityAdapter
@@ -145,6 +147,13 @@ object RecordCodec {
                 )
                 putEnumField(json, entry.field("measurementLocation"), record.measurementLocation)
             }
+            is BloodPressureRecord -> {
+                json.put("systolic", record.systolic.inMillimetersOfMercury)
+                json.put("diastolic", record.diastolic.inMillimetersOfMercury)
+                json.put("unit", "mmHg")
+                putEnumField(json, entry.field("bodyPosition"), record.bodyPosition)
+                putEnumField(json, entry.field("measurementLocation"), record.measurementLocation)
+            }
             is MenstruationPeriodRecord -> {
                 json.put("firstDay", PeriodDays.firstDay(record).toString())
                 json.put("lastDay", PeriodDays.lastDay(record).toString())
@@ -162,6 +171,7 @@ object RecordCodec {
             is CervicalMucusRecord -> RecordTimes(record.time, record.zoneOffset, record.time, record.zoneOffset)
             is OvulationTestRecord -> RecordTimes(record.time, record.zoneOffset, record.time, record.zoneOffset)
             is SexualActivityRecord -> RecordTimes(record.time, record.zoneOffset, record.time, record.zoneOffset)
+            is BloodPressureRecord -> RecordTimes(record.time, record.zoneOffset, record.time, record.zoneOffset)
             is SkinTemperatureRecord -> RecordTimes(record.startTime, record.startZoneOffset, record.endTime, record.endZoneOffset)
             is MenstruationPeriodRecord -> RecordTimes(record.startTime, record.startZoneOffset, record.endTime, record.endZoneOffset)
             else -> throw HealthException(HealthException.NATIVE_ERROR, "${record::class.simpleName} has no codec.")
@@ -277,6 +287,7 @@ object RecordCodec {
                 SexualActivityRecord(time.toInstant(), time.offset, metadata, protection)
             }
             SkinTemperatureRecord::class -> decodeSkinTemperature(fields, entry, metadata)
+            BloodPressureRecord::class -> decodeBloodPressure(fields, entry, metadata)
             MenstruationPeriodRecord::class -> return decodePeriod(fields, metadata)
             else -> throw HealthException(HealthException.NATIVE_ERROR, "${entry.id} has no codec.")
         }
@@ -325,6 +336,29 @@ object RecordCodec {
             HealthLog.debug("Health Connect rejected ${entry.id}: ${e.message}")
             throw HealthException.invalidArgument(fields.field("value"), "is outside the range Health Connect accepts for ${entry.id}", "outOfRange")
         }
+
+    private fun decodeBloodPressure(fields: Fields, entry: RegistryEntry, metadata: Metadata): BloodPressureRecord {
+        val time = instant(fields)
+        unit(fields, entry)
+        val systolic = fields.double("systolic")
+        val diastolic = fields.double("diastolic")
+        return try {
+            BloodPressureRecord(
+                time = time.toInstant(),
+                zoneOffset = time.offset,
+                metadata = metadata,
+                systolic = Pressure.millimetersOfMercury(systolic),
+                diastolic = Pressure.millimetersOfMercury(diastolic),
+                bodyPosition = enumField(fields, entry, "bodyPosition"),
+                measurementLocation = enumField(fields, entry, "measurementLocation"),
+            )
+        } catch (e: IllegalArgumentException) {
+            // Health Connect takes systolic 20–200 and diastolic 10–180 mmHg; its message quotes the value.
+            HealthLog.debug("Health Connect rejected bloodPressure: ${e.message}")
+            val field = if (e.message?.contains("diastolic", ignoreCase = true) == true) "diastolic" else "systolic"
+            throw HealthException.invalidArgument(fields.field(field), "is outside the range Health Connect accepts", "outOfRange")
+        }
+    }
 
     private fun unit(fields: Fields, entry: RegistryEntry): String {
         val unit = fields.optString("unit") ?: entry.unit ?: "degC"

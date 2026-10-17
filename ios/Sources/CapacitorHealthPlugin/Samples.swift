@@ -132,6 +132,9 @@ final class Samples {
             return ["deleted": try await periodService().delete(options)]
         }
         let predicate = try Self.deletePredicate(options)
+        if let correlationType = type as? HKCorrelationType {
+            return ["deleted": try await store.deleteOwnCorrelations(of: correlationType, matching: predicate)]
+        }
         var types = [type]
         if !entry.members.isEmpty {
             // A combined id deletes from every member the app may write; HealthKit rejects deletes from the others.

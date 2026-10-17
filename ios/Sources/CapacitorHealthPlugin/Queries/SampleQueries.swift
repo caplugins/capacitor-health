@@ -49,6 +49,16 @@ extension HKHealthStore {
         }
     }
 
+    /// Deletes this app's correlations matching `predicate` with the samples they hold: deleting only a correlation
+    /// leaves its members in HealthKit (decision #54).
+    func deleteOwnCorrelations(of type: HKCorrelationType, matching predicate: NSPredicate) async throws -> Int {
+        let own = NSCompoundPredicate(andPredicateWithSubpredicates: [predicate, HKQuery.predicateForObjects(from: HKSource.default())])
+        let correlations = try await samples(of: type, predicate: own).compactMap { $0 as? HKCorrelation }
+        guard !correlations.isEmpty else { return 0 }
+        try await delete(correlations.flatMap { [$0] + Array($0.objects) })
+        return correlations.count
+    }
+
     /// The stored ids of this app's samples with the given sync identifiers (decision #28).
     func ownSampleIds(of type: HKSampleType, clientIds: [String]) async throws -> [String: String] {
         guard !clientIds.isEmpty else { return [:] }

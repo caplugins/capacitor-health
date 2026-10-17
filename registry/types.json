@@ -168,6 +168,32 @@
         }
       }
     },
+    "bloodPressureBodyPosition": {
+      "values": ["standingUp", "sittingDown", "lyingDown", "reclining"],
+      "android": {
+        "constants": "BloodPressureRecord",
+        "map": {
+          "standingUp": "BODY_POSITION_STANDING_UP",
+          "sittingDown": "BODY_POSITION_SITTING_DOWN",
+          "lyingDown": "BODY_POSITION_LYING_DOWN",
+          "reclining": "BODY_POSITION_RECLINING"
+        },
+        "absent": "BODY_POSITION_UNKNOWN"
+      }
+    },
+    "bloodPressureMeasurementLocation": {
+      "values": ["leftWrist", "rightWrist", "leftUpperArm", "rightUpperArm"],
+      "android": {
+        "constants": "BloodPressureRecord",
+        "map": {
+          "leftWrist": "MEASUREMENT_LOCATION_LEFT_WRIST",
+          "rightWrist": "MEASUREMENT_LOCATION_RIGHT_WRIST",
+          "leftUpperArm": "MEASUREMENT_LOCATION_LEFT_UPPER_ARM",
+          "rightUpperArm": "MEASUREMENT_LOCATION_RIGHT_UPPER_ARM"
+        },
+        "absent": "MEASUREMENT_LOCATION_UNKNOWN"
+      }
+    },
     "cervicalMucusSensation": {
       "values": ["light", "medium", "heavy"],
       "android": {
@@ -1860,6 +1886,14 @@
       "group": "vitals",
       "unit": "mmHg",
       "units": ["mmHg"],
+      "fields": {
+        "bodyPosition": {"type": "enum", "values": "bloodPressureBodyPosition", "android": {"property": "bodyPosition"}},
+        "measurementLocation": {
+          "type": "enum",
+          "values": "bloodPressureMeasurementLocation",
+          "android": {"property": "measurementLocation"}
+        }
+      },
       "ios": {"identifier": "HKCorrelationTypeIdentifierBloodPressure", "minOS": "8.0", "writable": true},
       "android": {
         "record": "BloodPressureRecord",
@@ -1868,7 +1902,7 @@
         "writePermission": "android.permission.health.WRITE_BLOOD_PRESSURE",
         "writable": true
       },
-      "notes": "One sample with systolic and diastolic (T29)"
+      "notes": "One sample with systolic and diastolic: an HKCorrelation of the two quantity types on iOS (decision #54)"
     },
     {
       "id": "bloodGlucose",

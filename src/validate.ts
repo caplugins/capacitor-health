@@ -459,6 +459,29 @@ function newSkinTemperature(s: Fields, at: string, entry: RegistryEntry, platfor
   return result;
 }
 
+function newBloodPressure(s: Fields, at: string, entry: RegistryEntry, platform: NativePlatform): Fields {
+  const start = parseDate(s.startDate, `${at}.startDate`);
+  let end = start;
+  if (s.endDate !== undefined) [, end] = dateRange(s.startDate, s.endDate, `${at}.`);
+  if (platform === 'android' && end.ms !== start.ms) {
+    throw invalid(
+      `${at}.endDate`,
+      'must equal startDate: a blood pressure reading is a single moment on Android',
+      'instantOnly',
+    );
+  }
+  rejectIfSet(s, at, entry, ['value', 'flow', 'deltas', 'baseline']);
+  const result: Fields = {
+    type: entry.id,
+    startDate: start.iso,
+    endDate: end.iso,
+    systolic: finiteNumber(s.systolic, `${at}.systolic`),
+    diastolic: finiteNumber(s.diastolic, `${at}.diastolic`),
+    unit: unit(s.unit, `${at}.unit`, entry),
+  };
+  return Object.assign(result, typedFields(s, at, entry, platform));
+}
+
 function newSample(raw: unknown, i: number, platform: NativePlatform): NewSample {
   const at = `samples[${i}]`;
   const s = object(raw, at);
@@ -469,6 +492,8 @@ function newSample(raw: unknown, i: number, platform: NativePlatform): NewSample
     result = newPeriod(s, at, entry, platform);
   } else if (entry.id === 'skinTemperature') {
     result = newSkinTemperature(s, at, entry, platform);
+  } else if (entry.id === 'bloodPressure') {
+    result = newBloodPressure(s, at, entry, platform);
   } else {
     const start = parseDate(s.startDate, `${at}.startDate`);
     let end = start;

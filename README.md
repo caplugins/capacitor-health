@@ -267,6 +267,15 @@ Android), `relationToMeal`, `mealType` and `specimenSource` (`bloodGlucose`; the
 - On iOS, `menstruationPeriod` can't be followed (periods are derived; see below): follow
   `menstrualFlow` and re-read the periods around what changed.
 
+### Blood pressure
+
+- A `bloodPressure` sample carries `systolic` and `diastolic` in mmHg, plus `bodyPosition` and
+  `measurementLocation` on Android. Apple Health and Health Connect show it as one reading.
+- iOS stores it as a correlation of a systolic and a diastolic sample; the plugin asks for access to
+  those two types, which HealthKit's sheet shows as "Blood Pressure". Readings another app saved as
+  loose systolic / diastolic samples, without the correlation, aren't returned.
+- Android takes a single moment and Health Connect's ranges: systolic 20–200, diastolic 10–180.
+
 ### Menstruation periods
 
 Health Connect stores periods as records; HealthKit doesn't have them, so on iOS the plugin works them
@@ -923,6 +932,22 @@ One change from the baseline in a `skinTemperature` sample.
 | **`delta`** | <code>number</code> | Difference from the baseline, in the sample's unit. | 0.1.0 |
 
 
+#### BloodPressureSample
+
+A blood pressure reading. iOS stores it as a correlation of a systolic and a diastolic sample
+(what Apple Health shows as one reading), Android as a `BloodPressureRecord`.
+
+| Prop                      | Type                         | Description                                                                                      | Since |
+| ------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------ | ----- |
+| **`kind`**                | <code>'special'</code>       |                                                                                                  | 0.2.0 |
+| **`type`**                | <code>'bloodPressure'</code> |                                                                                                  | 0.2.0 |
+| **`systolic`**            | <code>number</code>          |                                                                                                  | 0.2.0 |
+| **`diastolic`**           | <code>number</code>          |                                                                                                  | 0.2.0 |
+| **`unit`**                | <code>'mmHg'</code>          |                                                                                                  | 0.2.0 |
+| **`bodyPosition`**        | <code>string</code>          | Android: `standingUp`, `sittingDown`, `lyingDown` or `reclining`. Absent when not recorded.      | 0.2.0 |
+| **`measurementLocation`** | <code>string</code>          | Android: `leftWrist`, `rightWrist`, `leftUpperArm` or `rightUpperArm`. Absent when not recorded. | 0.2.0 |
+
+
 #### ReadSamplesOptions
 
 | Prop            | Type                                              | Description                                                                                                                                                                                                                                                                                 | Default           | Since |
@@ -1047,6 +1072,21 @@ Android only.
 | **`measurementLocation`** | <code>string</code>                 |                                                        | 0.1.0 |
 
 
+#### NewBloodPressureSample
+
+A blood pressure reading, in mmHg. Android takes a single moment (`endDate` equal to `startDate`
+or absent).
+
+| Prop                      | Type                         | Since |
+| ------------------------- | ---------------------------- | ----- |
+| **`type`**                | <code>'bloodPressure'</code> | 0.2.0 |
+| **`systolic`**            | <code>number</code>          | 0.2.0 |
+| **`diastolic`**           | <code>number</code>          | 0.2.0 |
+| **`unit`**                | <code>'mmHg'</code>          | 0.2.0 |
+| **`bodyPosition`**        | <code>string</code>          | 0.2.0 |
+| **`measurementLocation`** | <code>string</code>          | 0.2.0 |
+
+
 #### DeleteSamplesResult
 
 | Prop          | Type                | Since |
@@ -1142,9 +1182,7 @@ Access to one type.
 
 #### Sample
 
-Any sample `readSamples()` or `getChanges()` returns. Narrow it with `kind` or `type`.
-
-<code><a href="#quantitysample">QuantitySample</a> | <a href="#categorysample">CategorySample</a> | <a href="#eventsample">EventSample</a> | <a href="#menstruationperiodsample">MenstruationPeriodSample</a> | <a href="#skintemperaturesample">SkinTemperatureSample</a></code>
+<code><a href="#quantitysample">QuantitySample</a> | <a href="#categorysample">CategorySample</a> | <a href="#eventsample">EventSample</a> | <a href="#menstruationperiodsample">MenstruationPeriodSample</a> | <a href="#skintemperaturesample">SkinTemperatureSample</a> | <a href="#bloodpressuresample">BloodPressureSample</a></code>
 
 
 #### QuantityHealthType
@@ -1170,9 +1208,7 @@ Types whose samples have no value, only a time range (the event happened).
 
 #### NewSample
 
-Any sample `saveSamples()` accepts.
-
-<code><a href="#newquantitysample">NewQuantitySample</a> | <a href="#newcategorysample">NewCategorySample</a> | <a href="#neweventsample">NewEventSample</a> | <a href="#newmenstruationperiod">NewMenstruationPeriod</a> | <a href="#newskintemperaturesample">NewSkinTemperatureSample</a></code>
+<code><a href="#newquantitysample">NewQuantitySample</a> | <a href="#newcategorysample">NewCategorySample</a> | <a href="#neweventsample">NewEventSample</a> | <a href="#newmenstruationperiod">NewMenstruationPeriod</a> | <a href="#newskintemperaturesample">NewSkinTemperatureSample</a> | <a href="#newbloodpressuresample">NewBloodPressureSample</a></code>
 
 </docgen-api>
 

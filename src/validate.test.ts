@@ -762,6 +762,34 @@ describe('M2 types', () => {
     expect(save({ ...heartRate, endDate: END, value: 72.5 }).value).toBe(72.5);
   });
 
+  it('validates blood pressure readings', () => {
+    const reading = { type: 'bloodPressure', startDate: START, systolic: 120, diastolic: 80 };
+    expect(save(reading)).toMatchObject({
+      systolic: 120,
+      diastolic: 80,
+      unit: 'mmHg',
+      endDate: save(reading).startDate,
+    });
+    expect(save({ ...reading, endDate: END }).endDate).toBe('2026-10-01T09:00:00.000+05:30');
+    rejection(
+      () => save({ ...reading, endDate: END }, 'android'),
+      'INVALID_ARGUMENT',
+      'samples[0].endDate',
+      'instantOnly',
+    );
+    rejection(() => save({ ...reading, systolic: undefined }), 'INVALID_ARGUMENT', 'samples[0].systolic');
+    rejection(() => save({ ...reading, value: 120 }), 'INVALID_ARGUMENT', 'samples[0].value', 'notApplicable');
+    rejection(() => save({ ...reading, unit: 'kPa' }), 'INVALID_ARGUMENT', 'samples[0].unit', 'unknownUnit');
+    const android = save({ ...reading, bodyPosition: 'sittingDown', measurementLocation: 'leftUpperArm' }, 'android');
+    expect(android).toMatchObject({ bodyPosition: 'sittingDown', measurementLocation: 'leftUpperArm' });
+    rejection(
+      () => save({ ...reading, bodyPosition: 'sittingDown' }),
+      'INVALID_ARGUMENT',
+      'samples[0].bodyPosition',
+      'valueUnsupportedOnPlatform',
+    );
+  });
+
   it('requires an insulin delivery reason on iOS', () => {
     const insulin = { type: 'insulinDelivery', startDate: START, value: 2 };
     rejection(() => save(insulin), 'INVALID_ARGUMENT', 'samples[0].reason', 'required');

@@ -89,6 +89,8 @@ export async function write(): Promise<string> {
   } else if (type.type === 'skinTemperature') {
     const end = new Date(now.getTime() + 3600_000);
     sample = { ...base, type: 'skinTemperature', endDate: localIso(end), baseline: 33.5, deltas: [{ time: startDate, delta: 0.1 }] };
+  } else if (type.type === 'bloodPressure') {
+    sample = { ...base, type: 'bloodPressure', systolic: Number($<HTMLInputElement>('explore-number').value) || 120, diastolic: 80 };
   } else if (type.units) {
     sample = { ...base, type: type.type as NewSample['type'], value: Number($<HTMLInputElement>('explore-number').value) || 36.5 } as NewSample;
   } else if (type.values) {

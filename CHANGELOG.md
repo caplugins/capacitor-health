@@ -9,6 +9,8 @@
   and running metrics, audio exposure, Apple's heart and fitness notifications, and more. See the
   type table in the README.
 - iOS: combined ids `distance`, `speed` and `power` read every matching HealthKit type.
+- `bloodPressure`: one reading with `systolic` and `diastolic` (an `HKCorrelation` on iOS, a
+  `BloodPressureRecord` on Android).
 - Typed fields `testType` / `measurementMethod` (`vo2Max`), `relationToMeal`, `mealType`,
   `specimenSource` (`bloodGlucose`) and `reason` (`insulinDelivery`).
 - `UnsupportedReason` `aggregateOnly` for types that only have aggregates on a platform.

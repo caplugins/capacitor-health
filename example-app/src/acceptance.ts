@@ -109,6 +109,8 @@ function sampleFor(support: TypeSupport, at: Date, clientId: string, variant: 0 
       return { ...base, type: 'cervicalMucus', value, ...(platform === 'android' ? { sensation: 'light' } : {}) };
     case 'menstrualFlow':
       return { ...base, type: 'menstrualFlow', value, ...(platform === 'ios' ? { isCycleStart: variant === 0 } : {}) };
+    case 'bloodPressure':
+      return { ...base, type: 'bloodPressure', systolic: 120 + variant, diastolic: 80, unit: 'mmHg' };
     case 'insulinDelivery':
       return {
         ...base,
@@ -149,6 +151,10 @@ function sameValue(sample: Sample | undefined, expected: NewSample): boolean {
     return (sample as { lastDay?: string }).lastDay === expected.endDate?.slice(0, 10);
   }
   if (expected.type === 'skinTemperature') return (sample as { baseline?: number }).baseline === expected.baseline;
+  if (expected.type === 'bloodPressure') {
+    const reading = sample as { systolic?: number; diastolic?: number };
+    return reading.systolic === expected.systolic && reading.diastolic === expected.diastolic;
+  }
   if (expected.type === 'sexualActivity')
     return (sample as { protectionUsed?: boolean }).protectionUsed === expected.protectionUsed;
   return wanted === undefined || actual === wanted;

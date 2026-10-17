@@ -17,8 +17,8 @@ function daysAgo(days: number, hour: number): Date {
 /**
  * A known reproductive dataset over the last ~60 days: two periods with daily flow, daily basal body
  * temperature with a luteal rise, ovulation tests and cervical mucus around ovulation, one spotting day,
- * sexual activity, and (iOS) a couple of symptoms. Every sample has a fixed `clientId`, so seeding again
- * upserts instead of duplicating.
+ * sexual activity, and (iOS) a couple of symptoms; plus two blood pressure readings. Every sample has a
+ * fixed `clientId`, so seeding again upserts instead of duplicating.
  */
 export function seedSamples(): NewSample[] {
   const ios = Capacitor.getPlatform() === 'ios';
@@ -50,6 +50,9 @@ export function seedSamples(): NewSample[] {
 
   samples.push({ type: 'intermenstrualBleeding', startDate: localIso(daysAgo(20, 18)), clientId: id('spotting'), recordingMethod: 'manual' });
   samples.push({ type: 'sexualActivity', startDate: localIso(daysAgo(15, 22)), protectionUsed: true, clientId: id('activity'), recordingMethod: 'manual' });
+  for (const [d, systolic, diastolic] of [[2, 118, 76], [1, 122, 79]]) {
+    samples.push({ type: 'bloodPressure', startDate: localIso(daysAgo(d, 8)), systolic, diastolic, clientId: id(`bp-${d}`), recordingMethod: 'manual' });
+  }
   if (ios) {
     samples.push({ type: 'abdominalCramps', startDate: localIso(daysAgo(28, 10)), value: 'moderate', clientId: id('cramps'), recordingMethod: 'manual' });
     samples.push({ type: 'headache', startDate: localIso(daysAgo(27, 15)), value: 'mild', clientId: id('headache'), recordingMethod: 'manual' });

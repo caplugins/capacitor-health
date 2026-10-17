@@ -339,6 +339,24 @@ object Registry {
                 "unknown" to CervicalMucusRecord.APPEARANCE_UNKNOWN,
             ),
         ),
+        "bloodPressureBodyPosition" to RegistryValueSet(
+            constants = mapOf(
+                "standingUp" to BloodPressureRecord.BODY_POSITION_STANDING_UP,
+                "sittingDown" to BloodPressureRecord.BODY_POSITION_SITTING_DOWN,
+                "lyingDown" to BloodPressureRecord.BODY_POSITION_LYING_DOWN,
+                "reclining" to BloodPressureRecord.BODY_POSITION_RECLINING,
+            ),
+            absent = BloodPressureRecord.BODY_POSITION_UNKNOWN,
+        ),
+        "bloodPressureMeasurementLocation" to RegistryValueSet(
+            constants = mapOf(
+                "leftWrist" to BloodPressureRecord.MEASUREMENT_LOCATION_LEFT_WRIST,
+                "rightWrist" to BloodPressureRecord.MEASUREMENT_LOCATION_RIGHT_WRIST,
+                "leftUpperArm" to BloodPressureRecord.MEASUREMENT_LOCATION_LEFT_UPPER_ARM,
+                "rightUpperArm" to BloodPressureRecord.MEASUREMENT_LOCATION_RIGHT_UPPER_ARM,
+            ),
+            absent = BloodPressureRecord.MEASUREMENT_LOCATION_UNKNOWN,
+        ),
         "cervicalMucusSensation" to RegistryValueSet(
             constants = mapOf(
                 "light" to CervicalMucusRecord.SENSATION_LIGHT,
@@ -794,6 +812,10 @@ object Registry {
             writable = true,
             unit = "mmHg",
             units = listOf("mmHg"),
+            fields = listOf(
+                RegistryField(name = "bodyPosition", property = "bodyPosition", valueSet = "bloodPressureBodyPosition"),
+                RegistryField(name = "measurementLocation", property = "measurementLocation", valueSet = "bloodPressureMeasurementLocation"),
+            ),
         ),
         RegistryEntry(
             id = "bloodGlucose",

@@ -448,6 +448,16 @@ export const VALUE_SETS: Readonly<Record<string, RegistryValueSet>> = {
     ios: ['dry', 'sticky', 'creamy', 'watery', 'eggWhite'],
     android: ['dry', 'sticky', 'creamy', 'watery', 'eggWhite', 'unusual', 'unknown'],
   },
+  bloodPressureBodyPosition: {
+    values: ['standingUp', 'sittingDown', 'lyingDown', 'reclining'],
+    ios: null,
+    android: ['standingUp', 'sittingDown', 'lyingDown', 'reclining'],
+  },
+  bloodPressureMeasurementLocation: {
+    values: ['leftWrist', 'rightWrist', 'leftUpperArm', 'rightUpperArm'],
+    ios: null,
+    android: ['leftWrist', 'rightWrist', 'leftUpperArm', 'rightUpperArm'],
+  },
   cervicalMucusSensation: { values: ['light', 'medium', 'heavy'], ios: null, android: ['light', 'medium', 'heavy'] },
   ovulationTestResult: {
     values: ['negative', 'lhSurge', 'estrogenSurge', 'indeterminate'],
@@ -1962,6 +1972,10 @@ export const REGISTRY: Readonly<Record<HealthType, RegistryEntry>> = {
     group: 'vitals',
     unit: 'mmHg',
     units: ['mmHg'],
+    fields: {
+      bodyPosition: { type: 'enum', values: 'bloodPressureBodyPosition', ios: false, android: 'stored' },
+      measurementLocation: { type: 'enum', values: 'bloodPressureMeasurementLocation', ios: false, android: 'stored' },
+    },
     ios: { identifier: 'HKCorrelationTypeIdentifierBloodPressure', minOS: '8.0', writable: true, time: 'any' },
     android: {
       record: 'BloodPressureRecord',

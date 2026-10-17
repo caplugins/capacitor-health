@@ -50,7 +50,8 @@ final class Authorization {
         for typeId in write {
             guard let entry = Registry.byId[typeId], HealthTypes.sampleType(for: entry) != nil else { continue }
             // Asking to share a type HealthKit disallows raises an exception, so this must never get through.
-            shareTypes.insert(try HealthTypes.resolveWritable(typeId).1)
+            let (writable, type) = try HealthTypes.resolveWritable(typeId)
+            shareTypes.formUnion(HealthTypes.shareTypes(for: writable, type: type))
         }
         let missing = Self.missingUsageDescriptions(read: !readTypes.isEmpty, write: !shareTypes.isEmpty, info: infoDictionary())
         if !missing.isEmpty {
@@ -66,9 +67,16 @@ final class Authorization {
         return try await check(read: read, write: write)
     }
 
-    /// The HealthKit types reading `typeId` needs: a combined or aggregate-only id needs every member.
+    /// The HealthKit types reading `typeId` needs: every member of a combined, aggregate-only or correlation type.
     private static func readTypes(_ typeId: String) -> [HKSampleType] {
-        Registry.byId[typeId].map { HealthTypes.readTypes(for: $0).map(\.1) } ?? []
+        Registry.byId[typeId].map(HealthTypes.authorizationTypes) ?? []
+    }
+
+    /// Share access to every type writing `typeId` needs: granted only when all are, refused when any is.
+    static func writeStatus(_ statuses: [HKAuthorizationStatus]) -> String {
+        if statuses.contains(.sharingDenied) { return "notGranted" }
+        if !statuses.isEmpty && statuses.allSatisfy({ $0 == .sharingAuthorized }) { return "granted" }
+        return statuses.contains(.notDetermined) ? "notDetermined" : "notGranted"
     }
 
     func check(read: [String], write: [String]) async throws -> [String: Any] {
@@ -87,11 +95,11 @@ final class Authorization {
 
         var writeStatuses: [String: String] = [:]
         for typeId in write {
-            guard let (_, type) = try? HealthTypes.resolve(typeId) else {
+            guard let (entry, type) = try? HealthTypes.resolve(typeId) else {
                 writeStatuses[typeId] = "unsupported"
                 continue
             }
-            writeStatuses[typeId] = Self.writeStatus(store.authorizationStatus(for: type))
+            writeStatuses[typeId] = Self.writeStatus(HealthTypes.shareTypes(for: entry, type: type).map(store.authorizationStatus))
         }
 
         var result: [String: Any] = ["read": readStatuses, "write": writeStatuses]

@@ -12,9 +12,9 @@ enum HealthTypes {
     /// to `menstrualFlow`, which its registry entry names.
     static func sampleType(for entry: RegistryEntry) -> HKSampleType? {
         guard entry.isAvailable() else { return nil }
-        // A correlation (bloodPressure) needs its own codec and authorizes its member types, so until that
-        // exists it stays unsupported rather than reaching HealthKit as a share type.
-        if entry.isCorrelation { return nil }
+        if entry.isCorrelation {
+            return HKObjectType.correlationType(forIdentifier: HKCorrelationTypeIdentifier(rawValue: entry.identifier))
+        }
         if entry.isQuantity {
             return HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier(rawValue: entry.identifier))
         }
@@ -28,6 +28,18 @@ enum HealthTypes {
         return entry.members.compactMap { registry[$0] }.compactMap { member in sampleType(for: member).map { (member, $0) } }
     }
 
+    /// The types HealthKit authorizes reading `entry` through: a correlation's member types (HealthKit doesn't
+    /// authorize correlation types), a combined id's members, or the type itself.
+    static func authorizationTypes(for entry: RegistryEntry) -> [HKSampleType] {
+        guard sampleType(for: entry) != nil else { return [] }
+        return entry.isCorrelation ? BloodPressure.memberTypes : readTypes(for: entry).map(\.1)
+    }
+
+    /// The types writing `entry` needs share access to: a correlation's members, else the type writes go to.
+    static func shareTypes(for entry: RegistryEntry, type: HKSampleType) -> [HKSampleType] {
+        entry.isCorrelation ? BloodPressure.memberTypes : [type]
+    }
+
     /// Rejects aggregate-only types (`totalEnergy`), which have no samples to read, follow or delete.
     static func requireSamples(_ entry: RegistryEntry) throws {
         if entry.aggregateOnly { throw HealthError.unsupportedType(entry.typeId, reason: "aggregateOnly") }
@@ -36,7 +48,7 @@ enum HealthTypes {
     /// The entry and HealthKit type for `typeId`, or why there is none.
     static func lookup(_ typeId: String, registry: [String: RegistryEntry] = Registry.byId)
         -> Result<(RegistryEntry, HKSampleType), Unavailability> {
-        guard let entry = registry[typeId], !entry.isCorrelation else { return .failure(.notOnPlatform) }
+        guard let entry = registry[typeId] else { return .failure(.notOnPlatform) }
         guard let type = sampleType(for: entry) else { return .failure(.osVersion) }
         return .success((entry, type))
     }
