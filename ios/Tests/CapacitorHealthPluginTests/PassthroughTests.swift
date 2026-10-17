@@ -14,7 +14,7 @@ final class PassthroughTests: XCTestCase {
 
     func testQuantityUsesTheUnitsThatFit() throws {
         let water = try XCTUnwrap(HealthTypes.passthroughEntry("hk:HKQuantityTypeIdentifierDietaryWater"))
-        XCTAssertEqual(water.units, ["L", "mL"])
+        XCTAssertEqual(water.units, ["L", "mL", "flOz"])
         XCTAssertEqual(water.unit, "L")
         XCTAssertTrue(water.writable)
         let sample = try XCTUnwrap(try decode(["type": "hk:HKQuantityTypeIdentifierDietaryWater", "startDate": noon, "value": 250, "unit": "mL"]) as? HKQuantitySample)

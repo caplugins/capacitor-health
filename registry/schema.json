@@ -20,6 +20,12 @@
       "propertyNames": { "$ref": "#/$defs/camelId" },
       "additionalProperties": { "$ref": "#/$defs/valueSet" }
     },
+    "nutrients": {
+      "description": "Nutrients of a nutrition entry (NutritionRecord properties ⇄ HealthKit dietary quantity types), keyed by the unified nutrient id.",
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/camelId" },
+      "additionalProperties": { "$ref": "#/$defs/nutrient" }
+    },
     "types": {
       "type": "array",
       "minItems": 1,
@@ -177,6 +183,47 @@
       ]
     },
 
+    "part": {
+      "description": "One child array of a session (decision #61).",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "values": { "description": "Value set of each child's type (a sleep stage, a segment type).", "$ref": "#/$defs/camelId" },
+        "ios": { "description": "How HealthKit holds the children.", "$ref": "#/$defs/notes" },
+        "android": { "description": "How Health Connect holds the children.", "$ref": "#/$defs/notes" },
+        "notes": { "$ref": "#/$defs/notes" }
+      }
+    },
+
+    "nutrient": {
+      "type": "object",
+      "required": ["unit"],
+      "additionalProperties": false,
+      "properties": {
+        "unit": { "description": "Canonical unit (g or kcal); any unit of the same dimension works.", "$ref": "#/$defs/unit" },
+        "ios": {
+          "type": "object",
+          "required": ["identifier", "minOS"],
+          "additionalProperties": false,
+          "properties": {
+            "identifier": { "type": "string", "pattern": "^HKQuantityTypeIdentifierDietary[A-Za-z0-9]+$" },
+            "minOS": { "$ref": "#/$defs/osVersion" }
+          }
+        },
+        "android": {
+          "type": "object",
+          "required": ["property", "aggregate"],
+          "additionalProperties": false,
+          "properties": {
+            "property": { "description": "NutritionRecord property (and constructor argument).", "$ref": "#/$defs/camelId" },
+            "aggregate": { "description": "NutritionRecord AggregateMetric constant summing it.", "$ref": "#/$defs/hcConstant" }
+          }
+        },
+        "notes": { "$ref": "#/$defs/notes" }
+      },
+      "anyOf": [{ "required": ["ios"] }, { "required": ["android"] }]
+    },
+
     "type": {
       "type": "object",
       "required": ["id", "kind", "group"],
@@ -187,7 +234,7 @@
           "description": "quantity: number + unit. category: one value from a value set. event: no value, only start/end. special: bespoke codec in Special/ (still registered).",
           "enum": ["quantity", "category", "event", "special"]
         },
-        "group": { "enum": ["reproductiveHealth", "symptoms", "activity", "vitals", "body", "other"] },
+        "group": { "enum": ["reproductiveHealth", "symptoms", "activity", "vitals", "body", "sleep", "nutrition", "mindfulness", "other"] },
         "values": { "description": "Value set name of the main value (category kind).", "$ref": "#/$defs/camelId" },
         "unit": { "description": "Canonical unit returned by default.", "$ref": "#/$defs/unit" },
         "units": { "description": "Units callers may ask for.", "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/unit" } },
@@ -195,6 +242,12 @@
           "type": "object",
           "propertyNames": { "$ref": "#/$defs/camelId" },
           "additionalProperties": { "$ref": "#/$defs/field" }
+        },
+        "parts": {
+          "description": "Child arrays of a special type (sleep stages, workout segments and laps), keyed by the sample property holding them.",
+          "type": "object",
+          "propertyNames": { "$ref": "#/$defs/camelId" },
+          "additionalProperties": { "$ref": "#/$defs/part" }
         },
         "ios": { "$ref": "#/$defs/iosMapping" },
         "android": { "$ref": "#/$defs/androidMapping" },

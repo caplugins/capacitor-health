@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import types from '../../registry/types.json';
 
-import { HEALTH_TYPES, REGISTRY, UNITS, VALUE_SETS } from './registry';
+import { HEALTH_TYPES, NUTRIENTS, NUTRIENT_IDS, REGISTRY, UNITS, VALUE_SETS } from './registry';
 
 describe('generated TypeScript registry', () => {
   it('lists every type in registry order', () => {
@@ -17,6 +17,17 @@ describe('generated TypeScript registry', () => {
         if (field.values) expect(VALUE_SETS[field.values], `${entry.id} field`).toBeDefined();
       }
     }
+  });
+
+  it('lists nutrients with their platform names', () => {
+    expect([...NUTRIENT_IDS]).toEqual(Object.keys(types.nutrients));
+    expect(NUTRIENTS.carbohydrates).toEqual({
+      unit: 'g',
+      ios: 'HKQuantityTypeIdentifierDietaryCarbohydrates',
+      android: 'totalCarbohydrate',
+    });
+    expect(NUTRIENTS.transFat.ios).toBeNull();
+    expect(VALUE_SETS.sleepStage.ios).not.toContain('outOfBed');
   });
 
   it('marks platform-only values', () => {

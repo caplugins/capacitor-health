@@ -68,6 +68,17 @@ describe('registry/types.json', () => {
     }
   });
 
+  it('maps every HealthKit dietary type but water to a nutrient, at its catalog version', () => {
+    const catalog = healthKitIdentifiers().filter((x) => x.identifier.startsWith('HKQuantityTypeIdentifierDietary'));
+    const nutrients = Object.values(registry.nutrients).filter((n) => n.ios);
+    expect(nutrients.map((n) => n.ios.identifier).sort()).toEqual(
+      catalog.map((x) => x.identifier).filter((id) => id !== 'HKQuantityTypeIdentifierDietaryWater').sort(),
+    );
+    for (const n of nutrients) expect(n.ios.minOS).toBe(catalog.find((x) => x.identifier === n.ios.identifier).ios);
+    // NutritionRecord's 42 properties (connect-client 1.1.0); the Kotlin compiler checks each name.
+    expect(Object.values(registry.nutrients).filter((n) => n.android)).toHaveLength(42);
+  });
+
   it('uses the raw values in the SDK-header enum table', () => {
     const enums = healthKitEnums();
     for (const [name, set] of Object.entries(registry.valueSets)) {
@@ -96,6 +107,7 @@ describe('schema and semantic checks reject mistakes', () => {
     ['an unknown group', (t) => (t.group = 'misc')],
     ['an ios mapping with neither identifier nor members', (t) => delete t.ios.identifier],
     ['an unknown aggregate metric', (t) => (t.android.aggregates = { median: 'X_MEDIAN' })],
+    ['a part with an unknown property', (t) => (t.parts = { stages: { order: 1 } })],
   ])('schema rejects %s', (_label, mutate) => {
     const entry = clone(flow);
     mutate(entry);
@@ -103,6 +115,22 @@ describe('schema and semantic checks reject mistakes', () => {
   });
 
   it.each([
+    ['a nutrient on neither platform', (r) => (r.nutrients.protein = { unit: 'g' })],
+    ['a nutrient with a non-dietary identifier', (r) => (r.nutrients.protein.ios.identifier = 'HKQuantityTypeIdentifierStepCount')],
+    ['a nutrient without a unit', (r) => delete r.nutrients.protein.unit],
+  ])('schema rejects %s', (_label, mutate) => {
+    const broken = clone(registry);
+    mutate(broken);
+    expect(schemaErrors(broken)).not.toEqual([]);
+  });
+
+  it.each([
+    ['parts on a category', (r) => (r.types[0].parts = { stages: { values: 'sleepStage' } }), /parts only apply to special/],
+    ['a part with an unknown value set', (r) => (r.types.find((t) => t.id === 'bloodPressure').parts = { stages: { values: 'nope' } }), /unknown value set nope/],
+    ['a part whose value set maps to neither platform', (r) => (r.types.find((t) => t.id === 'skinTemperature').parts = { x: { values: 'severity' } }), /maps to none of the type's platforms/],
+    ['a nutrient in an unknown unit', (r) => (r.nutrients.protein.unit = 'furlong'), /unknown unit furlong/],
+    ['a nutrient in a volume unit', (r) => (r.nutrients.protein.unit = 'mL'), /mass or energy unit/],
+    ['two nutrients on one property', (r) => (r.nutrients.sugar.android.property = 'protein'), /property is used twice/],
     ['a value set map missing a value', (r) => delete r.valueSets.bleeding.ios.map.heavy, /missing heavy/],
     ['an unknown value set', (r) => (r.types[0].values = 'nope'), /unknown value set nope/],
     ['mismatched permissions', (r) => (r.types[0].android.writePermission = 'android.permission.health.WRITE_STEPS'), /different data types/],

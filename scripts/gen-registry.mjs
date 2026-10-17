@@ -65,6 +65,11 @@ async function renderTypeScript(registry) {
       const entry = { id: t.id, kind: t.kind, group: t.group };
       if (t.values) entry.values = t.values;
       if (t.unit) Object.assign(entry, { unit: t.unit, units: t.units });
+      if (t.parts) {
+        entry.parts = Object.fromEntries(
+          Object.entries(t.parts).map(([name, p]) => [name, p.values ? { values: p.values } : {}]),
+        );
+      }
       if (t.fields) {
         entry.fields = Object.fromEntries(
           Object.entries(t.fields).map(([name, f]) => {
@@ -108,6 +113,13 @@ async function renderTypeScript(registry) {
     }),
   );
 
+  const nutrients = Object.fromEntries(
+    Object.entries(registry.nutrients ?? {}).map(([id, n]) => [
+      id,
+      { unit: n.unit, ios: n.ios ? runtimeIdentifier(n.ios) : null, android: n.android?.property ?? null },
+    ]),
+  );
+
   const idsOfKind = (kind) =>
     registry.types
       .filter((t) => t.kind === kind)
@@ -148,7 +160,26 @@ export type CategoryHealthType = ${idsOfKind('category')};
 export type EventHealthType = ${idsOfKind('event')};
 
 export type RegistryKind = 'quantity' | 'category' | 'event' | 'special';
-export type RegistryGroup = 'reproductiveHealth' | 'symptoms' | 'activity' | 'vitals' | 'body' | 'other';
+export type RegistryGroup =
+  | 'reproductiveHealth'
+  | 'symptoms'
+  | 'activity'
+  | 'vitals'
+  | 'body'
+  | 'sleep'
+  | 'nutrition'
+  | 'mindfulness'
+  | 'other';
+
+/** Every nutrient id, in registry order. */
+export const NUTRIENT_IDS = ${JSON.stringify(Object.keys(registry.nutrients ?? {}))} as const;
+
+/**
+ * A nutrient of a nutrition entry. Which platforms store it is in {@link NUTRIENTS}.
+ *
+ * @since 0.3.0
+ */
+export type Nutrient = (typeof NUTRIENT_IDS)[number];
 
 /**
  * A statistic \`aggregate()\` can compute.
@@ -175,6 +206,21 @@ export interface RegistryValueSet {
   android: readonly string[] | null;
 }
 
+export interface RegistryNutrient {
+  /** Canonical unit: \`g\` or \`kcal\`. */
+  unit: string;
+  /** HealthKit dietary quantity identifier, or \`null\` when HealthKit has none. */
+  ios: string | null;
+  /** \`NutritionRecord\` property, or \`null\` when Health Connect has none. */
+  android: string | null;
+}
+
+/** One child array of a session type (sleep stages, workout segments and laps). */
+export interface RegistryPart {
+  /** Value set of each child's type. */
+  values?: string;
+}
+
 export interface RegistryField {
   type: 'boolean' | 'enum';
   /** Value set name, for enum fields. */
@@ -195,6 +241,8 @@ export interface RegistryEntry {
   unit?: string;
   units?: readonly string[];
   fields?: Readonly<Record<string, RegistryField>>;
+  /** Child arrays of a session type, by sample property. */
+  parts?: Readonly<Record<string, RegistryPart>>;
   ios?: {
     /** Absent for combined ids (\`members\`). */
     identifier?: string;
@@ -236,6 +284,8 @@ export const UNITS: Readonly<Record<string, RegistryUnit>> = ${JSON.stringify(un
 export const VALUE_SETS: Readonly<Record<string, RegistryValueSet>> = ${JSON.stringify(valueSets)};
 
 export const REGISTRY: Readonly<Record<HealthType, RegistryEntry>> = ${JSON.stringify(entries)};
+
+export const NUTRIENTS: Readonly<Record<Nutrient, RegistryNutrient>> = ${JSON.stringify(nutrients)};
 `;
   const config = (await prettier.resolveConfig(OUTPUTS.ts)) ?? {};
   return prettier.format(source, { ...config, parser: 'typescript' });
@@ -305,6 +355,9 @@ function renderSwift(registry) {
     });
 
   const byId = new Map(registry.types.map((t) => [t.id, t]));
+  const nutrients = Object.entries(registry.nutrients ?? {})
+    .filter(([, n]) => n.ios)
+    .map(([id, n]) => `        ${q(id)}: RegistryNutrient(identifier: ${q(runtimeIdentifier(n.ios))}, unit: ${q(n.unit)})`);
   const units = Object.entries(registry.units)
     .filter(([, u]) => u.ios)
     .map(([id, u]) => `        ${q(id)}: RegistryUnit(${q(u.ios)}${u.percent ? ', percent: true' : ''})`);
@@ -379,6 +432,14 @@ struct RegistryValueSet {
         values = pairs.map { $0.0 }
         rawValues = Dictionary(uniqueKeysWithValues: pairs)
     }
+}
+
+/// A nutrient HealthKit stores as a dietary quantity type (decision #61).
+struct RegistryNutrient {
+    /// Runtime identifier of its \`HKQuantityTypeIdentifierDietary…\` type.
+    let identifier: String
+    /// Canonical unit id.
+    let unit: String
 }
 
 struct RegistryMetadataField {
@@ -500,6 +561,11 @@ ${passthrough.categories.map(([id, values]) => `        ${q(id)}: [${values.join
 ${sets.join(',\n')}
     ]
 
+    /// Nutrients HealthKit stores, by unified nutrient id.
+    static let nutrients: [String: RegistryNutrient] = [
+${nutrients.join(',\n')}
+    ]
+
     static let entries: [RegistryEntry] = [
 ${entries.join(',\n')}
     ]
@@ -546,6 +612,14 @@ function renderSwiftTest(registry) {
       ),
     );
   }
+
+  const nutrientIdentifiers = Object.values(registry.nutrients ?? {})
+    .filter((n) => n.ios)
+    .map((n) => {
+      const { swiftType, member } = swiftIdentifier(n.ios.identifier);
+      return { minOS: n.ios.minOS, args: [`${swiftType}.${member}.rawValue`, q(runtimeIdentifier(n.ios))] };
+    });
+  if (nutrientIdentifiers.length) functions.push(testFunction('testNutrientIdentifiers', nutrientIdentifiers));
 
   for (const [name, set] of Object.entries(registry.valueSets)) {
     if (!set.ios) continue;
@@ -716,6 +790,19 @@ function renderKotlin(registry) {
       return `        ${record}::class to SeriesAdapter(\n${lines.map((l) => `            ${l},`).join('\n')}\n        ),`;
     });
 
+  // Nutrients (T39): a read and an aggregate per NutritionRecord property, and a builder naming every one, so the
+  // compiler checks each property and metric.
+  const hcNutrients = Object.entries(registry.nutrients ?? {}).filter(([, n]) => n.android);
+  if (hcNutrients.length) recordImport('NutritionRecord');
+  const nutrients = hcNutrients.map(
+    ([id, n]) =>
+      `        ${q(id)} to RegistryNutrient(${q(n.unit)}, read = { it.${n.android.property} }, aggregate = NutritionRecord.${n.android.aggregate}),`,
+  );
+  const nutritionArgs = hcNutrients.map(([id, n]) => {
+    const cls = registry.units[n.unit].android.class;
+    return `${n.android.property} = values[${q(id)}] as ${cls}?`;
+  });
+
   const units = Object.entries(registry.units)
     .filter(([, u]) => u.android)
     .map(([id, u]) => {
@@ -737,8 +824,17 @@ function renderKotlin(registry) {
       return `        ${q(id)} to RegistryUnit(${q(u.dimension)}, read = ${read}, build = ${build}),`;
     });
 
+  // connect-client 1.1.0 marks mindfulness sessions experimental; using them needs an explicit opt-in.
+  const optIns = imports.has('androidx.health.connect.client.records.MindfulnessSessionRecord')
+    ? ['androidx.health.connect.client.feature.ExperimentalMindfulnessSessionApi']
+    : [];
+  optIns.forEach((cls) => imports.add(cls));
+  const fileOptIn = optIns.length
+    ? `@file:OptIn(${optIns.map((cls) => `${cls.split('.').pop()}::class`).join(', ')})\n\n`
+    : '';
+
   return `// ${HEADER}
-package com.caplugins.health.generated
+${fileOptIn}package com.caplugins.health.generated
 
 ${[...imports]
   .sort()
@@ -820,6 +916,13 @@ class QuantityAdapter(
     val build: (RecordTimes, Metadata, Any, Map<String, Int>) -> Record,
 )
 
+/** A nutrient of a NutritionRecord (decision #61): its canonical unit, its property's unit object, the metric summing it. */
+class RegistryNutrient(
+    val unit: String,
+    val read: (NutritionRecord) -> Any?,
+    val aggregate: AggregateMetric<*>,
+)
+
 /** One series record class (T28): its times, its points (time and value object), and its constructor. */
 class SeriesAdapter(
     val times: (Record) -> RecordTimes,
@@ -858,6 +961,24 @@ ${adapters.join('\n')}
     val seriesAdapters: Map<KClass<out Record>, SeriesAdapter> = mapOf(
 ${seriesAdapters.join('\n')}
     )
+
+    /** NutritionRecord's nutrients, by unified nutrient id. */
+    val nutrients: Map<String, RegistryNutrient> = mapOf(
+${nutrients.join('\n')}
+    )
+
+    /** A NutritionRecord with [values] (nutrient id → Mass or Energy); nutrients not listed stay unset. */
+    fun nutritionRecord(times: RecordTimes, metadata: Metadata, name: String?, mealType: Int, values: Map<String, Any>) =
+        NutritionRecord(
+            startTime = times.start,
+            startZoneOffset = times.startOffset,
+            endTime = times.end,
+            endZoneOffset = times.endOffset,
+            metadata = metadata,
+            name = name,
+            mealType = mealType,
+${nutritionArgs.map((a) => `            ${a},`).join('\n')}
+        )
 }
 `;
 }

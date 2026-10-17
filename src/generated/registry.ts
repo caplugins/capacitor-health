@@ -314,7 +314,61 @@ export type EventHealthType =
   | 'sleepApneaEvent';
 
 export type RegistryKind = 'quantity' | 'category' | 'event' | 'special';
-export type RegistryGroup = 'reproductiveHealth' | 'symptoms' | 'activity' | 'vitals' | 'body' | 'other';
+export type RegistryGroup =
+  'reproductiveHealth' | 'symptoms' | 'activity' | 'vitals' | 'body' | 'sleep' | 'nutrition' | 'mindfulness' | 'other';
+
+/** Every nutrient id, in registry order. */
+export const NUTRIENT_IDS = [
+  'energy',
+  'energyFromFat',
+  'protein',
+  'carbohydrates',
+  'fiber',
+  'sugar',
+  'totalFat',
+  'saturatedFat',
+  'monounsaturatedFat',
+  'polyunsaturatedFat',
+  'unsaturatedFat',
+  'transFat',
+  'cholesterol',
+  'sodium',
+  'potassium',
+  'calcium',
+  'iron',
+  'magnesium',
+  'phosphorus',
+  'zinc',
+  'copper',
+  'manganese',
+  'selenium',
+  'chromium',
+  'molybdenum',
+  'iodine',
+  'chloride',
+  'vitaminA',
+  'vitaminB6',
+  'vitaminB12',
+  'vitaminC',
+  'vitaminD',
+  'vitaminE',
+  'vitaminK',
+  'thiamin',
+  'riboflavin',
+  'niacin',
+  'pantothenicAcid',
+  'biotin',
+  'folate',
+  'folicAcid',
+  'caffeine',
+] as const;
+
+/**
+ * A nutrient of a nutrition entry. Which platforms store it is in {@link NUTRIENTS}.
+ *
+ * @since 0.3.0
+ */
+export type Nutrient = (typeof NUTRIENT_IDS)[number];
 
 /**
  * A statistic `aggregate()` can compute.
@@ -341,6 +395,21 @@ export interface RegistryValueSet {
   android: readonly string[] | null;
 }
 
+export interface RegistryNutrient {
+  /** Canonical unit: `g` or `kcal`. */
+  unit: string;
+  /** HealthKit dietary quantity identifier, or `null` when HealthKit has none. */
+  ios: string | null;
+  /** `NutritionRecord` property, or `null` when Health Connect has none. */
+  android: string | null;
+}
+
+/** One child array of a session type (sleep stages, workout segments and laps). */
+export interface RegistryPart {
+  /** Value set of each child's type. */
+  values?: string;
+}
+
 export interface RegistryField {
   type: 'boolean' | 'enum';
   /** Value set name, for enum fields. */
@@ -361,6 +430,8 @@ export interface RegistryEntry {
   unit?: string;
   units?: readonly string[];
   fields?: Readonly<Record<string, RegistryField>>;
+  /** Child arrays of a session type, by sample property. */
+  parts?: Readonly<Record<string, RegistryPart>>;
   ios?: {
     /** Absent for combined ids (`members`). */
     identifier?: string;
@@ -410,6 +481,9 @@ export const UNITS: Readonly<Record<string, RegistryUnit>> = {
   kJ: { dimension: 'energy', ios: true, android: true },
   kg: { dimension: 'mass', ios: true, android: true },
   g: { dimension: 'mass', ios: true, android: true },
+  mg: { dimension: 'mass', ios: true, android: true },
+  mcg: { dimension: 'mass', ios: true, android: true },
+  oz: { dimension: 'mass', ios: true, android: true },
   lb: { dimension: 'mass', ios: true, android: true },
   degC: { dimension: 'temperature', ios: true, android: true },
   degF: { dimension: 'temperature', ios: true, android: true },
@@ -429,6 +503,7 @@ export const UNITS: Readonly<Record<string, RegistryUnit>> = {
   'mL/(kg·min)': { dimension: 'vo2Max', ios: true, android: true },
   L: { dimension: 'volume', ios: true, android: true },
   mL: { dimension: 'volume', ios: true, android: true },
+  flOz: { dimension: 'volume', ios: true, android: true },
   'kcal/(kg·h)': { dimension: 'physicalEffort', ios: true, android: false },
   appleEffortScore: { dimension: 'effortScore', ios: true, android: false },
   mcS: { dimension: 'conductance', ios: true, android: false },
@@ -564,6 +639,16 @@ export const VALUE_SETS: Readonly<Record<string, RegistryValueSet>> = {
     android: ['interstitialFluid', 'capillaryBlood', 'plasma', 'serum', 'tears', 'wholeBlood'],
   },
   insulinDeliveryReason: { values: ['basal', 'bolus'], ios: ['basal', 'bolus'], android: null },
+  sleepStage: {
+    values: ['inBed', 'asleep', 'awake', 'light', 'deep', 'rem', 'outOfBed', 'unknown'],
+    ios: ['inBed', 'asleep', 'awake', 'light', 'deep', 'rem'],
+    android: ['inBed', 'asleep', 'awake', 'light', 'deep', 'rem', 'outOfBed', 'unknown'],
+  },
+  mindfulnessSessionType: {
+    values: ['meditation', 'breathing', 'music', 'movement', 'unguided'],
+    ios: null,
+    android: ['meditation', 'breathing', 'music', 'movement', 'unguided'],
+  },
 };
 
 export const REGISTRY: Readonly<Record<HealthType, RegistryEntry>> = {
@@ -2497,4 +2582,57 @@ export const REGISTRY: Readonly<Record<HealthType, RegistryEntry>> = {
       metrics: ['sum'],
     },
   },
+};
+
+export const NUTRIENTS: Readonly<Record<Nutrient, RegistryNutrient>> = {
+  energy: { unit: 'kcal', ios: 'HKQuantityTypeIdentifierDietaryEnergyConsumed', android: 'energy' },
+  energyFromFat: { unit: 'kcal', ios: null, android: 'energyFromFat' },
+  protein: { unit: 'g', ios: 'HKQuantityTypeIdentifierDietaryProtein', android: 'protein' },
+  carbohydrates: { unit: 'g', ios: 'HKQuantityTypeIdentifierDietaryCarbohydrates', android: 'totalCarbohydrate' },
+  fiber: { unit: 'g', ios: 'HKQuantityTypeIdentifierDietaryFiber', android: 'dietaryFiber' },
+  sugar: { unit: 'g', ios: 'HKQuantityTypeIdentifierDietarySugar', android: 'sugar' },
+  totalFat: { unit: 'g', ios: 'HKQuantityTypeIdentifierDietaryFatTotal', android: 'totalFat' },
+  saturatedFat: { unit: 'g', ios: 'HKQuantityTypeIdentifierDietaryFatSaturated', android: 'saturatedFat' },
+  monounsaturatedFat: {
+    unit: 'g',
+    ios: 'HKQuantityTypeIdentifierDietaryFatMonounsaturated',
+    android: 'monounsaturatedFat',
+  },
+  polyunsaturatedFat: {
+    unit: 'g',
+    ios: 'HKQuantityTypeIdentifierDietaryFatPolyunsaturated',
+    android: 'polyunsaturatedFat',
+  },
+  unsaturatedFat: { unit: 'g', ios: null, android: 'unsaturatedFat' },
+  transFat: { unit: 'g', ios: null, android: 'transFat' },
+  cholesterol: { unit: 'g', ios: 'HKQuantityTypeIdentifierDietaryCholesterol', android: 'cholesterol' },
+  sodium: { unit: 'g', ios: 'HKQuantityTypeIdentifierDietarySodium', android: 'sodium' },
+  potassium: { unit: 'g', ios: 'HKQuantityTypeIdentifierDietaryPotassium', android: 'potassium' },
+  calcium: { unit: 'g', ios: 'HKQuantityTypeIdentifierDietaryCalcium', android: 'calcium' },
+  iron: { unit: 'g', ios: 'HKQuantityTypeIdentifierDietaryIron', android: 'iron' },
+  magnesium: { unit: 'g', ios: 'HKQuantityTypeIdentifierDietaryMagnesium', android: 'magnesium' },
+  phosphorus: { unit: 'g', ios: 'HKQuantityTypeIdentifierDietaryPhosphorus', android: 'phosphorus' },
+  zinc: { unit: 'g', ios: 'HKQuantityTypeIdentifierDietaryZinc', android: 'zinc' },
+  copper: { unit: 'g', ios: 'HKQuantityTypeIdentifierDietaryCopper', android: 'copper' },
+  manganese: { unit: 'g', ios: 'HKQuantityTypeIdentifierDietaryManganese', android: 'manganese' },
+  selenium: { unit: 'g', ios: 'HKQuantityTypeIdentifierDietarySelenium', android: 'selenium' },
+  chromium: { unit: 'g', ios: 'HKQuantityTypeIdentifierDietaryChromium', android: 'chromium' },
+  molybdenum: { unit: 'g', ios: 'HKQuantityTypeIdentifierDietaryMolybdenum', android: 'molybdenum' },
+  iodine: { unit: 'g', ios: 'HKQuantityTypeIdentifierDietaryIodine', android: 'iodine' },
+  chloride: { unit: 'g', ios: 'HKQuantityTypeIdentifierDietaryChloride', android: 'chloride' },
+  vitaminA: { unit: 'g', ios: 'HKQuantityTypeIdentifierDietaryVitaminA', android: 'vitaminA' },
+  vitaminB6: { unit: 'g', ios: 'HKQuantityTypeIdentifierDietaryVitaminB6', android: 'vitaminB6' },
+  vitaminB12: { unit: 'g', ios: 'HKQuantityTypeIdentifierDietaryVitaminB12', android: 'vitaminB12' },
+  vitaminC: { unit: 'g', ios: 'HKQuantityTypeIdentifierDietaryVitaminC', android: 'vitaminC' },
+  vitaminD: { unit: 'g', ios: 'HKQuantityTypeIdentifierDietaryVitaminD', android: 'vitaminD' },
+  vitaminE: { unit: 'g', ios: 'HKQuantityTypeIdentifierDietaryVitaminE', android: 'vitaminE' },
+  vitaminK: { unit: 'g', ios: 'HKQuantityTypeIdentifierDietaryVitaminK', android: 'vitaminK' },
+  thiamin: { unit: 'g', ios: 'HKQuantityTypeIdentifierDietaryThiamin', android: 'thiamin' },
+  riboflavin: { unit: 'g', ios: 'HKQuantityTypeIdentifierDietaryRiboflavin', android: 'riboflavin' },
+  niacin: { unit: 'g', ios: 'HKQuantityTypeIdentifierDietaryNiacin', android: 'niacin' },
+  pantothenicAcid: { unit: 'g', ios: 'HKQuantityTypeIdentifierDietaryPantothenicAcid', android: 'pantothenicAcid' },
+  biotin: { unit: 'g', ios: 'HKQuantityTypeIdentifierDietaryBiotin', android: 'biotin' },
+  folate: { unit: 'g', ios: 'HKQuantityTypeIdentifierDietaryFolate', android: 'folate' },
+  folicAcid: { unit: 'g', ios: null, android: 'folicAcid' },
+  caffeine: { unit: 'g', ios: 'HKQuantityTypeIdentifierDietaryCaffeine', android: 'caffeine' },
 };

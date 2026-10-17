@@ -38,6 +38,14 @@ struct RegistryValueSet {
     }
 }
 
+/// A nutrient HealthKit stores as a dietary quantity type (decision #61).
+struct RegistryNutrient {
+    /// Runtime identifier of its `HKQuantityTypeIdentifierDietary…` type.
+    let identifier: String
+    /// Canonical unit id.
+    let unit: String
+}
+
 struct RegistryMetadataField {
     let name: String
     /// Runtime metadata key. Differs from the symbol name for iOS 8/9 keys (T06 S7).
@@ -290,6 +298,9 @@ enum Registry {
         "kJ": RegistryUnit("kJ"),
         "kg": RegistryUnit("kg"),
         "g": RegistryUnit("g"),
+        "mg": RegistryUnit("mg"),
+        "mcg": RegistryUnit("mcg"),
+        "oz": RegistryUnit("oz"),
         "lb": RegistryUnit("lb"),
         "degC": RegistryUnit("degC"),
         "degF": RegistryUnit("degF"),
@@ -308,6 +319,7 @@ enum Registry {
         "mL/(kg·min)": RegistryUnit("mL/min·kg"),
         "L": RegistryUnit("L"),
         "mL": RegistryUnit("mL"),
+        "flOz": RegistryUnit("fl_oz_us"),
         "kcal/(kg·h)": RegistryUnit("kcal/hr·kg"),
         "appleEffortScore": RegistryUnit("appleEffortScore"),
         "mcS": RegistryUnit("mcS"),
@@ -317,7 +329,7 @@ enum Registry {
     ]
 
     /** The unit ids in table order, for picking the first unit that fits a passthrough quantity. */
-    static let unitOrder: [String] = ["count", "count/min", "m", "km", "cm", "mi", "ft", "in", "kcal", "kJ", "kg", "g", "lb", "degC", "degF", "%", "ms", "s", "min", "h", "mmHg", "mg/dL", "mmol/L", "m/s", "km/h", "mph", "W", "mL/(kg·min)", "L", "mL", "kcal/(kg·h)", "appleEffortScore", "mcS", "L/min", "IU", "dBASPL"]
+    static let unitOrder: [String] = ["count", "count/min", "m", "km", "cm", "mi", "ft", "in", "kcal", "kJ", "kg", "g", "mg", "mcg", "oz", "lb", "degC", "degF", "%", "ms", "s", "min", "h", "mmHg", "mg/dL", "mmol/L", "m/s", "km/h", "mph", "W", "mL/(kg·min)", "L", "mL", "flOz", "kcal/(kg·h)", "appleEffortScore", "mcS", "L/min", "IU", "dBASPL"]
 
     /** Unregistered quantity identifiers `hk:` passthrough ids may write (decision #59). */
     static let passthroughQuantities: Set<String> = [
@@ -432,7 +444,50 @@ enum Registry {
             ("predictionStepTest", 4)
         ]),
         "relationToMeal": RegistryValueSet([("beforeMeal", 1), ("afterMeal", 2)]),
-        "insulinDeliveryReason": RegistryValueSet([("basal", 1), ("bolus", 2)])
+        "insulinDeliveryReason": RegistryValueSet([("basal", 1), ("bolus", 2)]),
+        "sleepStage": RegistryValueSet([("inBed", 0), ("asleep", 1), ("awake", 2), ("light", 3), ("deep", 4), ("rem", 5)])
+    ]
+
+    /// Nutrients HealthKit stores, by unified nutrient id.
+    static let nutrients: [String: RegistryNutrient] = [
+        "energy": RegistryNutrient(identifier: "HKQuantityTypeIdentifierDietaryEnergyConsumed", unit: "kcal"),
+        "protein": RegistryNutrient(identifier: "HKQuantityTypeIdentifierDietaryProtein", unit: "g"),
+        "carbohydrates": RegistryNutrient(identifier: "HKQuantityTypeIdentifierDietaryCarbohydrates", unit: "g"),
+        "fiber": RegistryNutrient(identifier: "HKQuantityTypeIdentifierDietaryFiber", unit: "g"),
+        "sugar": RegistryNutrient(identifier: "HKQuantityTypeIdentifierDietarySugar", unit: "g"),
+        "totalFat": RegistryNutrient(identifier: "HKQuantityTypeIdentifierDietaryFatTotal", unit: "g"),
+        "saturatedFat": RegistryNutrient(identifier: "HKQuantityTypeIdentifierDietaryFatSaturated", unit: "g"),
+        "monounsaturatedFat": RegistryNutrient(identifier: "HKQuantityTypeIdentifierDietaryFatMonounsaturated", unit: "g"),
+        "polyunsaturatedFat": RegistryNutrient(identifier: "HKQuantityTypeIdentifierDietaryFatPolyunsaturated", unit: "g"),
+        "cholesterol": RegistryNutrient(identifier: "HKQuantityTypeIdentifierDietaryCholesterol", unit: "g"),
+        "sodium": RegistryNutrient(identifier: "HKQuantityTypeIdentifierDietarySodium", unit: "g"),
+        "potassium": RegistryNutrient(identifier: "HKQuantityTypeIdentifierDietaryPotassium", unit: "g"),
+        "calcium": RegistryNutrient(identifier: "HKQuantityTypeIdentifierDietaryCalcium", unit: "g"),
+        "iron": RegistryNutrient(identifier: "HKQuantityTypeIdentifierDietaryIron", unit: "g"),
+        "magnesium": RegistryNutrient(identifier: "HKQuantityTypeIdentifierDietaryMagnesium", unit: "g"),
+        "phosphorus": RegistryNutrient(identifier: "HKQuantityTypeIdentifierDietaryPhosphorus", unit: "g"),
+        "zinc": RegistryNutrient(identifier: "HKQuantityTypeIdentifierDietaryZinc", unit: "g"),
+        "copper": RegistryNutrient(identifier: "HKQuantityTypeIdentifierDietaryCopper", unit: "g"),
+        "manganese": RegistryNutrient(identifier: "HKQuantityTypeIdentifierDietaryManganese", unit: "g"),
+        "selenium": RegistryNutrient(identifier: "HKQuantityTypeIdentifierDietarySelenium", unit: "g"),
+        "chromium": RegistryNutrient(identifier: "HKQuantityTypeIdentifierDietaryChromium", unit: "g"),
+        "molybdenum": RegistryNutrient(identifier: "HKQuantityTypeIdentifierDietaryMolybdenum", unit: "g"),
+        "iodine": RegistryNutrient(identifier: "HKQuantityTypeIdentifierDietaryIodine", unit: "g"),
+        "chloride": RegistryNutrient(identifier: "HKQuantityTypeIdentifierDietaryChloride", unit: "g"),
+        "vitaminA": RegistryNutrient(identifier: "HKQuantityTypeIdentifierDietaryVitaminA", unit: "g"),
+        "vitaminB6": RegistryNutrient(identifier: "HKQuantityTypeIdentifierDietaryVitaminB6", unit: "g"),
+        "vitaminB12": RegistryNutrient(identifier: "HKQuantityTypeIdentifierDietaryVitaminB12", unit: "g"),
+        "vitaminC": RegistryNutrient(identifier: "HKQuantityTypeIdentifierDietaryVitaminC", unit: "g"),
+        "vitaminD": RegistryNutrient(identifier: "HKQuantityTypeIdentifierDietaryVitaminD", unit: "g"),
+        "vitaminE": RegistryNutrient(identifier: "HKQuantityTypeIdentifierDietaryVitaminE", unit: "g"),
+        "vitaminK": RegistryNutrient(identifier: "HKQuantityTypeIdentifierDietaryVitaminK", unit: "g"),
+        "thiamin": RegistryNutrient(identifier: "HKQuantityTypeIdentifierDietaryThiamin", unit: "g"),
+        "riboflavin": RegistryNutrient(identifier: "HKQuantityTypeIdentifierDietaryRiboflavin", unit: "g"),
+        "niacin": RegistryNutrient(identifier: "HKQuantityTypeIdentifierDietaryNiacin", unit: "g"),
+        "pantothenicAcid": RegistryNutrient(identifier: "HKQuantityTypeIdentifierDietaryPantothenicAcid", unit: "g"),
+        "biotin": RegistryNutrient(identifier: "HKQuantityTypeIdentifierDietaryBiotin", unit: "g"),
+        "folate": RegistryNutrient(identifier: "HKQuantityTypeIdentifierDietaryFolate", unit: "g"),
+        "caffeine": RegistryNutrient(identifier: "HKQuantityTypeIdentifierDietaryCaffeine", unit: "g")
     ]
 
     static let entries: [RegistryEntry] = [

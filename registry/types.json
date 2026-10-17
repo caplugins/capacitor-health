@@ -49,6 +49,9 @@
       "android": {"class": "Mass", "factory": "kilograms", "accessor": "inKilograms"}
     },
     "g": {"dimension": "mass", "ios": "g", "android": {"class": "Mass", "factory": "grams", "accessor": "inGrams"}},
+    "mg": {"dimension": "mass", "ios": "mg", "android": {"class": "Mass", "factory": "milligrams", "accessor": "inMilligrams"}},
+    "mcg": {"dimension": "mass", "ios": "mcg", "android": {"class": "Mass", "factory": "micrograms", "accessor": "inMicrograms"}},
+    "oz": {"dimension": "mass", "ios": "oz", "android": {"class": "Mass", "factory": "ounces", "accessor": "inOunces"}},
     "lb": {
       "dimension": "mass",
       "ios": "lb",
@@ -121,6 +124,7 @@
       "ios": "mL",
       "android": {"class": "Volume", "factory": "milliliters", "accessor": "inMilliliters"}
     },
+    "flOz": {"dimension": "volume", "ios": "fl_oz_us", "android": {"class": "Volume", "factory": "fluidOuncesUs", "accessor": "inFluidOuncesUs"}},
     "kcal/(kg·h)": {"dimension": "physicalEffort", "ios": "kcal/hr·kg"},
     "appleEffortScore": {"dimension": "effortScore", "ios": "appleEffortScore"},
     "mcS": {"dimension": "conductance", "ios": "mcS"},
@@ -459,7 +463,62 @@
     "insulinDeliveryReason": {
       "values": ["basal", "bolus"],
       "ios": {"enum": "HKInsulinDeliveryReason", "minOS": "11.0", "map": {"basal": 1, "bolus": 2}}
+    },
+    "sleepStage": {
+      "values": ["inBed", "asleep", "awake", "light", "deep", "rem", "outOfBed", "unknown"],
+      "ios": {"enum": "HKCategoryValueSleepAnalysis", "minOS": "8.0", "map": {"inBed": 0, "asleep": 1, "awake": 2, "light": 3, "deep": 4, "rem": 5, "outOfBed": null, "unknown": null}, "valueMinOS": {"asleep": "16.0", "light": "16.0", "deep": "16.0", "rem": "16.0"}, "cases": {"asleep": "asleepUnspecified", "light": "asleepCore", "deep": "asleepDeep", "rem": "asleepREM"}, "notes": "asleep is the deprecated Asleep (1) before iOS 16; core, deep and REM need iOS 16 (HealthKit raises an exception for them on iOS 15, decision #59)"},
+      "android": {"constants": "SleepSessionRecord", "map": {"inBed": "STAGE_TYPE_AWAKE_IN_BED", "asleep": "STAGE_TYPE_SLEEPING", "awake": "STAGE_TYPE_AWAKE", "light": "STAGE_TYPE_LIGHT", "deep": "STAGE_TYPE_DEEP", "rem": "STAGE_TYPE_REM", "outOfBed": "STAGE_TYPE_OUT_OF_BED", "unknown": "STAGE_TYPE_UNKNOWN"}},
+      "notes": "04-type-mapping §4a. HealthKit inBed spans the night and overlaps the asleep stages; Health Connect stages don't overlap (decision #61)"
+    },
+    "mindfulnessSessionType": {
+      "values": ["meditation", "breathing", "music", "movement", "unguided"],
+      "android": {"constants": "MindfulnessSessionRecord", "map": {"meditation": "MINDFULNESS_SESSION_TYPE_MEDITATION", "breathing": "MINDFULNESS_SESSION_TYPE_BREATHING", "music": "MINDFULNESS_SESSION_TYPE_MUSIC", "movement": "MINDFULNESS_SESSION_TYPE_MOVEMENT", "unguided": "MINDFULNESS_SESSION_TYPE_UNGUIDED"}, "absent": "MINDFULNESS_SESSION_TYPE_UNKNOWN"},
+      "notes": "HealthKit mindful sessions have no type"
     }
+  },
+  "nutrients": {
+    "energy": {"unit": "kcal", "ios": {"identifier": "HKQuantityTypeIdentifierDietaryEnergyConsumed", "minOS": "8.0"}, "android": {"property": "energy", "aggregate": "ENERGY_TOTAL"}},
+    "energyFromFat": {"unit": "kcal", "android": {"property": "energyFromFat", "aggregate": "ENERGY_FROM_FAT_TOTAL"}, "notes": "Health Connect only"},
+    "protein": {"unit": "g", "ios": {"identifier": "HKQuantityTypeIdentifierDietaryProtein", "minOS": "8.0"}, "android": {"property": "protein", "aggregate": "PROTEIN_TOTAL"}},
+    "carbohydrates": {"unit": "g", "ios": {"identifier": "HKQuantityTypeIdentifierDietaryCarbohydrates", "minOS": "8.0"}, "android": {"property": "totalCarbohydrate", "aggregate": "TOTAL_CARBOHYDRATE_TOTAL"}},
+    "fiber": {"unit": "g", "ios": {"identifier": "HKQuantityTypeIdentifierDietaryFiber", "minOS": "8.0"}, "android": {"property": "dietaryFiber", "aggregate": "DIETARY_FIBER_TOTAL"}},
+    "sugar": {"unit": "g", "ios": {"identifier": "HKQuantityTypeIdentifierDietarySugar", "minOS": "8.0"}, "android": {"property": "sugar", "aggregate": "SUGAR_TOTAL"}},
+    "totalFat": {"unit": "g", "ios": {"identifier": "HKQuantityTypeIdentifierDietaryFatTotal", "minOS": "8.0"}, "android": {"property": "totalFat", "aggregate": "TOTAL_FAT_TOTAL"}},
+    "saturatedFat": {"unit": "g", "ios": {"identifier": "HKQuantityTypeIdentifierDietaryFatSaturated", "minOS": "8.0"}, "android": {"property": "saturatedFat", "aggregate": "SATURATED_FAT_TOTAL"}},
+    "monounsaturatedFat": {"unit": "g", "ios": {"identifier": "HKQuantityTypeIdentifierDietaryFatMonounsaturated", "minOS": "8.0"}, "android": {"property": "monounsaturatedFat", "aggregate": "MONOUNSATURATED_FAT_TOTAL"}},
+    "polyunsaturatedFat": {"unit": "g", "ios": {"identifier": "HKQuantityTypeIdentifierDietaryFatPolyunsaturated", "minOS": "8.0"}, "android": {"property": "polyunsaturatedFat", "aggregate": "POLYUNSATURATED_FAT_TOTAL"}},
+    "unsaturatedFat": {"unit": "g", "android": {"property": "unsaturatedFat", "aggregate": "UNSATURATED_FAT_TOTAL"}, "notes": "Health Connect only"},
+    "transFat": {"unit": "g", "android": {"property": "transFat", "aggregate": "TRANS_FAT_TOTAL"}, "notes": "Health Connect only"},
+    "cholesterol": {"unit": "g", "ios": {"identifier": "HKQuantityTypeIdentifierDietaryCholesterol", "minOS": "8.0"}, "android": {"property": "cholesterol", "aggregate": "CHOLESTEROL_TOTAL"}},
+    "sodium": {"unit": "g", "ios": {"identifier": "HKQuantityTypeIdentifierDietarySodium", "minOS": "8.0"}, "android": {"property": "sodium", "aggregate": "SODIUM_TOTAL"}},
+    "potassium": {"unit": "g", "ios": {"identifier": "HKQuantityTypeIdentifierDietaryPotassium", "minOS": "8.0"}, "android": {"property": "potassium", "aggregate": "POTASSIUM_TOTAL"}},
+    "calcium": {"unit": "g", "ios": {"identifier": "HKQuantityTypeIdentifierDietaryCalcium", "minOS": "8.0"}, "android": {"property": "calcium", "aggregate": "CALCIUM_TOTAL"}},
+    "iron": {"unit": "g", "ios": {"identifier": "HKQuantityTypeIdentifierDietaryIron", "minOS": "8.0"}, "android": {"property": "iron", "aggregate": "IRON_TOTAL"}},
+    "magnesium": {"unit": "g", "ios": {"identifier": "HKQuantityTypeIdentifierDietaryMagnesium", "minOS": "8.0"}, "android": {"property": "magnesium", "aggregate": "MAGNESIUM_TOTAL"}},
+    "phosphorus": {"unit": "g", "ios": {"identifier": "HKQuantityTypeIdentifierDietaryPhosphorus", "minOS": "8.0"}, "android": {"property": "phosphorus", "aggregate": "PHOSPHORUS_TOTAL"}},
+    "zinc": {"unit": "g", "ios": {"identifier": "HKQuantityTypeIdentifierDietaryZinc", "minOS": "8.0"}, "android": {"property": "zinc", "aggregate": "ZINC_TOTAL"}},
+    "copper": {"unit": "g", "ios": {"identifier": "HKQuantityTypeIdentifierDietaryCopper", "minOS": "8.0"}, "android": {"property": "copper", "aggregate": "COPPER_TOTAL"}},
+    "manganese": {"unit": "g", "ios": {"identifier": "HKQuantityTypeIdentifierDietaryManganese", "minOS": "8.0"}, "android": {"property": "manganese", "aggregate": "MANGANESE_TOTAL"}},
+    "selenium": {"unit": "g", "ios": {"identifier": "HKQuantityTypeIdentifierDietarySelenium", "minOS": "8.0"}, "android": {"property": "selenium", "aggregate": "SELENIUM_TOTAL"}},
+    "chromium": {"unit": "g", "ios": {"identifier": "HKQuantityTypeIdentifierDietaryChromium", "minOS": "8.0"}, "android": {"property": "chromium", "aggregate": "CHROMIUM_TOTAL"}},
+    "molybdenum": {"unit": "g", "ios": {"identifier": "HKQuantityTypeIdentifierDietaryMolybdenum", "minOS": "8.0"}, "android": {"property": "molybdenum", "aggregate": "MOLYBDENUM_TOTAL"}},
+    "iodine": {"unit": "g", "ios": {"identifier": "HKQuantityTypeIdentifierDietaryIodine", "minOS": "8.0"}, "android": {"property": "iodine", "aggregate": "IODINE_TOTAL"}},
+    "chloride": {"unit": "g", "ios": {"identifier": "HKQuantityTypeIdentifierDietaryChloride", "minOS": "8.0"}, "android": {"property": "chloride", "aggregate": "CHLORIDE_TOTAL"}},
+    "vitaminA": {"unit": "g", "ios": {"identifier": "HKQuantityTypeIdentifierDietaryVitaminA", "minOS": "8.0"}, "android": {"property": "vitaminA", "aggregate": "VITAMIN_A_TOTAL"}},
+    "vitaminB6": {"unit": "g", "ios": {"identifier": "HKQuantityTypeIdentifierDietaryVitaminB6", "minOS": "8.0"}, "android": {"property": "vitaminB6", "aggregate": "VITAMIN_B6_TOTAL"}},
+    "vitaminB12": {"unit": "g", "ios": {"identifier": "HKQuantityTypeIdentifierDietaryVitaminB12", "minOS": "8.0"}, "android": {"property": "vitaminB12", "aggregate": "VITAMIN_B12_TOTAL"}},
+    "vitaminC": {"unit": "g", "ios": {"identifier": "HKQuantityTypeIdentifierDietaryVitaminC", "minOS": "8.0"}, "android": {"property": "vitaminC", "aggregate": "VITAMIN_C_TOTAL"}},
+    "vitaminD": {"unit": "g", "ios": {"identifier": "HKQuantityTypeIdentifierDietaryVitaminD", "minOS": "8.0"}, "android": {"property": "vitaminD", "aggregate": "VITAMIN_D_TOTAL"}},
+    "vitaminE": {"unit": "g", "ios": {"identifier": "HKQuantityTypeIdentifierDietaryVitaminE", "minOS": "8.0"}, "android": {"property": "vitaminE", "aggregate": "VITAMIN_E_TOTAL"}},
+    "vitaminK": {"unit": "g", "ios": {"identifier": "HKQuantityTypeIdentifierDietaryVitaminK", "minOS": "8.0"}, "android": {"property": "vitaminK", "aggregate": "VITAMIN_K_TOTAL"}},
+    "thiamin": {"unit": "g", "ios": {"identifier": "HKQuantityTypeIdentifierDietaryThiamin", "minOS": "8.0"}, "android": {"property": "thiamin", "aggregate": "THIAMIN_TOTAL"}},
+    "riboflavin": {"unit": "g", "ios": {"identifier": "HKQuantityTypeIdentifierDietaryRiboflavin", "minOS": "8.0"}, "android": {"property": "riboflavin", "aggregate": "RIBOFLAVIN_TOTAL"}},
+    "niacin": {"unit": "g", "ios": {"identifier": "HKQuantityTypeIdentifierDietaryNiacin", "minOS": "8.0"}, "android": {"property": "niacin", "aggregate": "NIACIN_TOTAL"}},
+    "pantothenicAcid": {"unit": "g", "ios": {"identifier": "HKQuantityTypeIdentifierDietaryPantothenicAcid", "minOS": "8.0"}, "android": {"property": "pantothenicAcid", "aggregate": "PANTOTHENIC_ACID_TOTAL"}},
+    "biotin": {"unit": "g", "ios": {"identifier": "HKQuantityTypeIdentifierDietaryBiotin", "minOS": "8.0"}, "android": {"property": "biotin", "aggregate": "BIOTIN_TOTAL"}},
+    "folate": {"unit": "g", "ios": {"identifier": "HKQuantityTypeIdentifierDietaryFolate", "minOS": "8.0"}, "android": {"property": "folate", "aggregate": "FOLATE_TOTAL"}},
+    "folicAcid": {"unit": "g", "android": {"property": "folicAcid", "aggregate": "FOLIC_ACID_TOTAL"}, "notes": "Health Connect only"},
+    "caffeine": {"unit": "g", "ios": {"identifier": "HKQuantityTypeIdentifierDietaryCaffeine", "minOS": "8.0"}, "android": {"property": "caffeine", "aggregate": "CAFFEINE_TOTAL"}}
   },
   "types": [
     {

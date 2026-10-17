@@ -59,10 +59,36 @@ export function semanticErrors(registry) {
     }
   }
 
+  const properties = new Set();
+  for (const [id, nutrient] of Object.entries(registry.nutrients ?? {})) {
+    const at = `nutrients.${id}`;
+    const unit = units[nutrient.unit];
+    if (!unit) errors.push(`${at} uses unknown unit ${nutrient.unit}`);
+    else {
+      if (!['mass', 'energy'].includes(unit.dimension)) errors.push(`${at}.unit must be a mass or energy unit`);
+      if (nutrient.ios && !unit.ios) errors.push(`${at}: unit ${nutrient.unit} has no HealthKit unit`);
+      if (nutrient.android && !unit.android) errors.push(`${at}: unit ${nutrient.unit} has no Health Connect unit`);
+    }
+    if (nutrient.android) {
+      if (properties.has(nutrient.android.property)) errors.push(`${at}.android.property is used twice`);
+      properties.add(nutrient.android.property);
+    }
+  }
+
   for (const type of registry.types) {
     const at = `types.${type.id}`;
     if (ids.has(type.id)) errors.push(`${at} is defined twice`);
     ids.add(type.id);
+
+    if (type.parts && type.kind !== 'special') errors.push(`${at}.parts only apply to special types`);
+    for (const [name, part] of Object.entries(type.parts ?? {})) {
+      if (!part.values) continue;
+      const set = sets[part.values];
+      if (!set) errors.push(`${at}.parts.${name}.values references unknown value set ${part.values}`);
+      else if (!(type.ios && set.ios) && !(type.android && set.android)) {
+        errors.push(`${at}.parts.${name}: value set ${part.values} maps to none of the type's platforms`);
+      }
+    }
 
     if (type.values) {
       const set = sets[type.values];
