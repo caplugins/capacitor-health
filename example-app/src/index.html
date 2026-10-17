@@ -34,8 +34,8 @@
         white-space: pre-wrap;
         margin: 8px 0 0;
       }
-      pre[data-status='available'] {
-        color: #1a7f37;
+      pre[data-status='error'] {
+        color: #cf222e;
       }
       button {
         font: inherit;
@@ -50,6 +50,17 @@
         <h2>Availability</h2>
         <button id="check-availability" type="button">isAvailable()</button>
         <pre id="availability"></pre>
+        <button id="supported-types" type="button">getSupportedTypes()</button>
+        <pre id="supported"></pre>
+      </section>
+      <section>
+        <h2>Permissions</h2>
+        <button id="request-authorization" type="button">requestAuthorization()</button>
+        <button id="check-authorization" type="button">checkAuthorization()</button>
+        <pre id="authorization"></pre>
+        <button id="open-settings" type="button">openHealthSettings()</button>
+        <button id="open-install" type="button">openHealthConnectInstall()</button>
+        <pre id="settings"></pre>
       </section>
     </main>
     <script src="./main.ts" type="module"></script>

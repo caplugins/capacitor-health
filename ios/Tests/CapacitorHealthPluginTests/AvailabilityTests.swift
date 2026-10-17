@@ -16,6 +16,13 @@ final class AvailabilityTests: XCTestCase {
 
     func testPluginExposesEveryMethod() {
         let names = Set(CapacitorHealthPlugin().pluginMethods.map(\.name))
-        XCTAssertEqual(names, ["isAvailable"])
+        XCTAssertEqual(names, [
+            "isAvailable",
+            "getSupportedTypes",
+            "requestAuthorization",
+            "checkAuthorization",
+            "openHealthSettings",
+            "openHealthConnectInstall"
+        ])
     }
 }

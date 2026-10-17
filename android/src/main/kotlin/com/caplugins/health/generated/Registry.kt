@@ -48,7 +48,10 @@ class RegistryEntry(
     val writable: Boolean,
     val valueProperty: String? = null,
     val valueSet: String? = null,
+    /** Canonical unit (quantity types). */
     val unit: String? = null,
+    /** Units callers may ask for, canonical first. */
+    val units: List<String> = emptyList(),
     /** HealthConnectFeatures constant that must be available, if any. */
     val feature: Int? = null,
     /** Longest interval the record accepts (inclusive). */
@@ -57,6 +60,55 @@ class RegistryEntry(
 )
 
 object Registry {
+    /** Every unified type id, in registry order, including types Health Connect doesn't have. */
+    val allTypeIds: List<String> = listOf(
+        "menstrualFlow",
+        "menstruationPeriod",
+        "intermenstrualBleeding",
+        "cervicalMucus",
+        "ovulationTest",
+        "sexualActivity",
+        "basalBodyTemperature",
+        "wristTemperature",
+        "skinTemperature",
+        "pregnancyTest",
+        "progesteroneTest",
+        "contraceptive",
+        "pregnancy",
+        "lactation",
+        "bleedingDuringPregnancy",
+        "bleedingAfterPregnancy",
+        "bleedingAfterMenopause",
+        "menopausalState",
+        "infrequentMenstrualCycles",
+        "irregularMenstrualCycles",
+        "persistentIntermenstrualBleeding",
+        "prolongedMenstrualPeriods",
+        "abdominalCramps",
+        "acne",
+        "appetiteChanges",
+        "bladderIncontinence",
+        "bloating",
+        "breastPain",
+        "chills",
+        "constipation",
+        "diarrhea",
+        "drySkin",
+        "fatigue",
+        "hairLoss",
+        "headache",
+        "hotFlashes",
+        "lowerBackPain",
+        "memoryLapse",
+        "moodChanges",
+        "nausea",
+        "nightSweats",
+        "pelvicPain",
+        "sleepChanges",
+        "vaginalDryness",
+    )
+
+    /** Constants keep the value set's display order. */
     val valueSets: Map<String, RegistryValueSet> = mapOf(
         "bleeding" to RegistryValueSet(
             constants = mapOf(
@@ -199,6 +251,7 @@ object Registry {
             writable = true,
             valueProperty = "temperature",
             unit = "degC",
+            units = listOf("degC", "degF"),
             fields = listOf(
                 RegistryField(name = "measurementLocation", property = "measurementLocation", valueSet = "bodyTemperatureLocation"),
             ),
@@ -212,6 +265,7 @@ object Registry {
             writePermission = "android.permission.health.WRITE_SKIN_TEMPERATURE",
             writable = true,
             unit = "degC",
+            units = listOf("degC", "degF"),
             feature = HealthConnectFeatures.FEATURE_SKIN_TEMPERATURE,
             fields = listOf(
                 RegistryField(name = "measurementLocation", property = "measurementLocation", valueSet = "skinTemperatureLocation"),

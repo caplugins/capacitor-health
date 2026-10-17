@@ -180,12 +180,12 @@ function swiftCall(name, args, indent) {
   return `${pad}${name}(\n${args.map((a) => `${pad}    ${a}`).join(',\n')}\n${pad})`;
 }
 
-/** A dictionary literal on one line when it fits after `prefix`, otherwise one pair per line. */
-function swiftDict(pairs, indent, prefix = '') {
+/** An array literal on one line when it fits after `prefix`, otherwise one item per line. */
+function swiftArray(items, indent, prefix = '') {
   const pad = ' '.repeat(indent);
-  const flat = `[${pairs.map(([k, v]) => `${q(k)}: ${v}`).join(', ')}]`;
+  const flat = `[${items.join(', ')}]`;
   if (pad.length + prefix.length + flat.length + 2 <= SWIFT_MAX) return flat;
-  return `[\n${pairs.map(([k, v]) => `${pad}    ${q(k)}: ${v}`).join(',\n')}\n${pad}]`;
+  return `[\n${items.map((item) => `${pad}    ${item}`).join(',\n')}\n${pad}]`;
 }
 
 function swiftAvailability(minOS) {
@@ -196,9 +196,9 @@ function renderSwift(registry) {
   const sets = Object.entries(registry.valueSets)
     .filter(([, set]) => set.ios)
     .map(([name, set]) => {
-      const raw = set.values.filter((v) => set.ios.map[v] !== null).map((v) => [v, String(set.ios.map[v])]);
-      const prefix = `${q(name)}: RegistryValueSet(rawValues: `;
-      return `        ${prefix}${swiftDict(raw, 8, prefix)})`;
+      const raw = set.values.filter((v) => set.ios.map[v] !== null).map((v) => `(${q(v)}, ${set.ios.map[v]})`);
+      const prefix = `${q(name)}: RegistryValueSet(`;
+      return `        ${prefix}${swiftArray(raw, 8, prefix)})`;
     });
 
   const entries = registry.types
@@ -210,7 +210,7 @@ function renderSwift(registry) {
       if (!t.ios.writable) args.push('writable: false');
       if (t.ios.time === 'instant') args.push('instantOnly: true');
       if (t.values) args.push(`valueSet: ${q(t.values)}`);
-      if (t.unit) args.push(`unit: ${q(t.unit)}`);
+      if (t.unit) args.push(`unit: ${q(t.unit)}`, `units: [${t.units.map(q).join(', ')}]`);
       if (t.ios.derivedFrom) args.push(`derivedFrom: ${q(t.ios.derivedFrom)}`);
       const fields = Object.entries(t.fields ?? {})
         .filter(([, f]) => f.ios)
@@ -237,8 +237,15 @@ enum RegistryFieldType {
 }
 
 struct RegistryValueSet {
+    /// Unified values HealthKit can store, in display order.
+    let values: [String]
     /// Unified value → HealthKit raw value. Values HealthKit can't store are absent.
     let rawValues: [String: Int]
+
+    init(_ pairs: [(String, Int)]) {
+        values = pairs.map { $0.0 }
+        rawValues = Dictionary(uniqueKeysWithValues: pairs)
+    }
 }
 
 struct RegistryMetadataField {
@@ -270,7 +277,10 @@ struct RegistryEntry {
     /// Start must equal end, or HealthKit rejects the save.
     let instantOnly: Bool
     let valueSet: String?
+    /// Canonical unit (quantity types).
     let unit: String?
+    /// Units callers may ask for, canonical first.
+    let units: [String]
     /// Set for types with no HealthKit object of their own (\`menstruationPeriod\`).
     let derivedFrom: String?
     let fields: [RegistryMetadataField]
@@ -287,6 +297,7 @@ struct RegistryEntry {
         instantOnly: Bool = false,
         valueSet: String? = nil,
         unit: String? = nil,
+        units: [String] = [],
         derivedFrom: String? = nil,
         fields: [RegistryMetadataField] = []
     ) {
@@ -299,12 +310,18 @@ struct RegistryEntry {
         self.instantOnly = instantOnly
         self.valueSet = valueSet
         self.unit = unit
+        self.units = units
         self.derivedFrom = derivedFrom
         self.fields = fields
     }
 }
 
 enum Registry {
+    /// Every unified type id, in registry order, including types HealthKit doesn't have.
+    static let allTypeIds: [String] = [
+${registry.types.map((t) => `        ${q(t.id)}`).join(',\n')}
+    ]
+
     static let valueSets: [String: RegistryValueSet] = [
 ${sets.join(',\n')}
     ]
@@ -414,7 +431,7 @@ function renderKotlin(registry) {
       ];
       if (a.valueProperty) args.push(`valueProperty = ${q(a.valueProperty)}`);
       if (t.values) args.push(`valueSet = ${q(t.values)}`);
-      if (t.unit) args.push(`unit = ${q(t.unit)}`);
+      if (t.unit) args.push(`unit = ${q(t.unit)}`, `units = listOf(${t.units.map(q).join(', ')})`);
       if (a.feature) {
         imports.add('androidx.health.connect.client.HealthConnectFeatures');
         args.push(`feature = HealthConnectFeatures.${a.feature}`);
@@ -475,7 +492,10 @@ class RegistryEntry(
     val writable: Boolean,
     val valueProperty: String? = null,
     val valueSet: String? = null,
+    /** Canonical unit (quantity types). */
     val unit: String? = null,
+    /** Units callers may ask for, canonical first. */
+    val units: List<String> = emptyList(),
     /** HealthConnectFeatures constant that must be available, if any. */
     val feature: Int? = null,
     /** Longest interval the record accepts (inclusive). */
@@ -484,6 +504,12 @@ class RegistryEntry(
 )
 
 object Registry {
+    /** Every unified type id, in registry order, including types Health Connect doesn't have. */
+    val allTypeIds: List<String> = listOf(
+${registry.types.map((t) => `        ${q(t.id)},`).join('\n')}
+    )
+
+    /** Constants keep the value set's display order. */
     val valueSets: Map<String, RegistryValueSet> = mapOf(
 ${sets.join('\n')}
     )

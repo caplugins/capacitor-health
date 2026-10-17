@@ -11,8 +11,15 @@ enum RegistryFieldType {
 }
 
 struct RegistryValueSet {
+    /// Unified values HealthKit can store, in display order.
+    let values: [String]
     /// Unified value → HealthKit raw value. Values HealthKit can't store are absent.
     let rawValues: [String: Int]
+
+    init(_ pairs: [(String, Int)]) {
+        values = pairs.map { $0.0 }
+        rawValues = Dictionary(uniqueKeysWithValues: pairs)
+    }
 }
 
 struct RegistryMetadataField {
@@ -44,7 +51,10 @@ struct RegistryEntry {
     /// Start must equal end, or HealthKit rejects the save.
     let instantOnly: Bool
     let valueSet: String?
+    /// Canonical unit (quantity types).
     let unit: String?
+    /// Units callers may ask for, canonical first.
+    let units: [String]
     /// Set for types with no HealthKit object of their own (`menstruationPeriod`).
     let derivedFrom: String?
     let fields: [RegistryMetadataField]
@@ -61,6 +71,7 @@ struct RegistryEntry {
         instantOnly: Bool = false,
         valueSet: String? = nil,
         unit: String? = nil,
+        units: [String] = [],
         derivedFrom: String? = nil,
         fields: [RegistryMetadataField] = []
     ) {
@@ -73,45 +84,94 @@ struct RegistryEntry {
         self.instantOnly = instantOnly
         self.valueSet = valueSet
         self.unit = unit
+        self.units = units
         self.derivedFrom = derivedFrom
         self.fields = fields
     }
 }
 
 enum Registry {
+    /// Every unified type id, in registry order, including types HealthKit doesn't have.
+    static let allTypeIds: [String] = [
+        "menstrualFlow",
+        "menstruationPeriod",
+        "intermenstrualBleeding",
+        "cervicalMucus",
+        "ovulationTest",
+        "sexualActivity",
+        "basalBodyTemperature",
+        "wristTemperature",
+        "skinTemperature",
+        "pregnancyTest",
+        "progesteroneTest",
+        "contraceptive",
+        "pregnancy",
+        "lactation",
+        "bleedingDuringPregnancy",
+        "bleedingAfterPregnancy",
+        "bleedingAfterMenopause",
+        "menopausalState",
+        "infrequentMenstrualCycles",
+        "irregularMenstrualCycles",
+        "persistentIntermenstrualBleeding",
+        "prolongedMenstrualPeriods",
+        "abdominalCramps",
+        "acne",
+        "appetiteChanges",
+        "bladderIncontinence",
+        "bloating",
+        "breastPain",
+        "chills",
+        "constipation",
+        "diarrhea",
+        "drySkin",
+        "fatigue",
+        "hairLoss",
+        "headache",
+        "hotFlashes",
+        "lowerBackPain",
+        "memoryLapse",
+        "moodChanges",
+        "nausea",
+        "nightSweats",
+        "pelvicPain",
+        "sleepChanges",
+        "vaginalDryness"
+    ]
+
     static let valueSets: [String: RegistryValueSet] = [
-        "bleeding": RegistryValueSet(rawValues: ["unspecified": 1, "light": 2, "medium": 3, "heavy": 4, "none": 5]),
-        "cervicalMucusAppearance": RegistryValueSet(rawValues: ["dry": 1, "sticky": 2, "creamy": 3, "watery": 4, "eggWhite": 5]),
-        "ovulationTestResult": RegistryValueSet(rawValues: ["negative": 1, "lhSurge": 2, "estrogenSurge": 4, "indeterminate": 3]),
-        "pregnancyTestResult": RegistryValueSet(rawValues: ["negative": 1, "positive": 2, "indeterminate": 3]),
-        "progesteroneTestResult": RegistryValueSet(rawValues: ["negative": 1, "positive": 2, "indeterminate": 3]),
-        "contraceptive": RegistryValueSet(rawValues: [
-            "unspecified": 1,
-            "implant": 2,
-            "injection": 3,
-            "intrauterineDevice": 4,
-            "intravaginalRing": 5,
-            "oral": 6,
-            "patch": 7
+        "bleeding": RegistryValueSet([("unspecified", 1), ("light", 2), ("medium", 3), ("heavy", 4), ("none", 5)]),
+        "cervicalMucusAppearance": RegistryValueSet([("dry", 1), ("sticky", 2), ("creamy", 3), ("watery", 4), ("eggWhite", 5)]),
+        "ovulationTestResult": RegistryValueSet([("negative", 1), ("lhSurge", 2), ("estrogenSurge", 4), ("indeterminate", 3)]),
+        "pregnancyTestResult": RegistryValueSet([("negative", 1), ("positive", 2), ("indeterminate", 3)]),
+        "progesteroneTestResult": RegistryValueSet([("negative", 1), ("positive", 2), ("indeterminate", 3)]),
+        "contraceptive": RegistryValueSet([
+            ("unspecified", 1),
+            ("implant", 2),
+            ("injection", 3),
+            ("intrauterineDevice", 4),
+            ("intravaginalRing", 5),
+            ("oral", 6),
+            ("patch", 7)
         ]),
-        "menopausalState": RegistryValueSet(rawValues: ["menopause": 1, "perimenopause": 2, "none": 3]),
-        "bodyTemperatureLocation": RegistryValueSet(rawValues: [
-            "armpit": 1,
-            "body": 2,
-            "ear": 3,
-            "earDrum": 9,
-            "finger": 4,
-            "forehead": 11,
-            "gastroIntestinal": 5,
-            "mouth": 6,
-            "rectum": 7,
-            "temporalArtery": 10,
-            "toe": 8,
-            "other": 0
+        "menopausalState": RegistryValueSet([("menopause", 1), ("perimenopause", 2), ("none", 3)]),
+        "bodyTemperatureLocation": RegistryValueSet([
+            ("armpit", 1),
+            ("body", 2),
+            ("ear", 3),
+            ("earDrum", 9),
+            ("finger", 4),
+            ("forehead", 11),
+            ("gastroIntestinal", 5),
+            ("mouth", 6),
+            ("rectum", 7),
+            ("temporalArtery", 10),
+            ("toe", 8),
+            ("other", 0)
         ]),
-        "severity": RegistryValueSet(rawValues: ["unspecified": 0, "notPresent": 1, "mild": 2, "moderate": 3, "severe": 4]),
-        "presence": RegistryValueSet(rawValues: ["present": 0, "notPresent": 1]),
-        "appetiteChanges": RegistryValueSet(rawValues: ["unspecified": 0, "noChange": 1, "decreased": 2, "increased": 3])
+        "severity": RegistryValueSet([("unspecified", 0), ("notPresent", 1), ("mild", 2), ("moderate", 3), ("severe", 4)]),
+        "presence": RegistryValueSet([("present", 0), ("notPresent", 1)]),
+        "appetiteChanges": RegistryValueSet([("unspecified", 0), ("noChange", 1), ("decreased", 2), ("increased", 3)])
     ]
 
     static let entries: [RegistryEntry] = [
@@ -152,6 +212,7 @@ enum Registry {
             "HKQuantityTypeIdentifierBasalBodyTemperature",
             minOS: "9.0",
             unit: "degC",
+            units: ["degC", "degF"],
             fields: [RegistryMetadataField(
                     "measurementLocation",
                     key: "HKBodyTemperatureSensorLocation",
@@ -166,7 +227,8 @@ enum Registry {
             minOS: "16.0",
             isAvailable: { if #available(iOS 16.0, *) { return true }; return false },
             writable: false,
-            unit: "degC"
+            unit: "degC",
+            units: ["degC", "degF"]
         ),
         RegistryEntry(
             "pregnancyTest",

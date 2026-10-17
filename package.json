@@ -49,7 +49,7 @@
     "registry:gen": "node scripts/gen-registry.mjs",
     "registry:check": "node scripts/gen-registry.mjs --check",
     "registry:coverage": "node scripts/coverage.mjs",
-    "test:ios": "xcodebuild test -scheme CapluginsCapacitorHealth -destination \"${IOS_DESTINATION:-platform=iOS Simulator,name=iPhone 17 Pro}\" -packageAuthorizationProvider netrc",
+    "test:ios": "xcodebuild test -scheme CapluginsCapacitorHealth -destination \"${IOS_DESTINATION:-platform=iOS Simulator,name=iPhone 17 Pro,OS=27.0}\" -packageAuthorizationProvider netrc",
     "test:android": "cd android && ./gradlew test && cd ..",
     "lint": "npm run eslint && npm run prettier -- --check && npm run swiftlint -- lint",
     "fmt": "npm run eslint -- --fix && npm run prettier -- --write && npm run swiftlint -- --fix --format",
