@@ -35,6 +35,7 @@ class CapacitorHealthPlugin : Plugin() {
     }
     private val types by lazy { HealthTypes(features) }
     private val authorization by lazy { Authorization(types, features) }
+    private val samples by lazy { Samples(client, types) }
     private val permissionContract = PermissionController.createRequestPermissionResultContract()
 
     override fun load() {
@@ -121,6 +122,31 @@ class CapacitorHealthPlugin : Plugin() {
             background = android.optBoolean("background", false),
         )
     }
+
+    // endregion
+
+    // region Samples
+
+    @PluginMethod
+    fun readSamples(call: PluginCall) =
+        launch(call) {
+            requireAvailable()
+            samples.read(Fields(call.data))
+        }
+
+    @PluginMethod
+    fun saveSamples(call: PluginCall) =
+        launch(call) {
+            requireAvailable()
+            samples.save(call.data.optJSONArray("samples") ?: org.json.JSONArray())
+        }
+
+    @PluginMethod
+    fun deleteSamples(call: PluginCall) =
+        launch(call) {
+            requireAvailable()
+            samples.delete(Fields(call.data))
+        }
 
     // endregion
 
