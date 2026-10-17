@@ -30,6 +30,7 @@ public class CapacitorHealthPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @objc func getSupportedTypes(_ call: CAPPluginCall) {
+        guard ensureAvailable(call) else { return }
         call.resolve(["types": Registry.allTypeIds.map { HealthTypes.support(for: $0) }])
     }
 

@@ -69,6 +69,8 @@ dependencies {
     implementation "androidx.health.connect:connect-client:$androidxHealthConnectVersion"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$kotlinxCoroutinesVersion"
     testImplementation "junit:junit:$junitVersion"
+    // A real org.json for unit tests: android.jar only has stubs, and JSObject extends JSONObject.
+    testImplementation "org.json:json:20250517"
     testImplementation "androidx.health.connect:connect-testing:$androidxHealthConnectTestingVersion"
     testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$kotlinxCoroutinesVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"

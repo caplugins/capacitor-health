@@ -5,6 +5,9 @@
   "plugins": {
     "SplashScreen": {
       "launchAutoHide": false
+    },
+    "CapacitorHealth": {
+      "privacyPolicyUrl": "https://example.com/privacy"
     }
   }
 }

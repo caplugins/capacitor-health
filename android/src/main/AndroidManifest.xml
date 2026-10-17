@@ -6,4 +6,33 @@
     <queries>
         <package android:name="com.google.android.apps.healthdata" />
     </queries>
+
+    <application>
+        <!--
+          Default permissions-rationale screen (decision #19): Health Connect shows no permission dialog
+          without one. It opens plugins.CapacitorHealth.privacyPolicyUrl. To use your own screen, remove
+          both entries in your app's manifest with tools:node="remove" and declare yours.
+        -->
+        <activity
+            android:name="com.caplugins.health.PermissionsRationaleActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <!-- Android 13 and lower (Health Connect app). -->
+            <intent-filter>
+                <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
+            </intent-filter>
+        </activity>
+        <!-- Android 14 and higher (Health Connect in the platform). -->
+        <activity-alias
+            android:name="com.caplugins.health.ViewPermissionUsageActivity"
+            android:exported="true"
+            android:permission="android.permission.START_VIEW_PERMISSION_USAGE"
+            android:targetActivity="com.caplugins.health.PermissionsRationaleActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
+                <category android:name="android.intent.category.HEALTH_PERMISSIONS" />
+            </intent-filter>
+        </activity-alias>
+    </application>
 </manifest>
