@@ -281,6 +281,9 @@ Android), `relationToMeal`, `mealType` and `specimenSource` (`bloodGlucose`; the
   hour shorter or longer. Pass a `startDate` at local midnight (or on a Monday, or the
   1st) for calendar-aligned buckets. Every bucket comes back, empty ones with no values.
 - `totalEnergy` on iOS and `basalEnergy` on Android exist only as aggregates.
+- Android: day, week and month buckets are local times in the device's zone, and Health Connect
+  places each record by the offset it was written with, so a record written while travelling counts
+  toward that local day.
 - iOS: a combined id sums its member types (`distance`, `totalEnergy`); `speed` and `power` give
   `min` and `max` but no `avg`, which HealthKit can't combine across types. Aggregate a split id
   (`walkingSpeed`) for its average.

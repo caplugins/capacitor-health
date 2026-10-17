@@ -43,6 +43,8 @@ class HealthTypes(private val features: (Int) -> Boolean) {
                 .put("writable", false)
                 .put("reason", failure?.data?.getString("reason") ?: "notOnPlatform")
         }
+        val metrics = Aggregation.metrics(entry)
+        if (metrics.isNotEmpty()) result.put("aggregatable", true).put("metrics", JSArray(metrics))
         if (entry.aggregateOnly) {
             return result.put("supported", true).put("readable", false).put("writable", false).put("reason", "aggregateOnly")
         }

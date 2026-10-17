@@ -37,6 +37,7 @@ class CapacitorHealthPlugin : Plugin() {
     private val authorization by lazy { Authorization(types, features) }
     private val samples by lazy { Samples(client, types, context.packageName) }
     private val changes by lazy { Changes(client, types, samples, context.packageName, Samples::base64, Samples::unbase64) }
+    private val aggregation by lazy { Aggregation(client, types) }
     private val permissionContract = PermissionController.createRequestPermissionResultContract()
 
     override fun load() {
@@ -133,6 +134,13 @@ class CapacitorHealthPlugin : Plugin() {
         launch(call) {
             requireAvailable()
             samples.read(Fields(call.data))
+        }
+
+    @PluginMethod
+    fun aggregate(call: PluginCall) =
+        launch(call) {
+            requireAvailable()
+            aggregation.aggregate(Fields(call.data))
         }
 
     @PluginMethod
