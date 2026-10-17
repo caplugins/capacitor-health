@@ -1,22 +1,375 @@
 # @caplugins/capacitor-health
 
-Capacitor plugin for **Apple HealthKit** and **Google Health Connect**: one API to read and write
-every health data type both platforms offer, from steps and heart rate to sleep, workouts,
-nutrition and **reproductive health** (menstrual flow, periods, ovulation tests, cervical mucus,
-basal body temperature and more).
+Capacitor plugin for **Apple HealthKit** (iOS) and **Google Health Connect** (Android): one API to
+read and write health data, with **reproductive health first**: menstrual flow, periods, spotting,
+ovulation, pregnancy and progesterone tests, cervical mucus, sexual activity, basal body
+temperature, cycle symptoms and more.
 
-> **Status: in design.** Nothing is published yet. The plan is in [docs/](docs/README.md).
-> This README will be replaced by the generated API docs (`@capacitor/docgen`) once code lands.
+- One type vocabulary on both platforms, with platform-only types and values reported, not hidden.
+- Paged reads, idempotent writes (`clientId` upserts), deletes and **incremental change queries**
+  for apps that sync.
+- Menstruation **periods on both platforms**: native records on Android, derived from flow samples on
+  iOS (which has no period object) by documented, tested rules.
+- No permissions declared for you, no network calls, no analytics, no health values in logs.
 
-Not to be confused with the unscoped `capacitor-health` package on npm, which is a different
-project.
+Version 0.1.0 covers availability, permissions and the 44 reproductive-health types listed
+[below](#supported-types). Activity, vitals, sleep, workouts and nutrition follow in later releases
+([roadmap](docs/05-roadmap.md)).
 
-## Why another health plugin?
+Not to be confused with the unscoped `capacitor-health` package on npm, which is a different project.
 
-Existing Capacitor health plugins cover a fixed set of fitness types and leave out reproductive
-health entirely, so apps that need cycle data end up writing native code or running two plugins.
-This one aims for complete coverage on both platforms behind one type vocabulary, with
-idempotent writes and incremental change queries for apps that sync.
+## Contents
+
+- [Install](#install)
+- [iOS setup](#ios-setup)
+- [Android setup](#android-setup)
+- [Usage](#usage)
+- [How it behaves](#how-it-behaves): dates, samples, writes, changes, periods, permissions, errors
+- [Privacy](#privacy)
+- [Supported types](#supported-types)
+- [Coming from another health plugin](#coming-from-another-health-plugin)
+- [Configuration](#configuration)
+- [API](#api)
+
+## Install
+
+Requires Capacitor 8.
+
+```bash
+npm install @caplugins/capacitor-health
+npx cap sync
+```
+
+Both Swift Package Manager and CocoaPods are supported on iOS.
+
+## iOS setup
+
+1. **Add the HealthKit capability** to your app target in Xcode (Signing & Capabilities → +
+   Capability → HealthKit). That adds the `com.apple.developer.healthkit` entitlement. Leave
+   "Clinical Health Records" and "Background Delivery" off: this plugin uses neither.
+2. **Add usage strings to `Info.plist`**, saying specifically what your app does with the data
+   (vague strings get rejected in review):
+
+   ```xml
+   <key>NSHealthShareUsageDescription</key>
+   <string>We read your cycle data from Apple Health to show your history and predictions.</string>
+   <key>NSHealthUpdateUsageDescription</key>
+   <string>We save the periods and symptoms you log to Apple Health.</string>
+   ```
+
+   `NSHealthShareUsageDescription` is needed to read, `NSHealthUpdateUsageDescription` to write.
+   HealthKit crashes an app that asks without them; this plugin checks first and rejects with
+   `MISSING_DECLARATION` instead.
+3. **App Store:** mention the Health integration in your description and UI (guideline 2.5.1), have
+   a privacy policy, don't use health data for ads or marketing and don't store it in iCloud
+   (5.1.3), and declare "Health" in the App Privacy section if data read from HealthKit leaves the
+   device.
+
+The plugin supports iOS 15 and later. Types newer than the running iOS (for example
+`menopausalState`, iOS 27) report `supported: false` in `getSupportedTypes()` and reject with
+`UNSUPPORTED_TYPE`.
+
+## Android setup
+
+1. **Declare the permissions you use** in `android/app/src/main/AndroidManifest.xml`, and only those
+   (Google Play rejects health permissions that no feature needs). The plugin declares none and
+   rejects with `MISSING_DECLARATION` when you request one you didn't declare. Each type's
+   permissions are in the [type table](#supported-types); a cycle tracker might declare:
+
+   ```xml
+   <uses-permission android:name="android.permission.health.READ_MENSTRUATION" />
+   <uses-permission android:name="android.permission.health.WRITE_MENSTRUATION" />
+   <uses-permission android:name="android.permission.health.READ_OVULATION_TEST" />
+   <uses-permission android:name="android.permission.health.WRITE_OVULATION_TEST" />
+   <!-- Optional: data older than 30 days before the first grant (requestAuthorization's android.history) -->
+   <uses-permission android:name="android.permission.health.READ_HEALTH_DATA_HISTORY" />
+   ```
+
+   `menstrualFlow` and `menstruationPeriod` share the `MENSTRUATION` permissions.
+2. **Set your privacy policy URL.** Health Connect only shows its permission dialog to apps with a
+   permissions-rationale screen, and links to it from the dialog. The plugin ships a default screen
+   that opens this URL (use the same policy as your Play listing):
+
+   ```json
+   {
+     "plugins": {
+       "CapacitorHealth": { "privacyPolicyUrl": "https://example.com/privacy" }
+     }
+   }
+   ```
+
+   To show your own screen instead, remove the plugin's in your app's manifest (with
+   `xmlns:tools="http://schemas.android.com/tools"` on `<manifest>`) and declare yours with the same
+   intent filters:
+
+   ```xml
+   <activity android:name="com.caplugins.health.PermissionsRationaleActivity" tools:node="remove" />
+   <activity-alias android:name="com.caplugins.health.ViewPermissionUsageActivity" tools:node="remove" />
+   ```
+
+3. **SDK levels.** Health Connect's library (`androidx.health.connect:connect-client` 1.1.0) needs
+   `compileSdkVersion` 36 and Android Gradle Plugin 8.9.1 or newer, which new Capacitor 8 apps have.
+   It also needs `minSdkVersion` 26 (Capacitor 8 apps start at 24). Either raise yours to 26, or add
+   `<uses-sdk tools:overrideLibrary="androidx.health.connect.client,com.caplugins.health" />` to your
+   manifest. Health Connect only runs on Android 9 (API 28) and later: below that `isAvailable()`
+   reports `notSupported` without touching it, and every other call rejects with `UNAVAILABLE`. To
+   use another `connect-client` version, set `androidxHealthConnectVersion` in
+   `android/variables.gradle`.
+4. **Health Connect itself.** It's part of Android 14 and later. On Android 9–13 users install the
+   Health Connect app; `isAvailable()` reports `notInstalled` or `updateRequired`, and
+   `openHealthConnectInstall()` opens it in the Play Store.
+5. **Google Play:** fill in the Health apps declaration (Play Console → App content) with a reason
+   for every Health Connect permission tied to a visible feature, and the Data safety form.
+   Reproductive data gets extra scrutiny: describe the cycle-tracking feature it serves.
+
+## Usage
+
+```ts
+import { CapacitorHealth } from '@caplugins/capacitor-health';
+
+// 1. Is health data available here? (On Android 9–13, offer to install Health Connect if it isn't.)
+const { available, status } = await CapacitorHealth.isAvailable();
+if (status === 'notInstalled' || status === 'updateRequired') await CapacitorHealth.openHealthConnectInstall();
+if (!available) throw new Error('No health data on this device');
+
+// 2. Ask for access. Types this platform doesn't have come back 'unsupported'.
+const access = await CapacitorHealth.requestAuthorization({
+  read: ['menstrualFlow', 'menstruationPeriod', 'basalBodyTemperature'],
+  write: ['menstrualFlow', 'menstruationPeriod'],
+});
+
+// 3. Read a page of samples (ISO 8601 dates with an offset).
+const { samples, nextCursor } = await CapacitorHealth.readSamples({
+  type: 'menstruationPeriod',
+  startDate: '2026-07-01T00:00:00+05:30',
+  endDate: '2026-10-01T00:00:00+05:30',
+});
+for (const period of samples) {
+  if (period.type === 'menstruationPeriod') console.log(period.firstDay, period.lastDay);
+}
+
+// 4. Write. A clientId makes the write idempotent: the same clientId updates instead of duplicating.
+await CapacitorHealth.saveSamples({
+  samples: [
+    {
+      type: 'menstruationPeriod',
+      startDate: '2026-10-01T09:00:00+05:30',
+      endDate: '2026-10-05T09:00:00+05:30',
+      clientId: 'period-2026-10-01',
+      flow: { '2026-10-01': 'heavy', '2026-10-02': 'medium' },
+      recordingMethod: 'manual',
+    },
+    { type: 'ovulationTest', startDate: '2026-10-14T08:00:00+05:30', value: 'lhSurge', clientId: 'ovulation-2026-10-14' },
+  ],
+});
+
+// 5. Sync incrementally: the first call (no cursor) returns only a cursor marking "now".
+let { nextCursor: cursor } = await CapacitorHealth.getChanges({ types: ['menstrualFlow', 'ovulationTest'] });
+// …later, and again whenever you sync:
+const changes = await CapacitorHealth.getChanges({ types: ['menstrualFlow', 'ovulationTest'], cursor });
+cursor = changes.nextCursor; // store it; call again straight away while changes.hasMore
+```
+
+Validation happens in JavaScript before anything reaches the platform: a malformed date, a value the
+type doesn't have or a value this platform can't store rejects with `INVALID_ARGUMENT` and names the
+field (`data.field`, e.g. `samples[1].value`).
+
+## How it behaves
+
+### Dates and time zones
+
+All dates are ISO 8601 strings **with an offset**: `2026-10-15T08:00:00+05:30`. The plugin returns
+them in the zone the sample was recorded in when the platform knows it (Health Connect always; iOS
+when the writer stored a time zone), otherwise in the device's current zone, and sets `zoneOffset`
+when the platform recorded one. Times are kept to the millisecond. On writes, Android stores the
+offsets of your dates; iOS stores the optional IANA `timeZone` you pass as `HKMetadataKeyTimeZone`.
+
+Ranges (`startDate`–`endDate`) match samples that **overlap** them on both platforms. One exception:
+Android's `skinTemperature` matches by start time, as Health Connect does.
+
+### Samples
+
+Every sample has `id`, `type`, `kind` (`quantity`, `category`, `event` or `special`), `startDate`,
+`endDate`, `source` (bundle id / package name), `recordingMethod`, `platform`, `native` (the HealthKit
+identifier or Health Connect record and raw value) and, when present, `device`, `clientId`,
+`clientVersion`, `zoneOffset` and `metadata` (native fields the shared shape has no place for, under
+`hk.` / `hc.` keys). Typed fields: `isCycleStart` (`menstrualFlow`), `sensation` (`cervicalMucus`,
+Android), `measurementLocation` (`basalBodyTemperature`, `skinTemperature`), `protectionUsed`
+(`sexualActivity`).
+
+- Quantities come in the type's canonical unit unless you pass `unit` (`degC` or `degF` for
+  temperatures).
+- Some values exist on one platform only, like flow `none` (iOS) or cervical mucus `unusual`
+  (Android). Reads never invent them; writes on the other platform reject with
+  `data.reason: 'valueUnsupportedOnPlatform'`. `getSupportedTypes()` lists each type's values here.
+- On Android, `menstrualFlow.isCycleStart` is computed: `true` when a period from the same app starts
+  that day, `false` when one covers it but started earlier, absent otherwise. On iOS it's whatever
+  the writer stored; note that Apple Health itself writes `false` even on day 1.
+
+### Writes, upserts and deletes
+
+- Give samples a `clientId` (your own stable id) to make writes idempotent. Writing the same
+  `clientId` again replaces the sample when `clientVersion` is equal or higher (default `1`) and is
+  ignored when it's lower. `saveSamples` returns the stored ids, in order.
+- **iOS replaces a sample's `id` when it's updated** (HealthKit samples are immutable); `clientId`
+  stays. Health Connect keeps the id. Don't re-save unchanged samples: on iOS it creates churn in
+  `getChanges`.
+- `deleteSamples` takes `ids`, `clientIds` or a `startDate`–`endDate` range. Both platforms only let
+  an app delete what it wrote; other apps' samples are left alone.
+- Read-only types (Apple-computed ones like `wristTemperature`) reject writes with `READ_ONLY_TYPE`.
+
+### Changes (`getChanges`)
+
+- Without a cursor you get **no samples**, only a cursor marking "now". Read existing data with
+  `readSamples`, then follow changes from there. A cursor only works with the types it was created for.
+- `upserted` holds samples in their current state; `deleted` holds `{ type, id }`, plus `clientId` on
+  iOS. Health Connect collapses several edits of one record into one upsert. iOS reports an edit as a
+  deletion plus a new sample with a new id.
+- Call again while `hasMore` is `true`. Health Connect cursors expire after about 30 days unused:
+  you get `CURSOR_EXPIRED`, re-read with `readSamples` and start over without a cursor.
+- `excludeOwnWrites: true` leaves out upserts your app made (deletions carry no source).
+- On iOS, `menstruationPeriod` can't be followed (periods are derived; see below): follow
+  `menstrualFlow` and re-read the periods around what changed.
+
+### Menstruation periods
+
+Health Connect stores periods as records; HealthKit doesn't have them, so on iOS the plugin works them
+out from `menstrualFlow` samples. These rules are a contract, covered by
+[test fixtures](fixtures/menstruation):
+
+- **Reading on iOS:** flow samples are mapped to local days (each sample's own stored time zone, else
+  the device's). A sample with a duration covers each day from its start up to, but not including, its
+  end, so a sample ending at midnight doesn't add a day. Samples with flow `none` are ignored. A new
+  period starts after **two or more blank days** (one blank day stays inside a period) or at a sample
+  flagged `isCycleStart`. The gap rule comes first, because Apple Health writes the flag as `false`
+  even on day 1. The plugin looks 15 days before your range, so a period that started earlier is
+  returned whole. A derived period has `derived: true`, `firstDay` / `lastDay` (local dates),
+  `startDate` / `endDate` from local midnight of the first day to 23:59:59.999 of the last, the ids of
+  its flow samples, and its first sample's id and source.
+- **Writing on iOS:** a period becomes one flow sample per day at local noon (`unspecified` unless you
+  pass `flow` for that day), flagged as cycle start on day 1, with `clientId`
+  `<your clientId>:<yyyy-mm-dd>`. Writing the same period again updates it, and a shorter period
+  deletes the days it no longer covers. This is the shape Apple Health writes itself.
+- **Android:** one `MenstruationPeriodRecord` from local midnight of the first day to 23:59:59.999 of
+  the last, at most **31 days** (Health Connect's limit). Days in `flow` also become flow records,
+  which belong to the period: re-writing it replaces them, deleting it deletes them. Reads map a
+  period's end to the day before when it ends exactly at midnight.
+- `deleteSamples` for periods counts periods. On iOS it deletes your app's flow samples of the
+  matched periods.
+
+### Permissions
+
+- **iOS never tells apps whether read access was granted.** Read status is `notDetermined` before you
+  ask and `unknown` after, never `granted`, and a read the user denied simply returns no data. Write
+  status is exact. On iOS 27, users can share only recent history; `earliestAuthorizedDates` tells you
+  where it starts (data before it is hidden, not absent; your app's own samples stay readable).
+- **Android reports grants exactly**, but `notGranted` can't tell "never asked" from "refused".
+- Health Connect **stops showing its dialog after the user refuses twice**: the call returns at once
+  with nothing new granted. When that happens, offer `openHealthSettings()` (Health Connect's
+  settings; users find your app under "App permissions"). On iOS it opens the Health app, where
+  users find your app under Profile → Apps.
+- On Android, reopening your app from its launcher icon while the dialog is open closes the dialog
+  (Capacitor's `singleTask` activity); the call then resolves with what was granted.
+- iOS shows its sheet only for types it hasn't asked about yet, and Android only for permissions not
+  yet granted.
+
+### Errors
+
+Every rejection has a stable `code` (see [`HealthErrorCode`](#healtherrorcode)) and a message without
+health values; `data` adds the `field`, `type`, `reason` or `missing` declarations where relevant.
+
+```ts
+try {
+  await CapacitorHealth.saveSamples({ samples });
+} catch (error) {
+  const { code, data } = error as HealthError;
+  if (code === 'PERMISSION_DENIED') {
+    // ask again, or point the user to openHealthSettings()
+  }
+}
+```
+
+## Privacy
+
+- The plugin sends nothing anywhere: no network calls, no analytics, no storage of its own.
+- It never logs health values unless you set `debugLogging: true` (for debugging only).
+- **Capacitor itself logs every plugin call's arguments and results in debug builds**, health values
+  included, to the Xcode console and logcat. Keep `loggingBehavior` at its default (`"debug"`) so
+  release builds don't log, or set `"none"` in `capacitor.config` to silence it everywhere.
+- Don't forward health data to analytics, advertising or attribution SDKs: both Apple (5.1.3) and
+  Google's Health Connect policy forbid it, and regulators have acted against cycle-tracking apps
+  that did. Treat sharing between users (partner features) as disclosure: ask for specific consent.
+
+## Supported types
+
+`getSupportedTypes()` reports what's available on the running device. Permissions are shown without
+the `android.permission.health.` prefix.
+
+<!-- registry-types:start -->
+<!-- Generated by scripts/gen-registry.mjs from registry/types.json. Do not edit. -->
+
+| Type | Kind | HealthKit | Health Connect record: read / write permission | Values or units |
+|---|---|---|---|---|
+| `menstrualFlow` | category | `MenstrualFlow` (iOS 9.0+) | `MenstruationFlowRecord`: `READ_MENSTRUATION` / `WRITE_MENSTRUATION` | `unspecified`, `light`, `medium`, `heavy`, `none` (iOS) |
+| `menstruationPeriod` | special | `MenstrualFlow` (iOS 9.0+, derived from `menstrualFlow`) | `MenstruationPeriodRecord`: `READ_MENSTRUATION` / `WRITE_MENSTRUATION` |  |
+| `intermenstrualBleeding` | event | `IntermenstrualBleeding` (iOS 9.0+) | `IntermenstrualBleedingRecord`: `READ_INTERMENSTRUAL_BLEEDING` / `WRITE_INTERMENSTRUAL_BLEEDING` |  |
+| `cervicalMucus` | category | `CervicalMucusQuality` (iOS 9.0+) | `CervicalMucusRecord`: `READ_CERVICAL_MUCUS` / `WRITE_CERVICAL_MUCUS` | `dry`, `sticky`, `creamy`, `watery`, `eggWhite`, `unusual` (Android), `unknown` (Android) |
+| `ovulationTest` | category | `OvulationTestResult` (iOS 9.0+) | `OvulationTestRecord`: `READ_OVULATION_TEST` / `WRITE_OVULATION_TEST` | `negative`, `lhSurge`, `estrogenSurge`, `indeterminate` |
+| `sexualActivity` | event | `SexualActivity` (iOS 9.0+) | `SexualActivityRecord`: `READ_SEXUAL_ACTIVITY` / `WRITE_SEXUAL_ACTIVITY` |  |
+| `basalBodyTemperature` | quantity | `BasalBodyTemperature` (iOS 9.0+) | `BasalBodyTemperatureRecord`: `READ_BASAL_BODY_TEMPERATURE` / `WRITE_BASAL_BODY_TEMPERATURE` | `degC`, `degF` |
+| `wristTemperature` | quantity | `AppleSleepingWristTemperature` (iOS 16.0+, read-only) | — | `degC`, `degF` |
+| `skinTemperature` | special | — | `SkinTemperatureRecord`: `READ_SKIN_TEMPERATURE` / `WRITE_SKIN_TEMPERATURE` (needs `FEATURE_SKIN_TEMPERATURE`) | `degC`, `degF` |
+| `pregnancyTest` | category | `PregnancyTestResult` (iOS 15.0+) | — | `negative`, `positive`, `indeterminate` |
+| `progesteroneTest` | category | `ProgesteroneTestResult` (iOS 15.0+) | — | `negative`, `positive`, `indeterminate` |
+| `contraceptive` | category | `Contraceptive` (iOS 14.3+) | — | `unspecified`, `implant`, `injection`, `intrauterineDevice`, `intravaginalRing`, `oral`, `patch` |
+| `pregnancy` | event | `Pregnancy` (iOS 14.3+) | — |  |
+| `lactation` | event | `Lactation` (iOS 14.3+) | — |  |
+| `bleedingDuringPregnancy` | category | `BleedingDuringPregnancy` (iOS 18.0+) | — | `unspecified`, `light`, `medium`, `heavy`, `none` |
+| `bleedingAfterPregnancy` | category | `BleedingAfterPregnancy` (iOS 18.0+) | — | `unspecified`, `light`, `medium`, `heavy`, `none` |
+| `bleedingAfterMenopause` | category | `BleedingAfterMenopause` (iOS 27.0+) | — | `unspecified`, `light`, `medium`, `heavy`, `none` |
+| `menopausalState` | category | `MenopausalState` (iOS 27.0+) | — | `menopause`, `perimenopause`, `none` |
+| `infrequentMenstrualCycles` | event | `InfrequentMenstrualCycles` (iOS 16.0+, read-only) | — |  |
+| `irregularMenstrualCycles` | event | `IrregularMenstrualCycles` (iOS 16.0+, read-only) | — |  |
+| `persistentIntermenstrualBleeding` | event | `PersistentIntermenstrualBleeding` (iOS 16.0+, read-only) | — |  |
+| `prolongedMenstrualPeriods` | event | `ProlongedMenstrualPeriods` (iOS 16.0+, read-only) | — |  |
+| `abdominalCramps` | category | `AbdominalCramps` (iOS 13.6+) | — | `unspecified`, `notPresent`, `mild`, `moderate`, `severe` |
+| `acne` | category | `Acne` (iOS 13.6+) | — | `unspecified`, `notPresent`, `mild`, `moderate`, `severe` |
+| `appetiteChanges` | category | `AppetiteChanges` (iOS 13.6+) | — | `unspecified`, `noChange`, `decreased`, `increased` |
+| `bladderIncontinence` | category | `BladderIncontinence` (iOS 14.0+) | — | `unspecified`, `notPresent`, `mild`, `moderate`, `severe` |
+| `bloating` | category | `Bloating` (iOS 13.6+) | — | `unspecified`, `notPresent`, `mild`, `moderate`, `severe` |
+| `breastPain` | category | `BreastPain` (iOS 13.6+) | — | `unspecified`, `notPresent`, `mild`, `moderate`, `severe` |
+| `chills` | category | `Chills` (iOS 13.6+) | — | `unspecified`, `notPresent`, `mild`, `moderate`, `severe` |
+| `constipation` | category | `Constipation` (iOS 13.6+) | — | `unspecified`, `notPresent`, `mild`, `moderate`, `severe` |
+| `diarrhea` | category | `Diarrhea` (iOS 13.6+) | — | `unspecified`, `notPresent`, `mild`, `moderate`, `severe` |
+| `drySkin` | category | `DrySkin` (iOS 14.0+) | — | `unspecified`, `notPresent`, `mild`, `moderate`, `severe` |
+| `fatigue` | category | `Fatigue` (iOS 13.6+) | — | `unspecified`, `notPresent`, `mild`, `moderate`, `severe` |
+| `hairLoss` | category | `HairLoss` (iOS 14.0+) | — | `unspecified`, `notPresent`, `mild`, `moderate`, `severe` |
+| `headache` | category | `Headache` (iOS 13.6+) | — | `unspecified`, `notPresent`, `mild`, `moderate`, `severe` |
+| `hotFlashes` | category | `HotFlashes` (iOS 13.6+) | — | `unspecified`, `notPresent`, `mild`, `moderate`, `severe` |
+| `lowerBackPain` | category | `LowerBackPain` (iOS 13.6+) | — | `unspecified`, `notPresent`, `mild`, `moderate`, `severe` |
+| `memoryLapse` | category | `MemoryLapse` (iOS 14.0+) | — | `unspecified`, `notPresent`, `mild`, `moderate`, `severe` |
+| `moodChanges` | category | `MoodChanges` (iOS 13.6+) | — | `present`, `notPresent` |
+| `nausea` | category | `Nausea` (iOS 13.6+) | — | `unspecified`, `notPresent`, `mild`, `moderate`, `severe` |
+| `nightSweats` | category | `NightSweats` (iOS 14.0+) | — | `unspecified`, `notPresent`, `mild`, `moderate`, `severe` |
+| `pelvicPain` | category | `PelvicPain` (iOS 13.6+) | — | `unspecified`, `notPresent`, `mild`, `moderate`, `severe` |
+| `sleepChanges` | category | `SleepChanges` (iOS 13.6+) | — | `present`, `notPresent` |
+| `vaginalDryness` | category | `VaginalDryness` (iOS 14.0+) | — | `unspecified`, `notPresent`, `mild`, `moderate`, `severe` |
+
+<!-- registry-types:end -->
+
+## Coming from another health plugin
+
+- **Types** are camelCase ids shared by both platforms (`menstrualFlow`, `basalBodyTemperature`),
+  not HealthKit identifiers or Health Connect record names; the [table](#supported-types) maps them.
+- **Values** are named, not numbers: flow is `unspecified | light | medium | heavy | none`, an
+  LH-surge ovulation test is `lhSurge`. Health Connect's `RESULT_HIGH` reads as `estrogenSurge`.
+- **Periods** are their own type, `menstruationPeriod`, on both platforms, read with `readSamples`.
+- **Dates** are ISO strings with an offset, not epoch milliseconds or `Date` objects.
+- **Upserts** use `clientId` / `clientVersion` (HealthKit's sync identifier and version, Health
+  Connect's `clientRecordId` and version): migrate your app's own ids to them to avoid duplicates
+  when you re-sync data you wrote with another plugin.
+- **Android permissions** are no longer declared by the plugin: copy the ones you use into your
+  manifest.
 
 ## Configuration
 

@@ -122,7 +122,7 @@ describe('generated files', () => {
   });
 
   it('cover every output', () => {
-    expect(Object.keys(OUTPUTS).sort()).toEqual(['kotlin', 'swift', 'swiftTest', 'ts']);
+    expect(Object.keys(OUTPUTS).sort()).toEqual(['kotlin', 'readme', 'swift', 'swiftTest', 'ts']);
   });
 });
 
