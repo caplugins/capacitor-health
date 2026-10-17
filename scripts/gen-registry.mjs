@@ -34,9 +34,19 @@ const supportedValues = (set, platform) =>
 
 // ---------------------------------------------------------------- TypeScript
 
-/** aggregate() metrics HealthKit serves for a type, from its (or its first member's) aggregation style. */
+const METRIC_ORDER = ['sum', 'avg', 'min', 'max', 'count', 'duration'];
+
+/** HealthKit's aggregation style for a type: its own, or its first member's. */
+const iosAggregation = (t, registry) =>
+  t.ios.aggregation ?? registry.types.find((x) => x.id === t.ios.members?.[0])?.ios?.aggregation;
+
+/**
+ * aggregate() metrics a type serves on iOS: the ones the plugin computes itself (`ios.metrics`), else
+ * those of its aggregation style.
+ */
 function iosMetrics(t, registry) {
   if (!t.ios) return null;
+  if (t.ios.metrics) return METRIC_ORDER.filter((m) => t.ios.metrics.includes(m));
   const style = t.ios.aggregation ?? registry.types.find((x) => x.id === t.ios.members?.[0])?.ios?.aggregation;
   if (!style) return null;
   if (style === 'cumulative') return ['sum'];
@@ -44,7 +54,6 @@ function iosMetrics(t, registry) {
   return t.ios.members ? ['min', 'max'] : ['avg', 'min', 'max'];
 }
 
-const METRIC_ORDER = ['sum', 'avg', 'min', 'max', 'count', 'duration'];
 const androidMetrics = (t) =>
   t.android?.aggregates ? METRIC_ORDER.filter((m) => t.android.aggregates[m] !== undefined) : null;
 
@@ -407,8 +416,9 @@ function renderSwift(registry) {
       if (t.values) args.push(`valueSet: ${q(t.values)}`);
       if (t.unit) args.push(`unit: ${q(t.unit)}`, `units: [${t.units.map(q).join(', ')}]`);
       if (t.ios.derivedFrom) args.push(`derivedFrom: ${q(t.ios.derivedFrom)}`);
-      const style = iosMetrics(t, registry);
-      if (style) args.push(`aggregation: .${style[0] === 'sum' ? 'cumulative' : 'discrete'}`);
+      const style = iosAggregation(t, registry);
+      if (style) args.push(`aggregation: .${style === 'cumulative' ? 'cumulative' : 'discrete'}`);
+      if (t.ios.metrics) args.push(`metrics: [${iosMetrics(t, registry).map(q).join(', ')}]`);
       if (t.ios.members) args.push(`members: [${t.ios.members.map(q).join(', ')}]`);
       if (t.ios.writeTo) args.push(`writeTo: ${q(t.ios.writeTo)}`);
       if (t.ios.aggregateOnly) args.push('aggregateOnly: true');
@@ -540,6 +550,8 @@ struct RegistryEntry {
     /// Values HealthKit accepts, in the canonical unit; outside it HealthKit raises an exception.
     let range: ClosedRange<Double>?
     let fields: [RegistryMetadataField]
+    /// \`aggregate()\` metrics the plugin computes itself (special types), instead of HealthKit statistics.
+    let metrics: [String]
 
     var isQuantity: Bool { identifier.hasPrefix("HKQuantityTypeIdentifier") }
     var isCorrelation: Bool { identifier.hasPrefix("HKCorrelationTypeIdentifier") }
@@ -562,7 +574,8 @@ struct RegistryEntry {
         writeTo: String? = nil,
         aggregateOnly: Bool = false,
         range: ClosedRange<Double>? = nil,
-        fields: [RegistryMetadataField] = []
+        fields: [RegistryMetadataField] = [],
+        metrics: [String] = []
     ) {
         self.typeId = typeId
         self.kind = kind
@@ -582,6 +595,7 @@ struct RegistryEntry {
         self.aggregateOnly = aggregateOnly
         self.range = range
         self.fields = fields
+        self.metrics = metrics
     }
 }
 

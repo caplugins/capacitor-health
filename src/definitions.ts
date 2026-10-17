@@ -1257,7 +1257,8 @@ export interface AggregateBucketOptions {
  */
 export interface AggregateOptions {
   /**
-   * A quantity type (or `bloodPressure`, later) whose `getSupportedTypes()` entry is `aggregatable`.
+   * A type whose `getSupportedTypes()` entry is `aggregatable`: quantity types, and `sleepSession`
+   * (`duration`: seconds asleep, time two apps both record counted once).
    *
    * @since 0.2.0
    */
@@ -1379,13 +1380,17 @@ export interface DeletedSample {
   type: HealthType | PassthroughType;
   /**
    * The deleted sample's id. On Android, a deleted series record gives one deletion whose id is the
-   * record's: remove the samples whose `id` or `seriesId` equals it.
+   * record's: remove the samples whose `id` or `seriesId` equals it. iOS `sleepSession`: the id of a
+   * deleted stage sample, so it matches a session's `id` or one of its `stageSampleIds`. HealthKit
+   * doesn't say when a deleted sample was, so a session that only lost some of its stages isn't
+   * derived again: when an id matches a stage of a session you hold, re-read that session's range.
    *
    * @since 0.1.0
    */
   id: string;
   /**
-   * iOS only: the deleted sample's `clientId`, if it had one.
+   * iOS only: the deleted sample's `clientId`, if it had one. For a stage of a sleep session the
+   * plugin wrote, the session's `clientId`.
    *
    * @since 0.1.0
    */

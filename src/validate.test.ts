@@ -1303,6 +1303,25 @@ describe('sleepSession (T43)', () => {
     );
   });
 
+  it('aggregates time asleep on iOS (Android follows in T45)', () => {
+    expect(validateAggregate({ type: 'sleepSession', ...night, metrics: ['duration'] }, 'ios')).toMatchObject({
+      type: 'sleepSession',
+      metrics: ['duration'],
+    });
+    rejection(
+      () => validateAggregate({ type: 'sleepSession', ...night, metrics: ['sum'] }, 'ios'),
+      'INVALID_ARGUMENT',
+      'metrics[0]',
+      'metricUnsupported',
+    );
+    rejection(
+      () => validateAggregate({ type: 'sleepSession', ...night, metrics: ['duration'], unit: 'min' }, 'ios'),
+      'INVALID_ARGUMENT',
+      'unit',
+      'notApplicable',
+    );
+  });
+
   it('points the HealthKit identifier to the session type', () => {
     rejection(
       () =>

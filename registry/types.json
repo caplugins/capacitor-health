@@ -2601,7 +2601,8 @@
         "identifier": "HKCategoryTypeIdentifierSleepAnalysis",
         "minOS": "8.0",
         "writable": true,
-        "notes": "Derived from sleepAnalysis samples on read (per source, split by gaps longer than an hour), written as one sample per stage plus an inBed sample spanning the session (decision #64)"
+        "metrics": ["duration"],
+        "notes": "Derived from sleepAnalysis samples on read (per source, split by gaps longer than an hour), written as one sample per stage plus an inBed sample spanning the session (decision #64). aggregate() duration is time asleep, overlaps between apps counted once (decision #65)"
       },
       "android": {
         "record": "SleepSessionRecord",
@@ -2610,7 +2611,7 @@
         "writePermission": "android.permission.health.WRITE_SLEEP",
         "writable": true
       },
-      "notes": "Native reads and writes land in T44 (iOS) and T45 (Android); until then both platforms report it unsupported. title and notes are Android only"
+      "notes": "Android support lands in T45; until then Android reports it unsupported. title and notes are Android only"
     },
     {
       "id": "mindfulSession",

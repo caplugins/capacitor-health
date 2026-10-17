@@ -341,6 +341,13 @@
         },
         "writeTo": { "description": "Combined id: the member a write goes to unless the sample names a member.", "$ref": "#/$defs/camelId" },
         "aggregateOnly": { "description": "No samples of its own: only aggregate() serves it (decision #21).", "type": "boolean" },
+        "metrics": {
+          "description": "aggregate() metrics the plugin computes itself for a special type, without HealthKit statistics (sleep sessions' duration, decision #65).",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "enum": ["sum", "avg", "min", "max", "count", "duration"] }
+        },
         "notes": { "$ref": "#/$defs/notes" }
       }
     },

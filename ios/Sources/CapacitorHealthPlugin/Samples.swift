@@ -8,6 +8,7 @@ final class Samples {
 
     private let store: HKHealthStore
     private lazy var periods = try? MenstruationPeriods(store: store)
+    private lazy var sleep = try? SleepSessions(store: store)
 
     init(store: HKHealthStore) {
         self.store = store
@@ -16,6 +17,11 @@ final class Samples {
     private func periodService() throws -> MenstruationPeriods {
         guard let periods else { throw HealthError.unsupportedType("menstruationPeriod", reason: "osVersion") }
         return periods
+    }
+
+    private func sleepService() throws -> SleepSessions {
+        guard let sleep else { throw HealthError.unsupportedType(SleepSessions.typeId, reason: "notOnPlatform") }
+        return sleep
     }
 
     // MARK: - Read
@@ -34,6 +40,9 @@ final class Samples {
         }
         if entry.derivedFrom != nil {
             return try await periodService().read(options, start: start, end: end, limit: limit, ascending: ascending)
+        }
+        if typeId == SleepSessions.typeId {
+            return try await sleepService().read(options, start: start, end: end, limit: limit, ascending: ascending)
         }
 
         let cursor = try options.optionalString("cursor").map { try ReadCursor.decode($0, typeId: typeId) }
@@ -83,24 +92,31 @@ final class Samples {
 
     func save(_ samples: [[String: Any]]) async throws -> [String: Any] {
         guard !samples.isEmpty else { throw HealthError.invalidArgument("samples", "must be a non-empty array") }
-        // Each input sample becomes one object, or one per day for a period (decision #29).
-        var groups: [(objects: [HKSample], periodClientId: String?)] = []
+        // Each input sample becomes one object, one per day for a period (decision #29), or a span plus one
+        // per stage for a sleep session (decision #64).
+        var groups: [(objects: [HKSample], periodClientId: String?, sleepClientId: String?)] = []
         for (index, json) in samples.enumerated() {
             let fields = JSONFields(json, path: "samples[\(index)]")
             let (entry, type) = try HealthTypes.resolveWritable(try fields.string("type"))
             if entry.derivedFrom != nil {
-                groups.append((try periodService().expand(fields), fields.optionalString("clientId")))
+                groups.append((try periodService().expand(fields), fields.optionalString("clientId"), nil))
+            } else if entry.typeId == SleepSessions.typeId {
+                groups.append((try sleepService().expand(fields), nil, fields.optionalString("clientId")))
             } else {
-                groups.append(([try SampleCodec.decode(fields, entry: entry, type: type)], nil))
+                groups.append(([try SampleCodec.decode(fields, entry: entry, type: type)], nil, nil))
             }
         }
         let objects = groups.flatMap(\.objects)
         try await store.save(objects)
         for group in groups {
-            guard let clientId = group.periodClientId else { continue }
-            let kept = Set(group.objects.compactMap { $0.metadata?[HKMetadataKeySyncIdentifier] as? String })
             let version = (group.objects.first?.metadata?[HKMetadataKeySyncVersion] as? NSNumber)?.intValue ?? 1
-            try await periodService().deleteDroppedDays(clientId: clientId, version: version, kept: kept, around: group.objects)
+            if let clientId = group.periodClientId {
+                let kept = Set(group.objects.compactMap { $0.metadata?[HKMetadataKeySyncIdentifier] as? String })
+                try await periodService().deleteDroppedDays(clientId: clientId, version: version, kept: kept, around: group.objects)
+            }
+            if let clientId = group.sleepClientId {
+                try await sleepService().deleteStaleStages(clientId: clientId, version: version, written: group.objects)
+            }
         }
         let firsts = groups.compactMap(\.objects.first)
         return ["ids": try await storedIds(firsts)]
@@ -130,6 +146,9 @@ final class Samples {
         let (entry, type) = try HealthTypes.resolveWritable(typeId)
         if entry.derivedFrom != nil {
             return ["deleted": try await periodService().delete(options)]
+        }
+        if typeId == SleepSessions.typeId {
+            return ["deleted": try await sleepService().delete(options)]
         }
         let predicate = try Self.deletePredicate(options)
         if let correlationType = type as? HKCorrelationType {

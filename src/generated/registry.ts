@@ -2810,7 +2810,13 @@ export const REGISTRY: Readonly<Record<HealthType, RegistryEntry>> = {
     kind: 'special',
     group: 'sleep',
     parts: { stages: { values: 'sleepStage' } },
-    ios: { identifier: 'HKCategoryTypeIdentifierSleepAnalysis', minOS: '8.0', writable: true, time: 'any' },
+    ios: {
+      identifier: 'HKCategoryTypeIdentifierSleepAnalysis',
+      minOS: '8.0',
+      writable: true,
+      time: 'any',
+      metrics: ['duration'],
+    },
     android: {
       record: 'SleepSessionRecord',
       time: 'interval',

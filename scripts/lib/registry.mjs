@@ -188,6 +188,7 @@ export function semanticErrors(registry) {
       }
       if (writeTo && !members) errors.push(`${at}.ios.writeTo needs ios.members`);
       if (aggregateOnly && type.ios.writable) errors.push(`${at}: an aggregate-only type can't be writable`);
+      if (type.ios.metrics && type.kind !== 'special') errors.push(`${at}.ios.metrics only apply to special types`);
       if (type.ios.range) {
         // Validation checks the range in JavaScript, which can't convert units.
         if (type.kind !== 'quantity' || type.units?.length !== 1) errors.push(`${at}.ios.range needs a quantity type with one unit`);

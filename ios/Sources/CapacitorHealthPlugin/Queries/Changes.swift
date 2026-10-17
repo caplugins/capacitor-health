@@ -95,13 +95,21 @@ final class Changes {
                 try await currentAnchor(type)
             }
             let page = try await anchoredQuery(type, anchor: anchor, predicate: nil, limit: limit)
-            upserted += page.samples
-                .filter { !excludeOwn || $0.sourceRevision.source != ownSource }
-                .map { SampleCodec.encode($0, entry: entry) }
+            let changed = page.samples.filter { !excludeOwn || $0.sourceRevision.source != ownSource }
+            if entry.typeId == SleepSessions.typeId {
+                // A session is derived from several samples: report the sessions holding changed samples, whole
+                // (decision #65). Deleted entries name the deleted sample: a session id or one of its stageSampleIds.
+                upserted += try await SleepSessions(store: store).sessions(containing: changed)
+            } else {
+                upserted += changed.map { SampleCodec.encode($0, entry: entry) }
+            }
             deleted += page.deleted.map { object in
                 var json: [String: Any] = ["type": entry.typeId, "id": object.uuid.uuidString]
                 // Deleted objects keep their sync identifier (T06 S4).
-                if let clientId = object.metadata?[HKMetadataKeySyncIdentifier] as? String { json["clientId"] = clientId }
+                if let clientId = object.metadata?[HKMetadataKeySyncIdentifier] as? String {
+                    // A stage sample of a session the plugin wrote reports the session's clientId.
+                    json["clientId"] = entry.typeId == SleepSessions.typeId ? SleepDerivation.split(clientId: clientId)?.session ?? clientId : clientId
+                }
                 return json
             }
             anchors[key] = try ChangesCursor.archive(page.anchor ?? anchor)

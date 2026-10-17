@@ -6,6 +6,7 @@ import { loadAggregateTypes, runAggregate, runAggregateCheck, runPassthroughChec
 import { changes, deleteByClientId, deleteRange, loadTypes, read, updateValues, write } from './explore';
 import { runChangesCheck, runPeriodCheck, runRoundTrips } from './roundtrip';
 import { deleteTestData, seedTestData } from './seed';
+import { SLEEP_CLIENT_ID, runSleepCheck } from './sleep';
 
 /** The example asks for every type the plugin knows; unsupported ones come back `unsupported`. */
 const TYPES: HealthType[] = [...HEALTH_TYPES];
@@ -100,6 +101,15 @@ bind('acceptance-denied', 'acceptance-output', async () => {
   return rows.map((row) => `${row.status.toUpperCase()} ${row.type} ${Object.values(row.steps).join(' | ')}`);
 });
 
+bind('sleep-check', 'sleep-output', async () => {
+  const lines = await runSleepCheck(true);
+  lines.forEach((line) => console.log(`[sleep] ${line}`));
+  return lines;
+});
+bind('sleep-delete', 'sleep-output', () =>
+  CapacitorHealth.deleteSamples({ type: 'sleepSession', clientIds: [SLEEP_CLIENT_ID] }),
+);
+
 bind('aggregate-check', 'aggregate-output', async () => {
   const lines = await runAggregateCheck();
   lines.forEach((line) => console.log(`[aggregate] ${line}`));
@@ -118,6 +128,7 @@ bind('passthrough-check', 'passthrough-output', async () => {
   runRoundTrips,
   runChangesCheck,
   runPeriodCheck,
+  runSleepCheck,
   runAcceptance,
   runAggregateCheck,
   runPassthroughCheck,

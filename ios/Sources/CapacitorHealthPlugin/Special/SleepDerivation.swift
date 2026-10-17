@@ -10,6 +10,8 @@ enum SleepDerivation {
     /// Which stage wins where samples of one source overlap: the more specific one. HealthKit means `inBed`
     /// to overlap the others (HKCategoryValueSleepAnalysis docs); other overlaps come from mixed writers.
     static let priority: [String: Int] = ["light": 4, "deep": 4, "rem": 4, "awake": 3, "asleep": 2, "inBed": 1]
+    /// Stages that count as time asleep in `aggregate()` (decision #65).
+    static let asleepStages: Set<String> = ["asleep", "light", "deep", "rem"]
     /// The suffix of the `inBed` sample spanning a session the plugin wrote.
     static let inBedSuffix = "inBed"
 
@@ -136,6 +138,36 @@ enum SleepDerivation {
             }
         }
         return pieces.map { Stage(stage: $0.sample.stage, start: $0.start, end: $0.end) }
+    }
+
+    // MARK: - Time asleep
+
+    /// Seconds per bucket that at least one session spends in an asleep stage, so two apps recording the same
+    /// night count it once (as HealthKit's statistics remove overlap between sources). `nil` for a bucket no
+    /// session overlaps.
+    static func timeAsleep(_ sessions: [Session], buckets: [(start: Date, end: Date)]) -> [Double?] {
+        let asleep = merged(sessions.flatMap { session in
+            session.stages.filter { asleepStages.contains($0.stage) }.map { (start: $0.start, end: $0.end) }
+        })
+        return buckets.map { bucket in
+            guard sessions.contains(where: { $0.start < bucket.end && $0.end > bucket.start }) else { return nil }
+            return asleep.reduce(0) { total, interval in
+                total + max(0, min(interval.end, bucket.end).timeIntervalSince(max(interval.start, bucket.start)))
+            }
+        }
+    }
+
+    /// The union of `intervals`, sorted, as non-overlapping intervals.
+    static func merged(_ intervals: [(start: Date, end: Date)]) -> [(start: Date, end: Date)] {
+        var result: [(start: Date, end: Date)] = []
+        for interval in intervals.sorted(by: { $0.start < $1.start }) {
+            if let last = result.last, interval.start <= last.end {
+                result[result.count - 1].end = max(last.end, interval.end)
+            } else {
+                result.append(interval)
+            }
+        }
+        return result
     }
 
     // MARK: - Writing

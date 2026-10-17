@@ -13,6 +13,7 @@ final class Aggregation {
     /// and maximum of a discrete one. A combined discrete id (speed, power) has no average: HealthKit's
     /// per-member averages can't be combined without their weights.
     static func metrics(for entry: RegistryEntry) -> [String] {
+        if !entry.metrics.isEmpty { return entry.metrics }
         switch entry.aggregation {
         case .cumulative: return ["sum"]
         case .discrete: return entry.members.isEmpty ? ["avg", "min", "max"] : ["min", "max"]
@@ -126,6 +127,7 @@ final class Aggregation {
         let start = try options.date("startDate")
         let end = try options.date("endDate")
         guard end > start else { throw HealthError.invalidArgument("endDate", "must be after startDate", reason: "emptyRange") }
+        if typeId == SleepSessions.typeId { return try await aggregateSleep(options, start: start, end: end) }
         let unit = options.optionalString("unit") ?? entry.unit ?? ""
         guard entry.units.contains(unit) else { throw HealthError.invalidArgument("unit", "isn't a unit of \(typeId)") }
         let bucket = options.object("bucket")
@@ -164,6 +166,20 @@ final class Aggregation {
         HealthLog.debug("aggregate \(typeId): \(json.count) buckets")
         return ["buckets": json]
     }
+
+    /// Time asleep from derived sleep sessions (decision #65), in seconds, like Android's sleep duration.
+    private func aggregateSleep(_ options: JSONFields, start: Date, end: Date) async throws -> [String: Any] {
+        let bucket = options.object("bucket")
+        let buckets = Self.buckets(from: start, to: end, unit: bucket?["unit"] as? String, size: max(bucket?["size"] as? Int ?? 1, 1), calendar: .current)
+        let values = try await SleepSessions(store: store).timeAsleep(buckets, sourceIds: options.strings("sourceIds"))
+        let json: [[String: Any]] = zip(buckets, values).map { bucket, values in
+            ["startDate": DateCoding.string(from: bucket.start), "endDate": DateCoding.string(from: bucket.end), "values": values, "unit": Self.durationUnit]
+        }
+        return ["buckets": json]
+    }
+
+    /// The bucket unit of types without units, whose only metric is a duration in seconds (as on Android).
+    static let durationUnit = "s"
 }
 
 extension HKHealthStore {

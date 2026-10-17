@@ -113,6 +113,8 @@ struct RegistryEntry {
     /// Values HealthKit accepts, in the canonical unit; outside it HealthKit raises an exception.
     let range: ClosedRange<Double>?
     let fields: [RegistryMetadataField]
+    /// `aggregate()` metrics the plugin computes itself (special types), instead of HealthKit statistics.
+    let metrics: [String]
 
     var isQuantity: Bool { identifier.hasPrefix("HKQuantityTypeIdentifier") }
     var isCorrelation: Bool { identifier.hasPrefix("HKCorrelationTypeIdentifier") }
@@ -135,7 +137,8 @@ struct RegistryEntry {
         writeTo: String? = nil,
         aggregateOnly: Bool = false,
         range: ClosedRange<Double>? = nil,
-        fields: [RegistryMetadataField] = []
+        fields: [RegistryMetadataField] = [],
+        metrics: [String] = []
     ) {
         self.typeId = typeId
         self.kind = kind
@@ -155,6 +158,7 @@ struct RegistryEntry {
         self.aggregateOnly = aggregateOnly
         self.range = range
         self.fields = fields
+        self.metrics = metrics
     }
 }
 
@@ -1643,7 +1647,7 @@ enum Registry {
             units: ["mL", "L", "flOz"],
             aggregation: .cumulative
         ),
-        RegistryEntry("sleepSession", .special, "HKCategoryTypeIdentifierSleepAnalysis", minOS: "8.0"),
+        RegistryEntry("sleepSession", .special, "HKCategoryTypeIdentifierSleepAnalysis", minOS: "8.0", metrics: ["duration"]),
         RegistryEntry("mindfulSession", .event, "HKCategoryTypeIdentifierMindfulSession", minOS: "10.0"),
         RegistryEntry(
             "dietaryEnergy",
