@@ -1338,3 +1338,306 @@ describe('sleepSession (T43)', () => {
     );
   });
 });
+
+describe('workout (T46)', () => {
+  const run = { type: 'workout', activityType: 'running', startDate: START, endDate: END };
+  const at = (minute: number) =>
+    `2026-10-01T${String(8 + Math.floor(minute / 60)).padStart(2, '0')}:${String(minute % 60).padStart(2, '0')}:00+05:30`;
+  const span = (from: number, to: number, extra: Record<string, unknown> = {}) => ({
+    startDate: at(from),
+    endDate: at(to),
+    ...extra,
+  });
+
+  it('normalizes a workout and sorts its segments and laps', () => {
+    const saved = save(
+      {
+        ...run,
+        totals: { energy: 420, distance: 8000 },
+        segments: [span(30, 35, { segmentType: 'pause' }), span(0, 30, { segmentType: 'running', repetitions: 0 })],
+        laps: [span(20, 40, { length: 4000 }), span(0, 20, { length: 4000 })],
+        title: 'Morning run',
+        clientId: 'run-1',
+      },
+      'android',
+    );
+    expect(saved).toMatchObject({
+      type: 'workout',
+      activityType: 'running',
+      startDate: '2026-10-01T08:00:00.000+05:30',
+      endDate: '2026-10-01T09:00:00.000+05:30',
+      totals: { energy: 420, distance: 8000 },
+      title: 'Morning run',
+      clientId: 'run-1',
+      clientVersion: 1,
+    });
+    expect(saved.segments).toEqual([
+      {
+        startDate: '2026-10-01T08:00:00.000+05:30',
+        endDate: '2026-10-01T08:30:00.000+05:30',
+        segmentType: 'running',
+        repetitions: 0,
+      },
+      { startDate: '2026-10-01T08:30:00.000+05:30', endDate: '2026-10-01T08:35:00.000+05:30', segmentType: 'pause' },
+    ]);
+    expect((saved.laps as { startDate: string }[]).map((lap) => lap.startDate)).toEqual([
+      '2026-10-01T08:00:00.000+05:30',
+      '2026-10-01T08:20:00.000+05:30',
+    ]);
+    expect(save(run)).toMatchObject({ segments: [], laps: [] });
+    expect(save(run).totals).toBeUndefined();
+  });
+
+  it('needs an activity this platform stores and an end after the start', () => {
+    rejection(
+      () => save({ ...run, activityType: undefined }),
+      'INVALID_ARGUMENT',
+      'samples[0].activityType',
+      'unknownValue',
+    );
+    rejection(
+      () => save({ ...run, activityType: 'parkour' }),
+      'INVALID_ARGUMENT',
+      'samples[0].activityType',
+      'unknownValue',
+    );
+    rejection(
+      () => save({ ...run, activityType: 'toString' }),
+      'INVALID_ARGUMENT',
+      'samples[0].activityType',
+      'unknownValue',
+    );
+    // archery is iOS-only, guidedBreathing Android-only (decision #62).
+    expect(save({ ...run, activityType: 'archery' }).activityType).toBe('archery');
+    rejection(
+      () => save({ ...run, activityType: 'archery' }, 'android'),
+      'INVALID_ARGUMENT',
+      'samples[0].activityType',
+      'valueUnsupportedOnPlatform',
+    );
+    rejection(
+      () => save({ ...run, activityType: 'guidedBreathing' }),
+      'INVALID_ARGUMENT',
+      'samples[0].activityType',
+      'valueUnsupportedOnPlatform',
+    );
+    rejection(() => save({ ...run, endDate: undefined }), 'INVALID_ARGUMENT', 'samples[0].endDate', 'required');
+    rejection(() => save({ ...run, endDate: START }), 'INVALID_ARGUMENT', 'samples[0].endDate', 'endNotAfterStart');
+  });
+
+  it("applies Health Connect's segment and lap rules on both platforms", () => {
+    for (const platform of ['ios', 'android'] as const) {
+      for (const part of ['segments', 'laps'] as const) {
+        rejection(
+          () => save({ ...run, [part]: [{ startDate: '2026-10-01T07:50:00+05:30', endDate: at(10) }] }, platform),
+          'INVALID_ARGUMENT',
+          `samples[0].${part}[0]`,
+          'outsideSession',
+        );
+        rejection(
+          () => save({ ...run, [part]: [span(10, 30), span(20, 40)] }, platform),
+          'INVALID_ARGUMENT',
+          `samples[0].${part}[1]`,
+          `${part}Overlap`,
+        );
+        rejection(
+          () => save({ ...run, [part]: [span(10, 10)] }, platform),
+          'INVALID_ARGUMENT',
+          `samples[0].${part}[0].endDate`,
+          'endNotAfterStart',
+        );
+        expect(save({ ...run, [part]: [span(0, 30), span(30, 60)] }, platform)[part]).toHaveLength(2);
+      }
+      // A lap may cross a segment: Health Connect only checks laps against laps.
+      expect(save({ ...run, segments: [span(0, 30)], laps: [span(20, 40)] }, platform).laps).toHaveLength(1);
+      rejection(
+        () => save({ ...run, laps: [span(0, 10, { length: 1_000_001 })] }, platform),
+        'INVALID_ARGUMENT',
+        'samples[0].laps[0].length',
+        'outOfRange',
+      );
+      rejection(
+        () => save({ ...run, laps: [span(0, 10, { length: -1 })] }, platform),
+        'INVALID_ARGUMENT',
+        'samples[0].laps[0].length',
+        'outOfRange',
+      );
+    }
+  });
+
+  it("checks segment types against the activity on Android (ExerciseSegment's table)", () => {
+    const withSegment = (activityType: string, segmentType: string) => ({
+      ...run,
+      activityType,
+      segments: [span(0, 10, { segmentType })],
+    });
+    rejection(
+      () => save(withSegment('running', 'cycling'), 'android'),
+      'INVALID_ARGUMENT',
+      'samples[0].segments[0].segmentType',
+      'segmentNotAllowed',
+    );
+    // Any activity takes pause, rest, stretching and other (EXERCISE_SEGMENT_TYPE_OTHER_WORKOUT).
+    for (const segmentType of ['pause', 'rest', 'stretching', 'other']) {
+      expect(save(withSegment('golf', segmentType), 'android').segments).toHaveLength(1);
+    }
+    // Boot camp, HIIT and other workouts take every segment type.
+    expect(save(withSegment('bootCamp', 'swimmingFreestyle'), 'android').segments).toHaveLength(1);
+    expect(save(withSegment('other', 'cycling'), 'android').segments).toHaveLength(1);
+    expect(save(withSegment('running', 'walking'), 'android').segments).toHaveLength(1);
+    expect(save(withSegment('swimmingPool', 'swimmingButterfly'), 'android').segments).toHaveLength(1);
+    expect(save(withSegment('strengthTraining', 'benchPress'), 'android').segments).toHaveLength(1);
+    rejection(
+      () => save(withSegment('yoga', 'benchPress'), 'android'),
+      'INVALID_ARGUMENT',
+      'samples[0].segments[0].segmentType',
+      'segmentNotAllowed',
+    );
+    rejection(
+      () => save(withSegment('running', 'sprint'), 'android'),
+      'INVALID_ARGUMENT',
+      'samples[0].segments[0].segmentType',
+      'unknownValue',
+    );
+  });
+
+  it('stores only pause segments, without repetitions, on iOS', () => {
+    expect(save({ ...run, segments: [span(0, 10), span(10, 15, { segmentType: 'pause' })] }).segments).toEqual([
+      { startDate: '2026-10-01T08:00:00.000+05:30', endDate: '2026-10-01T08:10:00.000+05:30' },
+      { startDate: '2026-10-01T08:10:00.000+05:30', endDate: '2026-10-01T08:15:00.000+05:30', segmentType: 'pause' },
+    ]);
+    rejection(
+      () => save({ ...run, segments: [span(0, 10, { segmentType: 'running' })] }),
+      'INVALID_ARGUMENT',
+      'samples[0].segments[0].segmentType',
+      'valueUnsupportedOnPlatform',
+    );
+    rejection(
+      () => save({ ...run, segments: [span(0, 10, { repetitions: 12 })] }),
+      'INVALID_ARGUMENT',
+      'samples[0].segments[0].repetitions',
+      'valueUnsupportedOnPlatform',
+    );
+    for (const repetitions of [-1, 2.5, '12']) {
+      rejection(
+        () => save({ ...run, segments: [span(0, 10, { repetitions })] }, 'android'),
+        'INVALID_ARGUMENT',
+        'samples[0].segments[0].repetitions',
+      );
+    }
+  });
+
+  it('takes totals within Health Connect limits', () => {
+    for (const platform of ['ios', 'android'] as const) {
+      expect(save({ ...run, totals: { energy: 0, distance: 1_000_000 } }, platform).totals).toEqual({
+        energy: 0,
+        distance: 1_000_000,
+      });
+      expect(save({ ...run, totals: { energy: 300 } }, platform).totals).toEqual({ energy: 300 });
+      rejection(
+        () => save({ ...run, totals: { distance: 1_000_001 } }, platform),
+        'INVALID_ARGUMENT',
+        'samples[0].totals.distance',
+        'outOfRange',
+      );
+      rejection(
+        () => save({ ...run, totals: { energy: -5 } }, platform),
+        'INVALID_ARGUMENT',
+        'samples[0].totals.energy',
+        'outOfRange',
+      );
+      rejection(
+        () => save({ ...run, totals: { steps: 9000 } }, platform),
+        'INVALID_ARGUMENT',
+        'samples[0].totals.steps',
+        'notApplicable',
+      );
+      rejection(() => save({ ...run, totals: 400 }, platform), 'INVALID_ARGUMENT', 'samples[0].totals');
+    }
+  });
+
+  it('keeps activities on iOS and title / notes on Android', () => {
+    const triathlon = {
+      ...run,
+      activityType: 'swimBikeRun',
+      activities: [
+        span(40, 60, { activityType: 'running' }),
+        span(0, 20, { activityType: 'swimmingOpenWater' }),
+        span(20, 40, { activityType: 'cycling' }),
+      ],
+    };
+    expect((save(triathlon).activities as { activityType: string }[]).map((a) => a.activityType)).toEqual([
+      'swimmingOpenWater',
+      'cycling',
+      'running',
+    ]);
+    rejection(
+      () =>
+        save({
+          ...triathlon,
+          activities: [span(0, 30, { activityType: 'running' }), span(20, 40, { activityType: 'cycling' })],
+        }),
+      'INVALID_ARGUMENT',
+      'samples[0].activities[1]',
+      'activitiesOverlap',
+    );
+    rejection(
+      () => save({ ...triathlon, activities: [span(0, 30, { activityType: 'guidedBreathing' })] }),
+      'INVALID_ARGUMENT',
+      'samples[0].activities[0].activityType',
+      'valueUnsupportedOnPlatform',
+    );
+    rejection(
+      () => save({ ...run, activities: [] }, 'android'),
+      'INVALID_ARGUMENT',
+      'samples[0].activities',
+      'valueUnsupportedOnPlatform',
+    );
+    expect(save({ ...run, title: 'Run', notes: 'Hills' }, 'android')).toMatchObject({ title: 'Run', notes: 'Hills' });
+    rejection(
+      () => save({ ...run, notes: 'Hills' }),
+      'INVALID_ARGUMENT',
+      'samples[0].notes',
+      'valueUnsupportedOnPlatform',
+    );
+  });
+
+  it('keeps workout fields off other types', () => {
+    rejection(() => save({ ...run, value: 1 }), 'INVALID_ARGUMENT', 'samples[0].value', 'notApplicable');
+    rejection(() => save({ ...run, stages: [] }), 'INVALID_ARGUMENT', 'samples[0].stages', 'notApplicable');
+    rejection(
+      () => save({ type: 'steps', startDate: START, endDate: END, value: 1, activityType: 'running' }),
+      'INVALID_ARGUMENT',
+      'samples[0].activityType',
+      'notApplicable',
+    );
+    rejection(
+      () =>
+        save({
+          type: 'sleepSession',
+          startDate: START,
+          endDate: END,
+          laps: [],
+        }),
+      'INVALID_ARGUMENT',
+      'samples[0].laps',
+      'notApplicable',
+    );
+  });
+
+  it('reads, deletes and follows workouts like other types, without aggregates', () => {
+    for (const platform of ['ios', 'android'] as const) {
+      expect(validateReadSamples({ type: 'workout', startDate: START, endDate: END }, platform).type).toBe('workout');
+      expect(validateDeleteSamples({ type: 'workout', clientIds: ['run-1'] }, platform)).toEqual({
+        type: 'workout',
+        clientIds: ['run-1'],
+      });
+      rejection(
+        () => validateAggregate({ type: 'workout', startDate: START, endDate: END, metrics: ['duration'] }, platform),
+        'UNSUPPORTED_TYPE',
+        'type',
+        'notAggregatable',
+      );
+    }
+  });
+});

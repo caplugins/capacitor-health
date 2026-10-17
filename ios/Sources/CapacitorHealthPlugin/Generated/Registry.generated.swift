@@ -308,6 +308,7 @@ enum Registry {
         "headphoneAudioExposureEvent",
         "nikeFuel",
         "hydration",
+        "workout",
         "sleepSession",
         "mindfulSession",
         "dietaryEnergy",
@@ -472,7 +473,8 @@ enum Registry {
         ]),
         "relationToMeal": RegistryValueSet([("beforeMeal", 1), ("afterMeal", 2)]),
         "insulinDeliveryReason": RegistryValueSet([("basal", 1), ("bolus", 2)]),
-        "sleepStage": RegistryValueSet([("inBed", 0), ("asleep", 1), ("awake", 2), ("light", 3), ("deep", 4), ("rem", 5)])
+        "sleepStage": RegistryValueSet([("inBed", 0), ("asleep", 1), ("awake", 2), ("light", 3), ("deep", 4), ("rem", 5)]),
+        "workoutSegmentType": RegistryValueSet([("pause", 1)])
     ]
 
     /// Workout activity types HealthKit stores, in registry order (decision #62).
@@ -1647,6 +1649,7 @@ enum Registry {
             units: ["mL", "L", "flOz"],
             aggregation: .cumulative
         ),
+        RegistryEntry("workout", .special, "HKWorkoutTypeIdentifier", minOS: "8.0"),
         RegistryEntry("sleepSession", .special, "HKCategoryTypeIdentifierSleepAnalysis", minOS: "8.0", metrics: ["duration"]),
         RegistryEntry("mindfulSession", .event, "HKCategoryTypeIdentifierMindfulSession", minOS: "10.0"),
         RegistryEntry(

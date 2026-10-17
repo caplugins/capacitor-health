@@ -96,6 +96,7 @@ final class RegistryRawValuesTests: XCTestCase {
         XCTAssertEqual(HKCategoryTypeIdentifier.appleStandHour.rawValue, "HKCategoryTypeIdentifierAppleStandHour")
         XCTAssertEqual(HKCategoryTypeIdentifier.appleWalkingSteadinessEvent.rawValue, "HKCategoryTypeIdentifierAppleWalkingSteadinessEvent")
         XCTAssertEqual(HKQuantityTypeIdentifier.nikeFuel.rawValue, "HKQuantityTypeIdentifierNikeFuel")
+        XCTAssertEqual(HKWorkoutTypeIdentifier, "HKWorkoutTypeIdentifier")
         if #available(iOS 16.0, *) {
             XCTAssertEqual(HKQuantityTypeIdentifier.runningSpeed.rawValue, "HKQuantityTypeIdentifierRunningSpeed")
             XCTAssertEqual(HKQuantityTypeIdentifier.runningPower.rawValue, "HKQuantityTypeIdentifierRunningPower")
@@ -532,6 +533,10 @@ final class RegistryRawValuesTests: XCTestCase {
             XCTAssertEqual(HKCategoryValueSleepAnalysis.asleepDeep.rawValue, 4)
             XCTAssertEqual(HKCategoryValueSleepAnalysis.asleepREM.rawValue, 5)
         }
+    }
+
+    func testWorkoutSegmentTypeRawValues() {
+        XCTAssertEqual(HKWorkoutEventType.pause.rawValue, 1)
     }
 
     func testMetadataKeys() {

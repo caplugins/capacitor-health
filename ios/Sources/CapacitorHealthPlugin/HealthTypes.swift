@@ -12,6 +12,7 @@ enum HealthTypes {
     /// to `menstrualFlow`, which its registry entry names.
     static func sampleType(for entry: RegistryEntry) -> HKSampleType? {
         guard entry.isAvailable() else { return nil }
+        if entry.identifier == HKWorkoutTypeIdentifier { return HKObjectType.workoutType() }
         if entry.isCorrelation {
             return HKObjectType.correlationType(forIdentifier: HKCorrelationTypeIdentifier(rawValue: entry.identifier))
         }
@@ -77,6 +78,8 @@ enum HealthTypes {
     static func lookup(_ typeId: String, registry: [String: RegistryEntry] = Registry.byId)
         -> Result<(RegistryEntry, HKSampleType), Unavailability> {
         guard let entry = entry(typeId, registry: registry) else { return .failure(.notOnPlatform) }
+        // Workouts are registered for the TypeScript model (T46); reads and writes arrive in T47.
+        if entry.typeId == "workout" { return .failure(.notOnPlatform) }
         guard let type = sampleType(for: entry) else { return .failure(.osVersion) }
         return .success((entry, type))
     }

@@ -13,6 +13,8 @@ class HealthTypes(private val features: (Int) -> Boolean) {
     /** The entry for [typeId], or why there is none (`notOnPlatform`, `featureUnavailable`). */
     fun lookup(typeId: String): Result<RegistryEntry> {
         val entry = Registry.byId[typeId] ?: return Result.failure(HealthException.unsupportedType(typeId, "notOnPlatform"))
+        // Workouts are registered for the TypeScript model (T46); reads and writes arrive in T48.
+        if (typeId == "workout") return Result.failure(HealthException.unsupportedType(typeId, "notOnPlatform"))
         val feature = entry.feature
         if (feature != null && !features(feature)) return Result.failure(HealthException.unsupportedType(typeId, "featureUnavailable"))
         return Result.success(entry)

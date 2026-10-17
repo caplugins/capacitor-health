@@ -132,6 +132,23 @@ export function semanticErrors(registry) {
   if (registry.workoutActivities && !(registry.workoutActivities.other?.ios && registry.workoutActivities.other?.android)) {
     errors.push('workoutActivities.other must exist on both platforms (unmapped native values read as it)');
   }
+  if (registry.workoutSegments) {
+    const { anySegment, anyActivity, activities } = registry.workoutSegments;
+    const segmentTypes = new Set(sets.workoutSegmentType?.values ?? []);
+    if (!sets.workoutSegmentType) errors.push('workoutSegments needs the workoutSegmentType value set');
+    const checkActivity = (id, at) => {
+      if (!registry.workoutActivities?.[id]?.android) errors.push(`${at}: ${id} is not a Health Connect workout activity`);
+    };
+    const checkSegment = (id, at) => {
+      if (!segmentTypes.has(id)) errors.push(`${at}: ${id} is not a workoutSegmentType value`);
+    };
+    anySegment.forEach((id) => checkActivity(id, 'workoutSegments.anySegment'));
+    anyActivity.forEach((id) => checkSegment(id, 'workoutSegments.anyActivity'));
+    for (const [id, segments] of Object.entries(activities)) {
+      checkActivity(id, `workoutSegments.activities.${id}`);
+      segments.forEach((s) => checkSegment(s, `workoutSegments.activities.${id}`));
+    }
+  }
 
   for (const type of registry.types) {
     const at = `types.${type.id}`;

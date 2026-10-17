@@ -32,6 +32,33 @@
       "propertyNames": { "$ref": "#/$defs/camelId" },
       "additionalProperties": { "$ref": "#/$defs/workoutActivity" }
     },
+    "workoutSegments": {
+      "description": "Which workout segment types Health Connect lets a session of each activity hold (decision #67).",
+      "type": "object",
+      "required": ["anySegment", "anyActivity", "activities"],
+      "additionalProperties": false,
+      "properties": {
+        "anySegment": {
+          "description": "Activities whose sessions take every segment type.",
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/camelId" }
+        },
+        "anyActivity": {
+          "description": "Segment types every activity takes.",
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/camelId" }
+        },
+        "activities": {
+          "description": "Activity → the further segment types it takes. Activities not listed take only anyActivity.",
+          "type": "object",
+          "propertyNames": { "$ref": "#/$defs/camelId" },
+          "additionalProperties": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/camelId" } }
+        },
+        "notes": { "$ref": "#/$defs/notes" }
+      }
+    },
     "types": {
       "type": "array",
       "minItems": 1,
@@ -305,9 +332,9 @@
       "additionalProperties": false,
       "properties": {
         "identifier": {
-          "description": "The HealthKit identifier constant, named as in the SDK headers. Its string is the runtime identifier unless rawValue says otherwise. For a derived type, the identifier it's derived from (authorization uses it).",
+          "description": "The HealthKit identifier constant, named as in the SDK headers. Its string is the runtime identifier unless rawValue says otherwise. For a derived type, the identifier it's derived from (authorization uses it). HKWorkoutTypeIdentifier is the workout type.",
           "type": "string",
-          "pattern": "^HK(Category|Quantity|Correlation)TypeIdentifier[A-Z][A-Za-z0-9]*$"
+          "pattern": "^(HK(Category|Quantity|Correlation)TypeIdentifier[A-Z][A-Za-z0-9]*|HKWorkoutTypeIdentifier)$"
         },
         "rawValue": {
           "description": "The identifier's runtime string when it isn't the constant's name (Apple renamed the constant and kept the old string). Runtime lookups use it.",

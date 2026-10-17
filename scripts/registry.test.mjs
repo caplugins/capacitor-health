@@ -98,6 +98,15 @@ describe('registry/types.json', () => {
     );
   });
 
+  it('maps every exercise segment type, UNKNOWN as absent', () => {
+    const set = registry.valueSets.workoutSegmentType;
+    expect([...Object.values(set.android.map), set.android.absent].sort()).toEqual(
+      workoutCatalog().segmentTypes.map((c) => c.name).sort(),
+    );
+    // Only a pause has a HealthKit equivalent (a pause event); other segments are untyped segment events.
+    expect(Object.entries(set.ios.map).filter(([, raw]) => raw !== null)).toEqual([['pause', 1]]);
+  });
+
   it('uses the raw values in the SDK-header enum table', () => {
     const enums = healthKitEnums();
     for (const [name, set] of Object.entries(registry.valueSets)) {
@@ -155,6 +164,8 @@ describe('schema and semantic checks reject mistakes', () => {
     ['two activities matching the same workouts', (r) => (r.workoutActivities.runningTreadmill.ios.indoor = false), /matches the same workouts/],
     ['two activities on one exercise type', (r) => (r.workoutActivities.walking.android.constant = 'EXERCISE_TYPE_RUNNING'), /constant is used twice/],
     ['no other activity', (r) => delete r.workoutActivities.other.android, /other must exist on both platforms/],
+    ['a segment rule for an iOS-only activity', (r) => (r.workoutSegments.activities.archery = ['pause']), /archery is not a Health Connect workout activity/],
+    ['a segment rule with an unknown segment type', (r) => r.workoutSegments.anyActivity.push('sprint'), /sprint is not a workoutSegmentType value/],
     ['a value set map missing a value', (r) => delete r.valueSets.bleeding.ios.map.heavy, /missing heavy/],
     ['an unknown value set', (r) => (r.types[0].values = 'nope'), /unknown value set nope/],
     ['mismatched permissions', (r) => (r.types[0].android.writePermission = 'android.permission.health.WRITE_STEPS'), /different data types/],

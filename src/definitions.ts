@@ -6,6 +6,7 @@ import type {
   EventHealthType,
   HealthType,
   QuantityHealthType,
+  WorkoutActivity,
 } from './generated/registry';
 
 export type {
@@ -14,6 +15,7 @@ export type {
   EventHealthType,
   HealthType,
   QuantityHealthType,
+  WorkoutActivity,
 } from './generated/registry';
 
 /**
@@ -868,6 +870,152 @@ export interface SleepSessionSample extends SampleBase {
   stageSampleIds?: string[];
 }
 
+/**
+ * A stretch of a workout: a pause, a rest, a set of one exercise, a swimming stroke.
+ *
+ * Segments lie inside the workout and don't overlap on Android; on iOS, segments other apps wrote may
+ * overlap (HealthKit allows it).
+ *
+ * @since 0.3.0
+ */
+export interface WorkoutSegment {
+  /** @since 0.3.0 */
+  startDate: string;
+  /** @since 0.3.0 */
+  endDate: string;
+  /**
+   * A `workoutSegmentType` value (`pause`, `rest`, `squat`, `swimmingFreestyle`, …); absent for a
+   * segment without one. iOS stores only `pause` (a pause event and its resume event); any other
+   * segment is a HealthKit segment event, which has no type. Android takes only the types the
+   * workout's activity allows (`WORKOUT_SEGMENTS`).
+   *
+   * @since 0.3.0
+   */
+  segmentType?: string;
+  /**
+   * Android only: repetitions done in the segment.
+   *
+   * @since 0.3.0
+   */
+  repetitions?: number;
+}
+
+/**
+ * One lap of a workout.
+ *
+ * @since 0.3.0
+ */
+export interface WorkoutLap {
+  /** @since 0.3.0 */
+  startDate: string;
+  /** @since 0.3.0 */
+  endDate: string;
+  /**
+   * Metres, 0 to 1,000,000. HealthKit stores it as the lap event's `HKMetadataKeyLapLength`.
+   *
+   * @since 0.3.0
+   */
+  length?: number;
+}
+
+/**
+ * iOS 16+: one activity of a multisport workout (a triathlon's swim, ride and run), HealthKit's
+ * `HKWorkoutActivity`.
+ *
+ * @since 0.3.0
+ */
+export interface WorkoutActivityPeriod {
+  /** @since 0.3.0 */
+  activityType: WorkoutActivity;
+  /** @since 0.3.0 */
+  startDate: string;
+  /** @since 0.3.0 */
+  endDate: string;
+}
+
+/**
+ * What a workout burned and covered. Neither platform stores these on the workout itself: iOS sums
+ * the active energy and distance samples associated with the workout (`HKWorkout` statistics),
+ * Android the active calories and distance records the workout's app wrote over its time, a record
+ * partly inside counted in proportion. A total is absent when there's nothing to sum.
+ *
+ * @since 0.3.0
+ */
+export interface WorkoutTotals {
+  /**
+   * Active energy, kcal.
+   *
+   * @since 0.3.0
+   */
+  energy?: number;
+  /**
+   * Metres.
+   *
+   * @since 0.3.0
+   */
+  distance?: number;
+}
+
+/**
+ * A finished workout: HealthKit's `HKWorkout`, Health Connect's `ExerciseSessionRecord`.
+ *
+ * Samples recorded during a workout (heart rate, steps, …) aren't part of it: read them by the
+ * workout's time range.
+ *
+ * @since 0.3.0
+ */
+export interface WorkoutSample extends SampleBase {
+  /** @since 0.3.0 */
+  kind: 'special';
+  /** @since 0.3.0 */
+  type: 'workout';
+  /**
+   * Native activities without a unified id read as `other`, with the raw value in `native.value`.
+   *
+   * @since 0.3.0
+   */
+  activityType: WorkoutActivity;
+  /**
+   * Android only.
+   *
+   * @since 0.3.0
+   */
+  title?: string;
+  /**
+   * Android only.
+   *
+   * @since 0.3.0
+   */
+  notes?: string;
+  /** @since 0.3.0 */
+  totals: WorkoutTotals;
+  /**
+   * In time order.
+   *
+   * @since 0.3.0
+   */
+  segments: WorkoutSegment[];
+  /**
+   * In time order.
+   *
+   * @since 0.3.0
+   */
+  laps: WorkoutLap[];
+  /**
+   * iOS 16+, in time order; absent on Android and for workouts with a single activity.
+   *
+   * @since 0.3.0
+   */
+  activities?: WorkoutActivityPeriod[];
+  /**
+   * Whether a route was recorded with the workout. On Android it's also `true` when this app may
+   * not read the route without the user's consent.
+   *
+   * @since 0.3.0
+   */
+  hasRoute: boolean;
+}
+
 export type Sample =
   | PassthroughSample
   | QuantitySample
@@ -876,7 +1024,8 @@ export type Sample =
   | MenstruationPeriodSample
   | SkinTemperatureSample
   | BloodPressureSample
-  | SleepSessionSample;
+  | SleepSessionSample
+  | WorkoutSample;
 
 // ------------------------------------------------------------------ writing
 
@@ -1149,6 +1298,67 @@ export interface NewSleepSession extends NewSampleBase {
   notes?: string;
 }
 
+/**
+ * A finished workout to write. Segments and laps must lie inside it and not overlap others of their
+ * kind (Health Connect's rules, checked on both platforms); the plugin sorts them.
+ *
+ * `totals` are written as samples of their own over the workout's time: `activeEnergy` and
+ * `distance` (the distance type the activity uses on iOS). They need write access to those types
+ * too, count in the day's totals like any other sample, and are deleted with the workout. With a
+ * `clientId`, they get `<clientId>:energy` and `<clientId>:distance`, so writing the workout again
+ * replaces them, and a total the new version lacks is deleted.
+ *
+ * iOS writes an `HKWorkout` through `HKWorkoutBuilder`, Android an `ExerciseSessionRecord`.
+ *
+ * @since 0.3.0
+ */
+export interface NewWorkout extends NewSampleBase {
+  /** @since 0.3.0 */
+  type: 'workout';
+  /**
+   * Required, after `startDate`.
+   *
+   * @since 0.3.0
+   */
+  endDate: string;
+  /**
+   * An id this platform stores (`WORKOUT_ACTIVITIES`); others reject with
+   * `valueUnsupportedOnPlatform`.
+   *
+   * @since 0.3.0
+   */
+  activityType: WorkoutActivity;
+  /**
+   * Android only: setting it on iOS rejects with `valueUnsupportedOnPlatform`.
+   *
+   * @since 0.3.0
+   */
+  title?: string;
+  /**
+   * Android only: setting it on iOS rejects with `valueUnsupportedOnPlatform`.
+   *
+   * @since 0.3.0
+   */
+  notes?: string;
+  /**
+   * Each at most 1,000,000 (kcal, m).
+   *
+   * @since 0.3.0
+   */
+  totals?: WorkoutTotals;
+  /** @since 0.3.0 */
+  segments?: WorkoutSegment[];
+  /** @since 0.3.0 */
+  laps?: WorkoutLap[];
+  /**
+   * iOS 16+ only: setting it on Android or iOS 15 rejects with `valueUnsupportedOnPlatform`.
+   * Activities lie inside the workout and don't overlap.
+   *
+   * @since 0.3.0
+   */
+  activities?: WorkoutActivityPeriod[];
+}
+
 export type NewSample =
   | NewPassthroughSample
   | NewQuantitySample
@@ -1157,7 +1367,8 @@ export type NewSample =
   | NewMenstruationPeriod
   | NewSkinTemperatureSample
   | NewBloodPressureSample
-  | NewSleepSession;
+  | NewSleepSession
+  | NewWorkout;
 
 // ------------------------------------------------------------------ method options and results
 

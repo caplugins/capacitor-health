@@ -23,8 +23,8 @@ import type {
   SampleDevice,
   SaveSamplesOptions,
 } from './definitions';
-import { REGISTRY, UNITS, VALUE_SETS } from './generated/registry';
-import type { HealthType, RegistryEntry } from './generated/registry';
+import { REGISTRY, UNITS, VALUE_SETS, WORKOUT_ACTIVITIES, WORKOUT_SEGMENTS } from './generated/registry';
+import type { HealthType, RegistryEntry, WorkoutActivity } from './generated/registry';
 
 export type NativePlatform = 'ios' | 'android';
 
@@ -34,6 +34,11 @@ export const MAX_BUCKETS = 5000;
 export const MAX_LIMIT = 10000;
 /** Health Connect's `MenstruationPeriodRecord.MAX_DURATION` in whole days (decision #30). */
 export const MAX_PERIOD_DAYS_ANDROID = 31;
+
+/** Health Connect's limit for lap lengths, active calories (kcal) and distance (m) alike. */
+export const MAX_WORKOUT_AMOUNT = 1_000_000;
+/** Fields only workouts have. */
+const WORKOUT_ONLY = ['activityType', 'totals', 'segments', 'laps', 'activities'];
 
 const PLATFORM_NAMES: Record<NativePlatform, string> = { ios: 'iOS', android: 'Android' };
 const RECORDING_METHODS: readonly RecordingMethod[] = ['manual', 'automatic', 'active', 'unknown'];
@@ -586,42 +591,47 @@ function newBloodPressure(s: Fields, at: string, entry: RegistryEntry, platform:
   return Object.assign(result, typedFields(s, at, entry, platform));
 }
 
-function newSleepSession(s: Fields, at: string, entry: RegistryEntry, platform: NativePlatform): Fields {
-  if (s.endDate === undefined) throw invalid(`${at}.endDate`, 'is required for a sleep session', 'required');
-  const [start, end] = dateRange(s.startDate, s.endDate, `${at}.`);
-  if (end.ms === start.ms) throw invalid(`${at}.endDate`, 'must be after startDate', 'endNotAfterStart');
-  rejectIfSet(s, at, entry, ['value', 'unit', ...TYPED_FIELDS, 'flow', 'deltas', 'baseline']);
-  const result: Fields = { type: entry.id, startDate: start.iso, endDate: end.iso };
-  // Health Connect's own rules (SleepSessionRecord, connect-client 1.1.0): each stage starts before it
-  // ends, lies inside the session, and touches the next at most. Checked here for both platforms.
-  const raw = s.stages ?? [];
-  if (!Array.isArray(raw)) throw invalid(`${at}.stages`, 'must be an array');
-  const stages = raw.map((value, i) => {
-    const field = `${at}.stages[${i}]`;
-    const stage = object(value, field);
-    const [stageStart, stageEnd] = dateRange(stage.startDate, stage.endDate, `${field}.`);
-    if (stageEnd.ms === stageStart.ms) throw invalid(`${field}.endDate`, 'must be after startDate', 'endNotAfterStart');
-    if (stageStart.ms < start.ms || stageEnd.ms > end.ms) {
-      throw invalid(field, 'must lie inside the session', 'outsideSession');
+/**
+ * Children of a session (sleep stages, workout segments and laps): each starts before it ends and lies
+ * inside the session, and none overlaps another (they may touch). Health Connect's own rules
+ * (`SleepSessionRecord`, `ExerciseSessionRecord`, connect-client 1.1.0), checked here for both
+ * platforms. Returns the children sorted by start, each from `build`.
+ */
+function sessionChildren(
+  raw: unknown,
+  field: string,
+  session: [ParsedDate, ParsedDate],
+  overlapReason: string,
+  build: (child: Fields, at: string, start: ParsedDate, end: ParsedDate) => Fields,
+): Fields[] {
+  if (raw === undefined) return [];
+  if (!Array.isArray(raw)) throw invalid(field, 'must be an array');
+  const [start, end] = session;
+  const children = raw.map((value, i) => {
+    const at = `${field}[${i}]`;
+    const child = object(value, at);
+    const [childStart, childEnd] = dateRange(child.startDate, child.endDate, `${at}.`);
+    if (childEnd.ms === childStart.ms) throw invalid(`${at}.endDate`, 'must be after startDate', 'endNotAfterStart');
+    if (childStart.ms < start.ms || childEnd.ms > end.ms) {
+      throw invalid(at, 'must lie inside the session', 'outsideSession');
     }
-    return {
-      index: i,
-      startMs: stageStart.ms,
-      endMs: stageEnd.ms,
-      stage: {
-        stage: enumValue(stage.stage, `${field}.stage`, 'sleepStage', platform),
-        startDate: stageStart.iso,
-        endDate: stageEnd.iso,
-      },
-    };
+    return { index: i, startMs: childStart.ms, endMs: childEnd.ms, value: build(child, at, childStart, childEnd) };
   });
-  stages.sort((a, b) => a.startMs - b.startMs || a.index - b.index);
-  for (let i = 1; i < stages.length; i++) {
-    if (stages[i].startMs < stages[i - 1].endMs) {
-      throw invalid(`${at}.stages[${stages[i].index}]`, `overlaps stages[${stages[i - 1].index}]`, 'stagesOverlap');
+  children.sort((a, b) => a.startMs - b.startMs || a.index - b.index);
+  for (let i = 1; i < children.length; i++) {
+    if (children[i].startMs < children[i - 1].endMs) {
+      throw invalid(
+        `${field}[${children[i].index}]`,
+        `overlaps ${field.slice(field.lastIndexOf('.') + 1)}[${children[i - 1].index}]`,
+        overlapReason,
+      );
     }
   }
-  result.stages = stages.map((item) => item.stage);
+  return children.map((item) => item.value);
+}
+
+/** `title` and `notes`, which only Health Connect stores on sessions. */
+function androidText(s: Fields, at: string, platform: NativePlatform, result: Fields): void {
   for (const name of ['title', 'notes'] as const) {
     if (s[name] === undefined) continue;
     if (platform === 'ios') {
@@ -629,6 +639,137 @@ function newSleepSession(s: Fields, at: string, entry: RegistryEntry, platform: 
     }
     if (typeof s[name] !== 'string') throw invalid(`${at}.${name}`, 'must be a string');
     result[name] = s[name];
+  }
+}
+
+/** A session's dates: an end is required and comes after the start. */
+function sessionRange(s: Fields, at: string, what: string): [ParsedDate, ParsedDate] {
+  if (s.endDate === undefined) throw invalid(`${at}.endDate`, `is required for ${what}`, 'required');
+  const range = dateRange(s.startDate, s.endDate, `${at}.`);
+  if (range[1].ms === range[0].ms) throw invalid(`${at}.endDate`, 'must be after startDate', 'endNotAfterStart');
+  return range;
+}
+
+function newSleepSession(s: Fields, at: string, entry: RegistryEntry, platform: NativePlatform): Fields {
+  const [start, end] = sessionRange(s, at, 'a sleep session');
+  rejectIfSet(s, at, entry, ['value', 'unit', ...TYPED_FIELDS, 'flow', 'deltas', 'baseline', ...WORKOUT_ONLY]);
+  const result: Fields = { type: entry.id, startDate: start.iso, endDate: end.iso };
+  result.stages = sessionChildren(
+    s.stages ?? [],
+    `${at}.stages`,
+    [start, end],
+    'stagesOverlap',
+    (stage, field, from, to) => ({
+      stage: enumValue(stage.stage, `${field}.stage`, 'sleepStage', platform),
+      startDate: from.iso,
+      endDate: to.iso,
+    }),
+  );
+  androidText(s, at, platform, result);
+  return result;
+}
+
+function workoutAmount(value: unknown, field: string): number {
+  const amount = finiteNumber(value, field);
+  if (amount < 0 || amount > MAX_WORKOUT_AMOUNT) {
+    throw invalid(field, `must be from 0 to ${MAX_WORKOUT_AMOUNT}`, 'outOfRange');
+  }
+  return amount;
+}
+
+function workoutActivity(value: unknown, field: string, platform: NativePlatform): WorkoutActivity {
+  if (typeof value !== 'string' || !Object.prototype.hasOwnProperty.call(WORKOUT_ACTIVITIES, value)) {
+    throw invalid(field, 'must be a workout activity id (WORKOUT_ACTIVITIES)', 'unknownValue');
+  }
+  const activity = value as WorkoutActivity;
+  if (!WORKOUT_ACTIVITIES[activity][platform]) {
+    throw invalid(field, `can't be stored on ${PLATFORM_NAMES[platform]}`, 'valueUnsupportedOnPlatform');
+  }
+  return activity;
+}
+
+/** Whether Health Connect lets a session of `activity` hold a `segmentType` segment (decision #67). */
+export function segmentAllowed(activity: WorkoutActivity, segmentType: string): boolean {
+  return (
+    WORKOUT_SEGMENTS.anySegment.includes(activity) ||
+    WORKOUT_SEGMENTS.anyActivity.includes(segmentType) ||
+    (WORKOUT_SEGMENTS.activities[activity]?.includes(segmentType) ?? false)
+  );
+}
+
+function newWorkout(s: Fields, at: string, entry: RegistryEntry, platform: NativePlatform): Fields {
+  const range = sessionRange(s, at, 'a workout');
+  const [start, end] = range;
+  rejectIfSet(s, at, entry, ['value', 'unit', ...TYPED_FIELDS, 'flow', 'deltas', 'baseline', 'stages']);
+  const activityType = workoutActivity(s.activityType, `${at}.activityType`, platform);
+  const result: Fields = { type: entry.id, startDate: start.iso, endDate: end.iso, activityType };
+  androidText(s, at, platform, result);
+
+  if (s.totals !== undefined) {
+    const totals = object(s.totals, `${at}.totals`);
+    const out: Fields = {};
+    for (const name of Object.keys(totals)) {
+      if (name !== 'energy' && name !== 'distance') {
+        throw invalid(`${at}.totals.${name}`, "isn't a workout total (energy, distance)", 'notApplicable');
+      }
+      if (totals[name] !== undefined) out[name] = workoutAmount(totals[name], `${at}.totals.${name}`);
+    }
+    result.totals = out;
+  }
+
+  result.segments = sessionChildren(
+    s.segments,
+    `${at}.segments`,
+    range,
+    'segmentsOverlap',
+    (segment, field, from, to) => {
+      const out: Fields = { startDate: from.iso, endDate: to.iso };
+      if (segment.segmentType !== undefined) {
+        const segmentType = enumValue(segment.segmentType, `${field}.segmentType`, 'workoutSegmentType', platform);
+        if (platform === 'android' && !segmentAllowed(activityType, segmentType)) {
+          throw invalid(
+            `${field}.segmentType`,
+            `isn't allowed in a ${activityType} workout on Android (WORKOUT_SEGMENTS)`,
+            'segmentNotAllowed',
+          );
+        }
+        out.segmentType = segmentType;
+      }
+      if (segment.repetitions !== undefined) {
+        if (platform === 'ios') {
+          throw invalid(`${field}.repetitions`, "can't be stored on iOS", 'valueUnsupportedOnPlatform');
+        }
+        const reps = segment.repetitions;
+        if (typeof reps !== 'number' || !Number.isInteger(reps) || reps < 0 || reps > 2_147_483_647) {
+          throw invalid(`${field}.repetitions`, 'must be a non-negative integer');
+        }
+        out.repetitions = reps;
+      }
+      return out;
+    },
+  );
+
+  result.laps = sessionChildren(s.laps, `${at}.laps`, range, 'lapsOverlap', (lap, field, from, to) => {
+    const out: Fields = { startDate: from.iso, endDate: to.iso };
+    if (lap.length !== undefined) out.length = workoutAmount(lap.length, `${field}.length`);
+    return out;
+  });
+
+  if (s.activities !== undefined) {
+    if (platform === 'android') {
+      throw invalid(`${at}.activities`, "can't be stored on Android", 'valueUnsupportedOnPlatform');
+    }
+    result.activities = sessionChildren(
+      s.activities,
+      `${at}.activities`,
+      range,
+      'activitiesOverlap',
+      (part, field, from, to) => ({
+        activityType: workoutActivity(part.activityType, `${field}.activityType`, platform),
+        startDate: from.iso,
+        endDate: to.iso,
+      }),
+    );
   }
   return result;
 }
@@ -647,6 +788,8 @@ function newSample(raw: unknown, i: number, platform: NativePlatform): NewSample
     result = newBloodPressure(s, at, entry, platform);
   } else if (entry.id === 'sleepSession') {
     result = newSleepSession(s, at, entry, platform);
+  } else if (entry.id === 'workout') {
+    result = newWorkout(s, at, entry, platform);
   } else {
     const start = parseDate(s.startDate, `${at}.startDate`);
     let end = start;
@@ -678,7 +821,7 @@ function newSample(raw: unknown, i: number, platform: NativePlatform): NewSample
       );
     }
     result = { type: entry.id, startDate: start.iso, endDate: end.iso };
-    rejectIfSet(s, at, entry, ['flow', 'deltas', 'baseline', 'stages']);
+    rejectIfSet(s, at, entry, ['flow', 'deltas', 'baseline', 'stages', ...WORKOUT_ONLY]);
 
     if ((entry as Entry).passthrough) {
       if (entry.kind === 'quantity') {

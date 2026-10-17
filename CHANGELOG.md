@@ -14,6 +14,10 @@
   `sleepAnalysis` samples and writes them back as an in-bed span plus one sample per stage; Android
   stores `SleepSessionRecord`s with `title` and `notes`. Read, write, delete, `getChanges` and
   `aggregate()` time asleep (`duration`) on both.
+- `workout` model (decision #67): `NewWorkout` / `WorkoutSample` with activity type, totals,
+  segments (Health Connect's segment types, checked against the activity on Android), laps and iOS
+  multisport activities, validated in JavaScript. Native reads and writes follow; until then both
+  platforms report the type unsupported. `WORKOUT_ACTIVITIES` and `WORKOUT_SEGMENTS` are exported.
 
 ### Changed
 
