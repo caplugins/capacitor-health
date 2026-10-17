@@ -169,6 +169,13 @@ enum SampleCodec {
             throw HealthError.invalidArgument(fields.field("endDate"), "must equal startDate", reason: "instantOnly")
         }
         var metadata = try baseMetadata(fields)
+        try metadata.merge(fieldMetadata(fields, entry: entry)) { $1 }
+        return try sample(fields, entry: entry, type: type, start: start, end: end, metadata: metadata)
+    }
+
+    /// The registry's typed fields (decision #20) as HealthKit metadata.
+    private static func fieldMetadata(_ fields: JSONFields, entry: RegistryEntry) throws -> [String: Any] {
+        var metadata: [String: Any] = [:]
         for field in entry.fields {
             switch field.type {
             case .boolean:
@@ -183,8 +190,14 @@ enum SampleCodec {
                 }
             }
         }
-        let device = device(fields)
+        return metadata
+    }
 
+    // swiftlint:disable:next function_parameter_count
+    private static func sample(
+        _ fields: JSONFields, entry: RegistryEntry, type: HKSampleType, start: Date, end: Date, metadata: [String: Any]
+    ) throws -> HKSample {
+        let device = device(fields)
         switch entry.kind {
         case .quantity:
             guard let quantityType = type as? HKQuantityType, let canonical = entry.unit else { break }
