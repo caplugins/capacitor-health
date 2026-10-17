@@ -1,6 +1,6 @@
 {
   "name": "@caplugins/capacitor-health",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Apple HealthKit and Google Health Connect for Capacitor: every data type, read and write, with reproductive health first",
   "main": "dist/plugin.cjs.js",
   "module": "dist/esm/index.js",

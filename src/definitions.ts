@@ -210,7 +210,7 @@ export interface TypeSupport {
   /** @since 0.1.0 */
   writable: boolean;
   /**
-   * Whether `aggregate()` works for the type on this device (always `false` in 0.1.0, which has no
+   * Whether `aggregate()` works for the type on this device (always `false` in 0.1.0, which had no
    * `aggregate()`).
    *
    * @since 0.1.0

@@ -8,13 +8,17 @@ temperature, cycle symptoms and more.
 - One type vocabulary on both platforms, with platform-only types and values reported, not hidden.
 - Paged reads, idempotent writes (`clientId` upserts), deletes and **incremental change queries**
   for apps that sync.
+- **Aggregates** (daily steps, average heart rate, …) computed by the platform, with its removal of
+  overlapping phone and watch data.
 - Menstruation **periods on both platforms**: native records on Android, derived from flow samples on
   iOS (which has no period object) by documented, tested rules.
 - No permissions declared for you, no network calls, no analytics, no health values in logs.
 
-Version 0.1.0 covers availability, permissions and the 44 reproductive-health types listed
-[below](#supported-types). Activity, vitals, sleep, workouts and nutrition follow in later releases
-([roadmap](docs/05-roadmap.md)).
+Version 0.2.0 covers 142 types, listed [below](#supported-types): reproductive health, plus
+activity (steps, distance, energy, floors, speed, power, cadence, walking and running metrics),
+vitals (heart rate and HRV, blood pressure, SpO2, respiration, temperature, blood glucose, VO2 max)
+and body measurements. Other HealthKit types can be used through [passthrough ids](#passthrough-ids-hk).
+Sleep, workouts and nutrition follow in later releases ([roadmap](docs/05-roadmap.md)).
 
 Not to be confused with the unscoped `capacitor-health` package on npm, which is a different project.
 
@@ -169,6 +173,16 @@ let { nextCursor: cursor } = await CapacitorHealth.getChanges({ types: ['menstru
 // …later, and again whenever you sync:
 const changes = await CapacitorHealth.getChanges({ types: ['menstrualFlow', 'ovulationTest'], cursor });
 cursor = changes.nextCursor; // store it; call again straight away while changes.hasMore
+
+// 6. Totals: steps per day for the last week, from the platform (never add up raw step samples).
+const { buckets } = await CapacitorHealth.aggregate({
+  type: 'steps',
+  startDate: '2026-10-10T00:00:00+05:30',
+  endDate: '2026-10-17T00:00:00+05:30',
+  metrics: ['sum'],
+  bucket: { unit: 'day' },
+});
+for (const day of buckets) console.log(day.startDate, day.values.sum ?? 0);
 ```
 
 Validation happens in JavaScript before anything reaches the platform: a malformed date, a value the
@@ -269,6 +283,9 @@ Android), `relationToMeal`, `mealType` and `specimenSource` (`bloodGlucose`; the
 
 ### Aggregates (`aggregate`)
 
+- **Don't add up raw samples for totals.** A phone and a watch both count the same walk, so summing
+  `readSamples` results double-counts. Use `aggregate()`, which removes the overlap the way Apple
+  Health and Health Connect do.
 - Totals and statistics come from the platform, not from adding up samples: `sum` for cumulative
   types (steps, distance, energy, floors), `avg` / `min` / `max` for the rest, `count` of readings
   where Health Connect has it (heart rate). `getSupportedTypes()` lists each type's `metrics`.
@@ -281,6 +298,11 @@ Android), `relationToMeal`, `mealType` and `specimenSource` (`bloodGlucose`; the
   hour shorter or longer. Pass a `startDate` at local midnight (or on a Monday, or the
   1st) for calendar-aligned buckets. Every bucket comes back, empty ones with no values.
 - `totalEnergy` on iOS and `basalEnergy` on Android exist only as aggregates.
+- `sourceIds` limits an aggregate to some apps (bundle ids / package names); `unit` picks the unit of
+  the values, as for reads. A range may hold up to 5,000 buckets.
+- Aggregates need read access to the type, like reads. On Android, Health Connect's limit on data
+  from before the first grant applies too (see `requestAuthorization`'s `android.history`). On iOS a
+  denied read looks like no data, as with `readSamples`.
 - Android: day, week and month buckets are local times in the device's zone, and Health Connect
   places each record by the offset it was written with, so a record written while travelling counts
   toward that local day.
@@ -860,7 +882,7 @@ others are left alone and not counted. `ids` and `clientIds` that match nothing 
 | **`supported`**    | <code>boolean</code>                                            | The type exists on this device. When `false`, every call with it rejects with `UNSUPPORTED_TYPE`.              | 0.1.0 |
 | **`readable`**     | <code>boolean</code>                                            |                                                                                                                | 0.1.0 |
 | **`writable`**     | <code>boolean</code>                                            |                                                                                                                | 0.1.0 |
-| **`aggregatable`** | <code>boolean</code>                                            | Whether `aggregate()` works for the type on this device (always `false` in 0.1.0, which has no `aggregate()`). | 0.1.0 |
+| **`aggregatable`** | <code>boolean</code>                                            | Whether `aggregate()` works for the type on this device (always `false` in 0.1.0, which had no `aggregate()`). | 0.1.0 |
 | **`metrics`**      | <code>AggregateMetric[]</code>                                  | The metrics `aggregate()` computes for the type here. Set when `aggregatable` is `true`.                       | 0.2.0 |
 | **`reason`**       | <code><a href="#unsupportedreason">UnsupportedReason</a></code> | Set when `supported`, `readable` or `writable` is `false`.                                                     | 0.1.0 |
 | **`minOS`**        | <code>string</code>                                             | iOS: the first iOS version with the type.                                                                      | 0.1.0 |
