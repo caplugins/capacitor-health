@@ -26,6 +26,12 @@
       "propertyNames": { "$ref": "#/$defs/camelId" },
       "additionalProperties": { "$ref": "#/$defs/nutrient" }
     },
+    "workoutActivities": {
+      "description": "Workout activity types (decision #62): unified activity id → HKWorkoutActivityType case and Health Connect EXERCISE_TYPE_* constant.",
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/camelId" },
+      "additionalProperties": { "$ref": "#/$defs/workoutActivity" }
+    },
     "types": {
       "type": "array",
       "minItems": 1,
@@ -193,6 +199,34 @@
         "android": { "description": "How Health Connect holds the children.", "$ref": "#/$defs/notes" },
         "notes": { "$ref": "#/$defs/notes" }
       }
+    },
+
+    "workoutActivity": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "ios": {
+          "type": "object",
+          "required": ["case", "raw", "minOS"],
+          "additionalProperties": false,
+          "properties": {
+            "case": { "description": "Swift case of HKWorkoutActivityType (pinned by the generated XCTest).", "$ref": "#/$defs/camelId" },
+            "raw": { "type": "integer", "minimum": 0 },
+            "minOS": { "$ref": "#/$defs/osVersion" },
+            "indoor": { "description": "HKMetadataKeyIndoorWorkout: true matches and writes indoor; false matches absent or false and writes false.", "type": "boolean" },
+            "swimmingLocation": { "description": "HKMetadataKeySwimmingLocationType it matches and writes.", "enum": ["pool", "openWater"] }
+          },
+          "not": { "required": ["indoor", "swimmingLocation"] }
+        },
+        "android": {
+          "type": "object",
+          "required": ["constant"],
+          "additionalProperties": false,
+          "properties": { "constant": { "description": "ExerciseSessionRecord constant.", "$ref": "#/$defs/hcConstant" } }
+        },
+        "notes": { "$ref": "#/$defs/notes" }
+      },
+      "anyOf": [{ "required": ["ios"] }, { "required": ["android"] }]
     },
 
     "nutrient": {

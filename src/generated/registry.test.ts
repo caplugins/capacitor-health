@@ -2,7 +2,16 @@ import { describe, expect, it } from 'vitest';
 
 import types from '../../registry/types.json';
 
-import { HEALTH_TYPES, NUTRIENTS, NUTRIENT_IDS, REGISTRY, UNITS, VALUE_SETS } from './registry';
+import {
+  HEALTH_TYPES,
+  NUTRIENTS,
+  NUTRIENT_IDS,
+  REGISTRY,
+  UNITS,
+  VALUE_SETS,
+  WORKOUT_ACTIVITIES,
+  WORKOUT_ACTIVITY_IDS,
+} from './registry';
 
 describe('generated TypeScript registry', () => {
   it('lists every type in registry order', () => {
@@ -28,6 +37,13 @@ describe('generated TypeScript registry', () => {
     });
     expect(NUTRIENTS.transFat.ios).toBeNull();
     expect(VALUE_SETS.sleepStage.ios).not.toContain('outOfBed');
+  });
+
+  it('lists workout activities with their platforms', () => {
+    expect([...WORKOUT_ACTIVITY_IDS]).toEqual(Object.keys(types.workoutActivities));
+    expect(WORKOUT_ACTIVITIES.running).toEqual({ ios: true, android: true });
+    expect(WORKOUT_ACTIVITIES.archery).toEqual({ ios: true, android: false });
+    expect(WORKOUT_ACTIVITIES.weightlifting).toEqual({ ios: false, android: true });
   });
 
   it('marks platform-only values', () => {

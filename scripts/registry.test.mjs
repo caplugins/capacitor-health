@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 import { coverage } from './coverage.mjs';
 import { OUTPUTS, renderAll } from './gen-registry.mjs';
-import { healthConnectRecords, healthKitEnums, healthKitIdentifiers } from './lib/catalogs.mjs';
+import { healthConnectRecords, healthKitEnums, healthKitIdentifiers, workoutCatalog } from './lib/catalogs.mjs';
 import { SCHEMA_PATH, loadRegistry, schemaErrors, semanticErrors, swiftMemberName } from './lib/registry.mjs';
 
 const registry = loadRegistry();
@@ -79,6 +79,25 @@ describe('registry/types.json', () => {
     expect(Object.values(registry.nutrients).filter((n) => n.android)).toHaveLength(42);
   });
 
+  it('maps every workout activity type on both platforms, at its catalog raw value and version', () => {
+    const catalog = workoutCatalog();
+    const activities = Object.values(registry.workoutActivities);
+    const iosCases = new Set(activities.filter((a) => a.ios).map((a) => a.ios.case));
+    for (const c of catalog.healthKit) {
+      const swiftCase = swiftMemberName(c.name);
+      // Deprecated cases (old data) and API_UNAVAILABLE ones read as `other` with the raw value.
+      if (c.note) expect(iosCases.has(swiftCase), c.name).toBe(false);
+      else expect(iosCases.has(swiftCase), c.name).toBe(true);
+    }
+    for (const a of activities.filter((x) => x.ios)) {
+      const c = catalog.healthKit.find((x) => swiftMemberName(x.name) === a.ios.case);
+      expect([a.ios.raw, a.ios.minOS], a.ios.case).toEqual([c.raw, c.ios]);
+    }
+    expect(activities.filter((a) => a.android).map((a) => a.android.constant).sort()).toEqual(
+      catalog.exerciseTypes.map((c) => c.name).sort(),
+    );
+  });
+
   it('uses the raw values in the SDK-header enum table', () => {
     const enums = healthKitEnums();
     for (const [name, set] of Object.entries(registry.valueSets)) {
@@ -118,6 +137,8 @@ describe('schema and semantic checks reject mistakes', () => {
     ['a nutrient on neither platform', (r) => (r.nutrients.protein = { unit: 'g' })],
     ['a nutrient with a non-dietary identifier', (r) => (r.nutrients.protein.ios.identifier = 'HKQuantityTypeIdentifierStepCount')],
     ['a nutrient without a unit', (r) => delete r.nutrients.protein.unit],
+    ['an activity both indoor and in a pool', (r) => (r.workoutActivities.swimmingPool.ios.indoor = true)],
+    ['an activity on neither platform', (r) => (r.workoutActivities.yoga = { notes: 'x' })],
   ])('schema rejects %s', (_label, mutate) => {
     const broken = clone(registry);
     mutate(broken);
@@ -131,6 +152,9 @@ describe('schema and semantic checks reject mistakes', () => {
     ['a nutrient in an unknown unit', (r) => (r.nutrients.protein.unit = 'furlong'), /unknown unit furlong/],
     ['a nutrient in a volume unit', (r) => (r.nutrients.protein.unit = 'mL'), /mass or energy unit/],
     ['two nutrients on one property', (r) => (r.nutrients.sugar.android.property = 'protein'), /property is used twice/],
+    ['two activities matching the same workouts', (r) => (r.workoutActivities.runningTreadmill.ios.indoor = false), /matches the same workouts/],
+    ['two activities on one exercise type', (r) => (r.workoutActivities.walking.android.constant = 'EXERCISE_TYPE_RUNNING'), /constant is used twice/],
+    ['no other activity', (r) => delete r.workoutActivities.other.android, /other must exist on both platforms/],
     ['a value set map missing a value', (r) => delete r.valueSets.bleeding.ios.map.heavy, /missing heavy/],
     ['an unknown value set', (r) => (r.types[0].values = 'nope'), /unknown value set nope/],
     ['mismatched permissions', (r) => (r.types[0].android.writePermission = 'android.permission.health.WRITE_STEPS'), /different data types/],
@@ -160,7 +184,7 @@ describe('generated files', () => {
   });
 
   it('cover every output', () => {
-    expect(Object.keys(OUTPUTS).sort()).toEqual(['kotlin', 'readme', 'swift', 'swiftTest', 'ts']);
+    expect(Object.keys(OUTPUTS).sort()).toEqual(['kotlin', 'readme', 'swift', 'swiftTest', 'ts', 'typeMapping']);
   });
 });
 

@@ -110,3 +110,24 @@ export function healthConnectRecords(path = HEALTH_CONNECT_CATALOG) {
   }
   return out;
 }
+
+export const WORKOUT_CATALOG = join(ROOT, 'registry/catalogs/workout-activity-types.md');
+
+/**
+ * registry/catalogs/workout-activity-types.md (scripts/workout-catalog.mjs): HealthKit activity cases
+ * `{ name, raw, ios, note }` and Health Connect exercise / segment constants `{ name, raw }`.
+ */
+export function workoutCatalog(path = WORKOUT_CATALOG) {
+  const byTitle = Object.fromEntries(sections(readFileSync(path, 'utf8'), 2).map((s) => [s.title, s.lines]));
+  const constants = (title) => tableRows(byTitle[title]).map(([name, raw]) => ({ name: unquote(name), raw: Number(raw) }));
+  return {
+    healthKit: tableRows(byTitle.HKWorkoutActivityType).map(([name, raw, ios, note = '']) => ({
+      name: unquote(name),
+      raw: Number(raw),
+      ios,
+      note,
+    })),
+    exerciseTypes: constants('ExerciseSessionRecord exercise types'),
+    segmentTypes: constants('ExerciseSegment segment types'),
+  };
+}

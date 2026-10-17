@@ -46,6 +46,26 @@ struct RegistryNutrient {
     let unit: String
 }
 
+/// A workout activity type (decision #62): its HealthKit raw value and the metadata that narrows it.
+struct RegistryWorkoutActivity {
+    let id: String
+    let raw: UInt
+    /// `false` when the running OS predates the case.
+    let isAvailable: () -> Bool
+    /// `HKMetadataKeyIndoorWorkout`: true matches and writes indoor; false matches absent or false and writes false.
+    let indoor: Bool?
+    /// `HKWorkoutSwimmingLocationType` raw value it matches and writes.
+    let swimmingLocation: Int?
+
+    init(_ id: String, raw: UInt, isAvailable: @escaping () -> Bool = { true }, indoor: Bool? = nil, swimmingLocation: Int? = nil) {
+        self.id = id
+        self.raw = raw
+        self.isAvailable = isAvailable
+        self.indoor = indoor
+        self.swimmingLocation = swimmingLocation
+    }
+}
+
 struct RegistryMetadataField {
     let name: String
     /// Runtime metadata key. Differs from the symbol name for iOS 8/9 keys (T06 S7).
@@ -446,6 +466,96 @@ enum Registry {
         "relationToMeal": RegistryValueSet([("beforeMeal", 1), ("afterMeal", 2)]),
         "insulinDeliveryReason": RegistryValueSet([("basal", 1), ("bolus", 2)]),
         "sleepStage": RegistryValueSet([("inBed", 0), ("asleep", 1), ("awake", 2), ("light", 3), ("deep", 4), ("rem", 5)])
+    ]
+
+    /// Workout activity types HealthKit stores, in registry order (decision #62).
+    static let workoutActivities: [RegistryWorkoutActivity] = [
+        RegistryWorkoutActivity("americanFootball", raw: 1),
+        RegistryWorkoutActivity("archery", raw: 2),
+        RegistryWorkoutActivity("australianFootball", raw: 3),
+        RegistryWorkoutActivity("badminton", raw: 4),
+        RegistryWorkoutActivity("barre", raw: 58),
+        RegistryWorkoutActivity("baseball", raw: 5),
+        RegistryWorkoutActivity("basketball", raw: 6),
+        RegistryWorkoutActivity("bowling", raw: 7),
+        RegistryWorkoutActivity("boxing", raw: 8),
+        RegistryWorkoutActivity("cardioDance", raw: 77),
+        RegistryWorkoutActivity("climbing", raw: 9),
+        RegistryWorkoutActivity("cooldown", raw: 80),
+        RegistryWorkoutActivity("coreTraining", raw: 59),
+        RegistryWorkoutActivity("cricket", raw: 10),
+        RegistryWorkoutActivity("crossCountrySkiing", raw: 60),
+        RegistryWorkoutActivity("crossTraining", raw: 11),
+        RegistryWorkoutActivity("curling", raw: 12),
+        RegistryWorkoutActivity("cycling", raw: 13, indoor: false),
+        RegistryWorkoutActivity("cyclingStationary", raw: 13, indoor: true),
+        RegistryWorkoutActivity("discSports", raw: 75),
+        RegistryWorkoutActivity("downhillSkiing", raw: 61),
+        RegistryWorkoutActivity("elliptical", raw: 16),
+        RegistryWorkoutActivity("equestrianSports", raw: 17),
+        RegistryWorkoutActivity("fencing", raw: 18),
+        RegistryWorkoutActivity("fishing", raw: 19),
+        RegistryWorkoutActivity("fitnessGaming", raw: 76),
+        RegistryWorkoutActivity("flexibility", raw: 62),
+        RegistryWorkoutActivity("functionalStrengthTraining", raw: 20),
+        RegistryWorkoutActivity("golf", raw: 21),
+        RegistryWorkoutActivity("gymnastics", raw: 22),
+        RegistryWorkoutActivity("handCycling", raw: 74),
+        RegistryWorkoutActivity("handball", raw: 23),
+        RegistryWorkoutActivity("highIntensityIntervalTraining", raw: 63),
+        RegistryWorkoutActivity("hiking", raw: 24),
+        RegistryWorkoutActivity("hockey", raw: 25),
+        RegistryWorkoutActivity("hunting", raw: 26),
+        RegistryWorkoutActivity("jumpRope", raw: 64),
+        RegistryWorkoutActivity("kickboxing", raw: 65),
+        RegistryWorkoutActivity("lacrosse", raw: 27),
+        RegistryWorkoutActivity("martialArts", raw: 28),
+        RegistryWorkoutActivity("mindAndBody", raw: 29),
+        RegistryWorkoutActivity("mixedCardio", raw: 73),
+        RegistryWorkoutActivity("paddleSports", raw: 31),
+        RegistryWorkoutActivity("pickleball", raw: 79),
+        RegistryWorkoutActivity("pilates", raw: 66),
+        RegistryWorkoutActivity("play", raw: 32),
+        RegistryWorkoutActivity("preparationAndRecovery", raw: 33),
+        RegistryWorkoutActivity("racquetball", raw: 34),
+        RegistryWorkoutActivity("rowing", raw: 35, indoor: false),
+        RegistryWorkoutActivity("rowingMachine", raw: 35, indoor: true),
+        RegistryWorkoutActivity("rugby", raw: 36),
+        RegistryWorkoutActivity("running", raw: 37, indoor: false),
+        RegistryWorkoutActivity("runningTreadmill", raw: 37, indoor: true),
+        RegistryWorkoutActivity("sailing", raw: 38),
+        RegistryWorkoutActivity("skatingSports", raw: 39),
+        RegistryWorkoutActivity("snowSports", raw: 40),
+        RegistryWorkoutActivity("snowboarding", raw: 67),
+        RegistryWorkoutActivity("soccer", raw: 41),
+        RegistryWorkoutActivity("socialDance", raw: 78),
+        RegistryWorkoutActivity("softball", raw: 42),
+        RegistryWorkoutActivity("squash", raw: 43),
+        RegistryWorkoutActivity("stairClimbingMachine", raw: 44),
+        RegistryWorkoutActivity("stairs", raw: 68),
+        RegistryWorkoutActivity("stepTraining", raw: 69),
+        RegistryWorkoutActivity("strengthTraining", raw: 50),
+        RegistryWorkoutActivity("surfing", raw: 45),
+        RegistryWorkoutActivity("swimBikeRun", raw: 82, isAvailable: { if #available(iOS 16.0, *) { return true }; return false }),
+        RegistryWorkoutActivity("swimming", raw: 46),
+        RegistryWorkoutActivity("swimmingOpenWater", raw: 46, swimmingLocation: 2),
+        RegistryWorkoutActivity("swimmingPool", raw: 46, swimmingLocation: 1),
+        RegistryWorkoutActivity("tableTennis", raw: 47),
+        RegistryWorkoutActivity("taiChi", raw: 72),
+        RegistryWorkoutActivity("tennis", raw: 48),
+        RegistryWorkoutActivity("trackAndField", raw: 49),
+        RegistryWorkoutActivity("transition", raw: 83, isAvailable: { if #available(iOS 16.0, *) { return true }; return false }),
+        RegistryWorkoutActivity("underwaterDiving", raw: 84, isAvailable: { if #available(iOS 17.0, *) { return true }; return false }),
+        RegistryWorkoutActivity("volleyball", raw: 51),
+        RegistryWorkoutActivity("walking", raw: 52),
+        RegistryWorkoutActivity("waterFitness", raw: 53),
+        RegistryWorkoutActivity("waterPolo", raw: 54),
+        RegistryWorkoutActivity("waterSports", raw: 55),
+        RegistryWorkoutActivity("wheelchairRunPace", raw: 71),
+        RegistryWorkoutActivity("wheelchairWalkPace", raw: 70),
+        RegistryWorkoutActivity("wrestling", raw: 56),
+        RegistryWorkoutActivity("yoga", raw: 57),
+        RegistryWorkoutActivity("other", raw: 3000)
     ]
 
     /// Nutrients HealthKit stores, by unified nutrient id.

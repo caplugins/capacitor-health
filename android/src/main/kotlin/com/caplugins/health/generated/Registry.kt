@@ -20,6 +20,7 @@ import androidx.health.connect.client.records.CervicalMucusRecord
 import androidx.health.connect.client.records.CyclingPedalingCadenceRecord
 import androidx.health.connect.client.records.DistanceRecord
 import androidx.health.connect.client.records.ElevationGainedRecord
+import androidx.health.connect.client.records.ExerciseSessionRecord
 import androidx.health.connect.client.records.FloorsClimbedRecord
 import androidx.health.connect.client.records.HeartRateRecord
 import androidx.health.connect.client.records.HeartRateVariabilityRmssdRecord
@@ -1096,6 +1097,71 @@ object Registry {
             points = { r -> (r as HeartRateRecord).samples.map { it.time to it.beatsPerMinute } },
             build = { t, metadata, points -> HeartRateRecord(startTime = t.start, startZoneOffset = t.startOffset, endTime = t.end, endZoneOffset = t.endOffset, samples = points.map { HeartRateRecord.Sample(time = it.first, beatsPerMinute = (it.second as Double).toLong()) }, metadata = metadata) },
         ),
+    )
+
+    /** Workout activity id → ExerciseSessionRecord exercise type (decision #62). */
+    val workoutActivities: Map<String, Int> = mapOf(
+        "americanFootball" to ExerciseSessionRecord.EXERCISE_TYPE_FOOTBALL_AMERICAN,
+        "australianFootball" to ExerciseSessionRecord.EXERCISE_TYPE_FOOTBALL_AUSTRALIAN,
+        "badminton" to ExerciseSessionRecord.EXERCISE_TYPE_BADMINTON,
+        "baseball" to ExerciseSessionRecord.EXERCISE_TYPE_BASEBALL,
+        "basketball" to ExerciseSessionRecord.EXERCISE_TYPE_BASKETBALL,
+        "bootCamp" to ExerciseSessionRecord.EXERCISE_TYPE_BOOT_CAMP,
+        "boxing" to ExerciseSessionRecord.EXERCISE_TYPE_BOXING,
+        "calisthenics" to ExerciseSessionRecord.EXERCISE_TYPE_CALISTHENICS,
+        "climbing" to ExerciseSessionRecord.EXERCISE_TYPE_ROCK_CLIMBING,
+        "cricket" to ExerciseSessionRecord.EXERCISE_TYPE_CRICKET,
+        "cycling" to ExerciseSessionRecord.EXERCISE_TYPE_BIKING,
+        "cyclingStationary" to ExerciseSessionRecord.EXERCISE_TYPE_BIKING_STATIONARY,
+        "dancing" to ExerciseSessionRecord.EXERCISE_TYPE_DANCING,
+        "discSports" to ExerciseSessionRecord.EXERCISE_TYPE_FRISBEE_DISC,
+        "elliptical" to ExerciseSessionRecord.EXERCISE_TYPE_ELLIPTICAL,
+        "exerciseClass" to ExerciseSessionRecord.EXERCISE_TYPE_EXERCISE_CLASS,
+        "fencing" to ExerciseSessionRecord.EXERCISE_TYPE_FENCING,
+        "golf" to ExerciseSessionRecord.EXERCISE_TYPE_GOLF,
+        "guidedBreathing" to ExerciseSessionRecord.EXERCISE_TYPE_GUIDED_BREATHING,
+        "gymnastics" to ExerciseSessionRecord.EXERCISE_TYPE_GYMNASTICS,
+        "handball" to ExerciseSessionRecord.EXERCISE_TYPE_HANDBALL,
+        "highIntensityIntervalTraining" to ExerciseSessionRecord.EXERCISE_TYPE_HIGH_INTENSITY_INTERVAL_TRAINING,
+        "hiking" to ExerciseSessionRecord.EXERCISE_TYPE_HIKING,
+        "iceHockey" to ExerciseSessionRecord.EXERCISE_TYPE_ICE_HOCKEY,
+        "iceSkating" to ExerciseSessionRecord.EXERCISE_TYPE_ICE_SKATING,
+        "martialArts" to ExerciseSessionRecord.EXERCISE_TYPE_MARTIAL_ARTS,
+        "paddleSports" to ExerciseSessionRecord.EXERCISE_TYPE_PADDLING,
+        "paragliding" to ExerciseSessionRecord.EXERCISE_TYPE_PARAGLIDING,
+        "pilates" to ExerciseSessionRecord.EXERCISE_TYPE_PILATES,
+        "racquetball" to ExerciseSessionRecord.EXERCISE_TYPE_RACQUETBALL,
+        "rollerHockey" to ExerciseSessionRecord.EXERCISE_TYPE_ROLLER_HOCKEY,
+        "rowing" to ExerciseSessionRecord.EXERCISE_TYPE_ROWING,
+        "rowingMachine" to ExerciseSessionRecord.EXERCISE_TYPE_ROWING_MACHINE,
+        "rugby" to ExerciseSessionRecord.EXERCISE_TYPE_RUGBY,
+        "running" to ExerciseSessionRecord.EXERCISE_TYPE_RUNNING,
+        "runningTreadmill" to ExerciseSessionRecord.EXERCISE_TYPE_RUNNING_TREADMILL,
+        "sailing" to ExerciseSessionRecord.EXERCISE_TYPE_SAILING,
+        "scubaDiving" to ExerciseSessionRecord.EXERCISE_TYPE_SCUBA_DIVING,
+        "skatingSports" to ExerciseSessionRecord.EXERCISE_TYPE_SKATING,
+        "skiing" to ExerciseSessionRecord.EXERCISE_TYPE_SKIING,
+        "snowboarding" to ExerciseSessionRecord.EXERCISE_TYPE_SNOWBOARDING,
+        "snowshoeing" to ExerciseSessionRecord.EXERCISE_TYPE_SNOWSHOEING,
+        "soccer" to ExerciseSessionRecord.EXERCISE_TYPE_SOCCER,
+        "softball" to ExerciseSessionRecord.EXERCISE_TYPE_SOFTBALL,
+        "squash" to ExerciseSessionRecord.EXERCISE_TYPE_SQUASH,
+        "stairClimbingMachine" to ExerciseSessionRecord.EXERCISE_TYPE_STAIR_CLIMBING_MACHINE,
+        "stairs" to ExerciseSessionRecord.EXERCISE_TYPE_STAIR_CLIMBING,
+        "strengthTraining" to ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING,
+        "stretching" to ExerciseSessionRecord.EXERCISE_TYPE_STRETCHING,
+        "surfing" to ExerciseSessionRecord.EXERCISE_TYPE_SURFING,
+        "swimmingOpenWater" to ExerciseSessionRecord.EXERCISE_TYPE_SWIMMING_OPEN_WATER,
+        "swimmingPool" to ExerciseSessionRecord.EXERCISE_TYPE_SWIMMING_POOL,
+        "tableTennis" to ExerciseSessionRecord.EXERCISE_TYPE_TABLE_TENNIS,
+        "tennis" to ExerciseSessionRecord.EXERCISE_TYPE_TENNIS,
+        "volleyball" to ExerciseSessionRecord.EXERCISE_TYPE_VOLLEYBALL,
+        "walking" to ExerciseSessionRecord.EXERCISE_TYPE_WALKING,
+        "waterPolo" to ExerciseSessionRecord.EXERCISE_TYPE_WATER_POLO,
+        "weightlifting" to ExerciseSessionRecord.EXERCISE_TYPE_WEIGHTLIFTING,
+        "wheelchair" to ExerciseSessionRecord.EXERCISE_TYPE_WHEELCHAIR,
+        "yoga" to ExerciseSessionRecord.EXERCISE_TYPE_YOGA,
+        "other" to ExerciseSessionRecord.EXERCISE_TYPE_OTHER_WORKOUT,
     )
 
     /** NutritionRecord's nutrients, by unified nutrient id. */

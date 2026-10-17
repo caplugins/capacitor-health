@@ -75,6 +75,24 @@ export function semanticErrors(registry) {
     }
   }
 
+  const iosActivities = new Set();
+  const hcActivities = new Set();
+  for (const [id, activity] of Object.entries(registry.workoutActivities ?? {})) {
+    const at = `workoutActivities.${id}`;
+    if (activity.ios) {
+      const key = `${activity.ios.raw}/${activity.ios.indoor ?? ''}/${activity.ios.swimmingLocation ?? ''}`;
+      if (iosActivities.has(key)) errors.push(`${at}.ios matches the same workouts as another activity`);
+      iosActivities.add(key);
+    }
+    if (activity.android) {
+      if (hcActivities.has(activity.android.constant)) errors.push(`${at}.android.constant is used twice`);
+      hcActivities.add(activity.android.constant);
+    }
+  }
+  if (registry.workoutActivities && !(registry.workoutActivities.other?.ios && registry.workoutActivities.other?.android)) {
+    errors.push('workoutActivities.other must exist on both platforms (unmapped native values read as it)');
+  }
+
   for (const type of registry.types) {
     const at = `types.${type.id}`;
     if (ids.has(type.id)) errors.push(`${at} is defined twice`);

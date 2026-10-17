@@ -19,6 +19,7 @@ const runtimeIdentifier = (ios) => ios.rawValue ?? ios.identifier;
 
 export const OUTPUTS = {
   readme: join(ROOT, 'README.md'),
+  typeMapping: join(ROOT, 'docs/04-type-mapping.md'),
   ts: join(ROOT, 'src/generated/registry.ts'),
   swift: join(ROOT, 'ios/Sources/CapacitorHealthPlugin/Generated/Registry.generated.swift'),
   swiftTest: join(ROOT, 'ios/Tests/CapacitorHealthPluginTests/Generated/RegistryRawValuesTests.generated.swift'),
@@ -120,6 +121,10 @@ async function renderTypeScript(registry) {
     ]),
   );
 
+  const activities = Object.fromEntries(
+    Object.entries(registry.workoutActivities ?? {}).map(([id, a]) => [id, { ios: Boolean(a.ios), android: Boolean(a.android) }]),
+  );
+
   const idsOfKind = (kind) =>
     registry.types
       .filter((t) => t.kind === kind)
@@ -170,6 +175,16 @@ export type RegistryGroup =
   | 'nutrition'
   | 'mindfulness'
   | 'other';
+
+/** Every workout activity id, in registry order. */
+export const WORKOUT_ACTIVITY_IDS = ${JSON.stringify(Object.keys(registry.workoutActivities ?? {}))} as const;
+
+/**
+ * A workout's activity type. Which platforms store it is in {@link WORKOUT_ACTIVITIES}.
+ *
+ * @since 0.3.0
+ */
+export type WorkoutActivity = (typeof WORKOUT_ACTIVITY_IDS)[number];
 
 /** Every nutrient id, in registry order. */
 export const NUTRIENT_IDS = ${JSON.stringify(Object.keys(registry.nutrients ?? {}))} as const;
@@ -286,6 +301,9 @@ export const VALUE_SETS: Readonly<Record<string, RegistryValueSet>> = ${JSON.str
 export const REGISTRY: Readonly<Record<HealthType, RegistryEntry>> = ${JSON.stringify(entries)};
 
 export const NUTRIENTS: Readonly<Record<Nutrient, RegistryNutrient>> = ${JSON.stringify(nutrients)};
+
+/** Which platforms can store each workout activity type. */
+export const WORKOUT_ACTIVITIES: Readonly<Record<WorkoutActivity, { ios: boolean; android: boolean }>> = ${JSON.stringify(activities)};
 `;
   const config = (await prettier.resolveConfig(OUTPUTS.ts)) ?? {};
   return prettier.format(source, { ...config, parser: 'typescript' });
@@ -316,6 +334,9 @@ function swiftAvailability(minOS) {
     ? `{ if #available(iOS ${minOS}, *) { return true }; return false }`
     : null;
 }
+
+/** HKWorkoutSwimmingLocationType raw values (pinned by the generated XCTest). */
+const SWIMMING_LOCATIONS = { pool: 1, openWater: 2 };
 
 /** Category cases newer than the iOS floor: HealthKit raises an exception for them on older iOS. */
 const NEWER_CASES = { HKCategoryValueSleepAnalysis: ['AsleepCore', 'AsleepDeep', 'AsleepREM'] };
@@ -358,6 +379,16 @@ function renderSwift(registry) {
   const nutrients = Object.entries(registry.nutrients ?? {})
     .filter(([, n]) => n.ios)
     .map(([id, n]) => `        ${q(id)}: RegistryNutrient(identifier: ${q(runtimeIdentifier(n.ios))}, unit: ${q(n.unit)})`);
+  const activities = Object.entries(registry.workoutActivities ?? {})
+    .filter(([, a]) => a.ios)
+    .map(([id, a]) => {
+      const args = [q(id), `raw: ${a.ios.raw}`];
+      const availability = swiftAvailability(a.ios.minOS);
+      if (availability) args.push(`isAvailable: ${availability}`);
+      if (a.ios.indoor !== undefined) args.push(`indoor: ${a.ios.indoor}`);
+      if (a.ios.swimmingLocation) args.push(`swimmingLocation: ${SWIMMING_LOCATIONS[a.ios.swimmingLocation]}`);
+      return swiftCall('RegistryWorkoutActivity', args, 8);
+    });
   const units = Object.entries(registry.units)
     .filter(([, u]) => u.ios)
     .map(([id, u]) => `        ${q(id)}: RegistryUnit(${q(u.ios)}${u.percent ? ', percent: true' : ''})`);
@@ -440,6 +471,26 @@ struct RegistryNutrient {
     let identifier: String
     /// Canonical unit id.
     let unit: String
+}
+
+/// A workout activity type (decision #62): its HealthKit raw value and the metadata that narrows it.
+struct RegistryWorkoutActivity {
+    let id: String
+    let raw: UInt
+    /// \`false\` when the running OS predates the case.
+    let isAvailable: () -> Bool
+    /// \`HKMetadataKeyIndoorWorkout\`: true matches and writes indoor; false matches absent or false and writes false.
+    let indoor: Bool?
+    /// \`HKWorkoutSwimmingLocationType\` raw value it matches and writes.
+    let swimmingLocation: Int?
+
+    init(_ id: String, raw: UInt, isAvailable: @escaping () -> Bool = { true }, indoor: Bool? = nil, swimmingLocation: Int? = nil) {
+        self.id = id
+        self.raw = raw
+        self.isAvailable = isAvailable
+        self.indoor = indoor
+        self.swimmingLocation = swimmingLocation
+    }
 }
 
 struct RegistryMetadataField {
@@ -561,6 +612,11 @@ ${passthrough.categories.map(([id, values]) => `        ${q(id)}: [${values.join
 ${sets.join(',\n')}
     ]
 
+    /// Workout activity types HealthKit stores, in registry order (decision #62).
+    static let workoutActivities: [RegistryWorkoutActivity] = [
+${activities.join(',\n')}
+    ]
+
     /// Nutrients HealthKit stores, by unified nutrient id.
     static let nutrients: [String: RegistryNutrient] = [
 ${nutrients.join(',\n')}
@@ -620,6 +676,20 @@ function renderSwiftTest(registry) {
       return { minOS: n.ios.minOS, args: [`${swiftType}.${member}.rawValue`, q(runtimeIdentifier(n.ios))] };
     });
   if (nutrientIdentifiers.length) functions.push(testFunction('testNutrientIdentifiers', nutrientIdentifiers));
+
+  const activityCases = new Map();
+  for (const a of Object.values(registry.workoutActivities ?? {})) {
+    if (a.ios) activityCases.set(a.ios.case, { minOS: a.ios.minOS, args: [`HKWorkoutActivityType.${a.ios.case}.rawValue`, String(a.ios.raw)] });
+  }
+  if (activityCases.size) {
+    functions.push(
+      testFunction('testWorkoutActivityRawValues', [
+        ...activityCases.values(),
+        { minOS: '10.0', args: ['HKWorkoutSwimmingLocationType.pool.rawValue', '1'] },
+        { minOS: '10.0', args: ['HKWorkoutSwimmingLocationType.openWater.rawValue', '2'] },
+      ]),
+    );
+  }
 
   for (const [name, set] of Object.entries(registry.valueSets)) {
     if (!set.ios) continue;
@@ -803,6 +873,10 @@ function renderKotlin(registry) {
     return `${n.android.property} = values[${q(id)}] as ${cls}?`;
   });
 
+  const hcActivities = Object.entries(registry.workoutActivities ?? {}).filter(([, a]) => a.android);
+  if (hcActivities.length) recordImport('ExerciseSessionRecord');
+  const activities = hcActivities.map(([id, a]) => `        ${q(id)} to ExerciseSessionRecord.${a.android.constant},`);
+
   const units = Object.entries(registry.units)
     .filter(([, u]) => u.android)
     .map(([id, u]) => {
@@ -962,6 +1036,11 @@ ${adapters.join('\n')}
 ${seriesAdapters.join('\n')}
     )
 
+    /** Workout activity id → ExerciseSessionRecord exercise type (decision #62). */
+    val workoutActivities: Map<String, Int> = mapOf(
+${activities.join('\n')}
+    )
+
     /** NutritionRecord's nutrients, by unified nutrient id. */
     val nutrients: Map<String, RegistryNutrient> = mapOf(
 ${nutrients.join('\n')}
@@ -1033,11 +1112,46 @@ function renderReadme(registry, current) {
   );
 }
 
+// ---------------------------------------------------------------- 04-type-mapping §4b
+
+const ACTIVITIES_START = '<!-- workout-activities:start -->';
+const ACTIVITIES_END = '<!-- workout-activities:end -->';
+
+/** 04-type-mapping's activity table, between its markers. */
+function renderTypeMapping(registry, current) {
+  if (!current?.includes(ACTIVITIES_START) || !current.includes(ACTIVITIES_END)) return current;
+  const rows = Object.entries(registry.workoutActivities ?? {}).map(([id, a]) => {
+    let ios = '—';
+    if (a.ios) {
+      ios = `\`${a.ios.case}\` (${a.ios.raw}${a.ios.minOS === '8.0' ? '' : `, iOS ${a.ios.minOS}`})`;
+      if (a.ios.indoor !== undefined) ios += a.ios.indoor ? ' + indoor' : ' + not indoor';
+      if (a.ios.swimmingLocation) ios += ` + ${a.ios.swimmingLocation}`;
+    }
+    const android = a.android ? `\`${a.android.constant.replace('EXERCISE_TYPE_', '')}\`` : '—';
+    return `| \`${id}\` | ${ios} | ${android} | ${a.notes ?? ''} |`;
+  });
+  const table = [
+    ACTIVITIES_START,
+    '<!-- Generated by scripts/gen-registry.mjs from registry/types.json. Do not edit. -->',
+    '',
+    '| Unified | HealthKit `HKWorkoutActivityType` (raw) | Health Connect `EXERCISE_TYPE_*` | Notes |',
+    '|---|---|---|---|',
+    ...rows,
+    '',
+    ACTIVITIES_END,
+  ].join('\n');
+  return current.slice(0, current.indexOf(ACTIVITIES_START)) + table + current.slice(current.indexOf(ACTIVITIES_END) + ACTIVITIES_END.length);
+}
+
 // ---------------------------------------------------------------- main
 
 export async function renderAll(registry = loadCheckedRegistry()) {
   return {
     [OUTPUTS.readme]: renderReadme(registry, existsSync(OUTPUTS.readme) ? readFileSync(OUTPUTS.readme, 'utf8') : null),
+    [OUTPUTS.typeMapping]: renderTypeMapping(
+      registry,
+      existsSync(OUTPUTS.typeMapping) ? readFileSync(OUTPUTS.typeMapping, 'utf8') : null,
+    ),
     [OUTPUTS.ts]: await renderTypeScript(registry),
     [OUTPUTS.swift]: renderSwift(registry),
     [OUTPUTS.swiftTest]: renderSwiftTest(registry),
