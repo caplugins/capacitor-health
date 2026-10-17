@@ -8,7 +8,7 @@ first-class citizen. Public MIT package on npm under `@caplugins` (same scope as
 
 **Status (2026-10-17): M2 implemented.** M1 is frozen on `release/0.1` for the 0.1.0 publish
 (decision #48; 👤 V1–V3 pending) and M2 on `release/0.2` for 0.2.0 (decision #60; 👤 V4–V5
-pending). M3 is planned by T38 and lands on `main`.
+pending). M3 is planned as T39–T55 and lands on `main`.
 The next piece of work is always the first unchecked task in [docs/tasks.md](docs/tasks.md).
 
 ## Read first
