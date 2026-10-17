@@ -1,8 +1,20 @@
 /// <reference types="@capacitor/cli" />
 
-import type { CategoryHealthType, EventHealthType, HealthType, QuantityHealthType } from './generated/registry';
+import type {
+  AggregateMetric,
+  CategoryHealthType,
+  EventHealthType,
+  HealthType,
+  QuantityHealthType,
+} from './generated/registry';
 
-export type { CategoryHealthType, EventHealthType, HealthType, QuantityHealthType } from './generated/registry';
+export type {
+  AggregateMetric,
+  CategoryHealthType,
+  EventHealthType,
+  HealthType,
+  QuantityHealthType,
+} from './generated/registry';
 
 declare module '@capacitor/cli' {
   export interface PluginsConfig {
@@ -187,12 +199,18 @@ export interface TypeSupport {
   /** @since 0.1.0 */
   writable: boolean;
   /**
-   * Whether `aggregate()` works for the type. `aggregate()` arrives in 0.2.0, so this is `false` for
-   * every type in 0.1.0.
+   * Whether `aggregate()` works for the type on this device (always `false` in 0.1.0, which has no
+   * `aggregate()`).
    *
    * @since 0.1.0
    */
   aggregatable: boolean;
+  /**
+   * The metrics `aggregate()` computes for the type here. Set when `aggregatable` is `true`.
+   *
+   * @since 0.2.0
+   */
+  metrics?: AggregateMetric[];
   /**
    * Set when `supported`, `readable` or `writable` is `false`.
    *
@@ -1040,6 +1058,119 @@ export interface ReadSamplesResult {
 }
 
 /**
+ * Bucket length for `aggregate()`.
+ *
+ * @since 0.2.0
+ */
+export type AggregateBucketUnit = 'minute' | 'hour' | 'day' | 'week' | 'month';
+
+/**
+ * @since 0.2.0
+ */
+export interface AggregateBucketOptions {
+  /** @since 0.2.0 */
+  unit: AggregateBucketUnit;
+  /**
+   * How many `unit`s each bucket spans.
+   *
+   * @since 0.2.0
+   * @default 1
+   */
+  size?: number;
+}
+
+/**
+ * @since 0.2.0
+ */
+export interface AggregateOptions {
+  /**
+   * A quantity type (or `bloodPressure`, later) whose `getSupportedTypes()` entry is `aggregatable`.
+   *
+   * @since 0.2.0
+   */
+  type: HealthType;
+  /**
+   * Start of the range and of the first bucket. ISO 8601 with an offset.
+   *
+   * @since 0.2.0
+   */
+  startDate: string;
+  /**
+   * End of the range; the last bucket stops here.
+   *
+   * @since 0.2.0
+   */
+  endDate: string;
+  /**
+   * What to compute: `sum` for cumulative types (steps, energy, distance), `avg` / `min` / `max`
+   * for the others, `count` (number of readings) where the platform has it. `TypeSupport.metrics`
+   * lists them per type.
+   *
+   * @since 0.2.0
+   */
+  metrics: AggregateMetric[];
+  /**
+   * Split the range into buckets that start at `startDate`. Without it the result is one bucket for
+   * the whole range. Minute and hour buckets are exact lengths of time; day, week and month buckets
+   * follow the calendar in `timeZone`, so a day across a daylight-saving change lasts 23 or 25 hours.
+   * At most 5,000 buckets.
+   *
+   * @since 0.2.0
+   */
+  bucket?: AggregateBucketOptions;
+  /**
+   * Time zone for day, week and month buckets (IANA, e.g. `Europe/Berlin`). Defaults to the device's
+   * zone.
+   *
+   * @since 0.2.0
+   */
+  timeZone?: string;
+  /**
+   * Unit for `sum`, `avg`, `min` and `max`; one of the type's units. Defaults to its canonical unit.
+   *
+   * @since 0.2.0
+   */
+  unit?: string;
+  /**
+   * Only data written by these apps (bundle ids / package names).
+   *
+   * @since 0.2.0
+   */
+  sourceIds?: string[];
+}
+
+/**
+ * @since 0.2.0
+ */
+export interface AggregateBucket {
+  /** @since 0.2.0 */
+  startDate: string;
+  /** @since 0.2.0 */
+  endDate: string;
+  /**
+   * The metrics asked for; a metric is absent when the bucket has no data for it. `count` is a
+   * number of readings, `duration` seconds; the others are in `unit`.
+   *
+   * @since 0.2.0
+   */
+  values: Partial<Record<AggregateMetric, number>>;
+  /** @since 0.2.0 */
+  unit: string;
+}
+
+/**
+ * @since 0.2.0
+ */
+export interface AggregateResult {
+  /**
+   * Every bucket of the range in order, including empty ones.
+   *
+   * @since 0.2.0
+   */
+  buckets: AggregateBucket[];
+}
+
+/**
  * @since 0.1.0
  */
 export interface GetChangesOptions {
@@ -1244,6 +1375,17 @@ export interface CapacitorHealthPlugin {
    * @since 0.1.0
    */
   readSamples(options: ReadSamplesOptions): Promise<ReadSamplesResult>;
+
+  /**
+   * Sums, averages, minimums and maximums of a quantity type over a range, optionally in buckets.
+   * Use it rather than adding up `readSamples()` values: phone and watch often record the same
+   * steps, and HealthKit removes that overlap when it aggregates. Health Connect removes it only for
+   * activity types (steps, distance, energy, floors…), using the user's app priority; for other types
+   * its aggregates cover every app's data.
+   *
+   * @since 0.2.0
+   */
+  aggregate(options: AggregateOptions): Promise<AggregateResult>;
 
   /**
    * Returns what was added, changed or deleted since `cursor`, for incremental sync.

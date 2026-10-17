@@ -7,6 +7,7 @@ import {
   DEFAULT_LIMIT,
   MAX_LIMIT,
   parseDate,
+  validateAggregate,
   validateCheckAuthorization,
   validateDeleteSamples,
   validateGetChanges,
@@ -847,6 +848,104 @@ describe('M2 types', () => {
     for (const type of ['exerciseTime', 'walkingSteadiness', 'highHeartRateEvent', 'nikeFuel']) {
       rejection(() => validateCheckAuthorization({ write: [type as never] }, 'ios'), 'READ_ONLY_TYPE', 'write[0]');
     }
+  });
+});
+
+describe('aggregate', () => {
+  const range = { startDate: START, endDate: '2026-10-08T08:00:00+05:30' };
+  const steps = { type: 'steps' as const, metrics: ['sum' as const], ...range };
+
+  it('normalizes a valid request', () => {
+    expect(validateAggregate(steps, 'ios')).toEqual({
+      type: 'steps',
+      startDate: '2026-10-01T08:00:00.000+05:30',
+      endDate: '2026-10-08T08:00:00.000+05:30',
+      metrics: ['sum'],
+      unit: 'count',
+    });
+    const full = validateAggregate(
+      {
+        ...steps,
+        type: 'heartRate',
+        metrics: ['avg', 'max', 'avg'],
+        bucket: { unit: 'day' },
+        timeZone: 'Asia/Kolkata',
+        sourceIds: ['com.example.watch'],
+      },
+      'android',
+    );
+    expect(full).toMatchObject({ metrics: ['avg', 'max'], bucket: { unit: 'day', size: 1 }, timeZone: 'Asia/Kolkata' });
+    expect(validateAggregate({ ...steps, type: 'distance', unit: 'km' }, 'ios').unit).toBe('km');
+  });
+
+  it('allows only the metrics the platform serves', () => {
+    rejection(
+      () => validateAggregate({ ...steps, metrics: ['avg'] }, 'ios'),
+      'INVALID_ARGUMENT',
+      'metrics[0]',
+      'metricUnsupported',
+    );
+    rejection(() => validateAggregate({ ...steps, metrics: [] }, 'ios'), 'INVALID_ARGUMENT', 'metrics');
+    expect(validateAggregate({ ...steps, type: 'heartRate', metrics: ['count'] }, 'android').metrics).toEqual([
+      'count',
+    ]);
+    rejection(
+      () => validateAggregate({ ...steps, type: 'heartRate', metrics: ['count'] }, 'ios'),
+      'INVALID_ARGUMENT',
+      'metrics[0]',
+      'metricUnsupported',
+    );
+  });
+
+  it('serves aggregate-only types and rejects types without aggregates', () => {
+    expect(validateAggregate({ ...steps, type: 'totalEnergy' }, 'ios').type).toBe('totalEnergy');
+    expect(validateAggregate({ ...steps, type: 'basalEnergy' }, 'android').type).toBe('basalEnergy');
+    rejection(
+      () => validateAggregate({ ...steps, type: 'menstrualFlow' }, 'ios'),
+      'UNSUPPORTED_TYPE',
+      'type',
+      'notAggregatable',
+    );
+    rejection(
+      () => validateAggregate({ ...steps, type: 'boneMass' }, 'ios'),
+      'UNSUPPORTED_TYPE',
+      'type',
+      'notOnPlatform',
+    );
+  });
+
+  it('checks the range, bucket, zone and unit', () => {
+    rejection(
+      () => validateAggregate({ ...steps, endDate: START }, 'ios'),
+      'INVALID_ARGUMENT',
+      'endDate',
+      'emptyRange',
+    );
+    rejection(
+      () => validateAggregate({ ...steps, bucket: { unit: 'year' as never } }, 'ios'),
+      'INVALID_ARGUMENT',
+      'bucket.unit',
+    );
+    rejection(
+      () => validateAggregate({ ...steps, bucket: { unit: 'day', size: 0 } }, 'ios'),
+      'INVALID_ARGUMENT',
+      'bucket.size',
+    );
+    rejection(
+      () => validateAggregate({ ...steps, bucket: { unit: 'minute' } }, 'ios'),
+      'INVALID_ARGUMENT',
+      'bucket',
+      'tooManyBuckets',
+    );
+    expect(validateAggregate({ ...steps, bucket: { unit: 'minute', size: 5 } }, 'ios').bucket).toEqual({
+      unit: 'minute',
+      size: 5,
+    });
+    expect(
+      validateAggregate({ ...steps, endDate: '2030-01-01T00:00:00Z', bucket: { unit: 'month' } }, 'ios').bucket?.unit,
+    ).toBe('month');
+    rejection(() => validateAggregate({ ...steps, timeZone: 'Mars/Olympus' }, 'ios'), 'INVALID_ARGUMENT', 'timeZone');
+    rejection(() => validateAggregate({ ...steps, unit: 'kg' }, 'ios'), 'INVALID_ARGUMENT', 'unit', 'unknownUnit');
   });
 });
 

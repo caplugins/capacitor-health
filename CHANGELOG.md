@@ -4,6 +4,8 @@
 
 ### Added
 
+- `aggregate()`: sums, averages, minimums and maximums over a range, optionally in minute to month
+  buckets, with each platform's de-duplication.
 - 98 activity, vitals and body types: steps, distance, energy, speed, power, heart rate and HRV,
   SpO2, respiration, body temperature, blood glucose, weight and body composition, VO2 max, walking
   and running metrics, audio exposure, Apple's heart and fitness notifications, and more. See the

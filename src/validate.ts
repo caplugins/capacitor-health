@@ -8,6 +8,9 @@ import { CapacitorException } from '@capacitor/core';
 import type { ExceptionCode } from '@capacitor/core';
 
 import type {
+  AggregateBucketUnit,
+  AggregateMetric,
+  AggregateOptions,
   AuthorizationOptions,
   CheckAuthorizationOptions,
   DeleteSamplesOptions,
@@ -26,6 +29,8 @@ import type { HealthType, RegistryEntry } from './generated/registry';
 export type NativePlatform = 'ios' | 'android';
 
 export const DEFAULT_LIMIT = 1000;
+/** The most buckets one `aggregate()` call may ask for. */
+export const MAX_BUCKETS = 5000;
 export const MAX_LIMIT = 10000;
 /** Health Connect's `MenstruationPeriodRecord.MAX_DURATION` in whole days (decision #30). */
 export const MAX_PERIOD_DAYS_ANDROID = 31;
@@ -321,6 +326,77 @@ export function validateGetChanges(options: GetChangesOptions, platform: NativeP
     excludeOwnWrites: optionalBoolean(o.excludeOwnWrites, 'excludeOwnWrites', false),
   };
   if (o.cursor !== undefined) result.cursor = nonEmptyString(o.cursor, 'cursor');
+  return result;
+}
+
+// ------------------------------------------------------------------ aggregating
+
+const BUCKET_UNITS: readonly AggregateBucketUnit[] = ['minute', 'hour', 'day', 'week', 'month'];
+const BUCKET_MS: Partial<Record<AggregateBucketUnit, number>> = {
+  minute: 60_000,
+  hour: 3_600_000,
+  day: 86_400_000,
+  week: 7 * 86_400_000,
+};
+
+/** How many buckets of `size` × `unit` fit from `start` to `end`, rounded up (months by calendar month). */
+function bucketCount(start: ParsedDate, end: ParsedDate, unit: AggregateBucketUnit, size: number): number {
+  const ms = BUCKET_MS[unit];
+  if (ms !== undefined) return Math.ceil((end.ms - start.ms) / (ms * size));
+  const [y1, m1] = start.day.split('-').map(Number);
+  const [y2, m2] = end.day.split('-').map(Number);
+  return Math.ceil(((y2 - y1) * 12 + (m2 - m1) + 1) / size);
+}
+
+export function validateAggregate(options: AggregateOptions, platform: NativePlatform): AggregateOptions {
+  const o = object(options, 'options');
+  const entry = platformType(o.type, 'type', platform);
+  const available = entry[platform]?.metrics ?? [];
+  if (available.length === 0) {
+    throw healthError('UNSUPPORTED_TYPE', `${entry.id} can't be aggregated on ${PLATFORM_NAMES[platform]}.`, {
+      field: 'type',
+      type: entry.id,
+      reason: 'notAggregatable',
+    });
+  }
+  const [start, end] = dateRange(o.startDate, o.endDate, '');
+  if (end.ms === start.ms) throw invalid('endDate', 'must be after startDate', 'emptyRange');
+  if (!Array.isArray(o.metrics) || o.metrics.length === 0) throw invalid('metrics', 'must be a non-empty array');
+  const metrics: AggregateMetric[] = [];
+  o.metrics.forEach((metric, i) => {
+    if (typeof metric !== 'string' || !available.includes(metric as AggregateMetric)) {
+      throw invalid(
+        `metrics[${i}]`,
+        `must be one of ${available.join(', ')} for ${entry.id} on ${PLATFORM_NAMES[platform]}`,
+        'metricUnsupported',
+      );
+    }
+    if (!metrics.includes(metric as AggregateMetric)) metrics.push(metric as AggregateMetric);
+  });
+  const result: AggregateOptions = { type: entry.id, startDate: start.iso, endDate: end.iso, metrics };
+  if (o.bucket !== undefined) {
+    const bucket = object(o.bucket, 'bucket');
+    if (typeof bucket.unit !== 'string' || !BUCKET_UNITS.includes(bucket.unit as AggregateBucketUnit)) {
+      throw invalid('bucket.unit', `must be one of ${BUCKET_UNITS.join(', ')}`, 'unknownValue');
+    }
+    const unit = bucket.unit as AggregateBucketUnit;
+    const size = bucket.size ?? 1;
+    if (typeof size !== 'number' || !Number.isInteger(size) || size < 1) {
+      throw invalid('bucket.size', 'must be a positive integer');
+    }
+    if (bucketCount(start, end, unit, size) > MAX_BUCKETS) {
+      throw invalid('bucket', `would make more than ${MAX_BUCKETS} buckets`, 'tooManyBuckets');
+    }
+    result.bucket = { unit, size };
+  }
+  if (o.timeZone !== undefined) {
+    const zone = nonEmptyString(o.timeZone, 'timeZone');
+    if (!isValidTimeZone(zone)) throw invalid('timeZone', 'must be an IANA time zone, e.g. Europe/Berlin');
+    result.timeZone = zone;
+  }
+  const u = unit(o.unit, 'unit', entry);
+  if (u) result.unit = u;
+  if (o.sourceIds !== undefined) result.sourceIds = stringList(o.sourceIds, 'sourceIds');
   return result;
 }
 

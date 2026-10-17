@@ -1,5 +1,6 @@
 import type { CapacitorHealthPlugin } from './definitions';
 import {
+  validateAggregate,
   validateCheckAuthorization,
   validateDeleteSamples,
   validateGetChanges,
@@ -31,6 +32,7 @@ export function withValidation(native: CapacitorHealthPlugin, getPlatform: () =>
     openHealthSettings: () => native.openHealthSettings(),
     openHealthConnectInstall: () => native.openHealthConnectInstall(),
     readSamples: (o) => call(o, validateReadSamples, (v) => native.readSamples(v)),
+    aggregate: (o) => call(o, validateAggregate, (v) => native.aggregate(v)),
     getChanges: (o) => call(o, validateGetChanges, (v) => native.getChanges(v)),
     saveSamples: (o) => call(o, validateSaveSamples, (v) => native.saveSamples(v)),
     deleteSamples: (o) => call(o, validateDeleteSamples, (v) => native.deleteSamples(v)),

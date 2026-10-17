@@ -267,6 +267,21 @@ Android), `relationToMeal`, `mealType` and `specimenSource` (`bloodGlucose`; the
 - On iOS, `menstruationPeriod` can't be followed (periods are derived; see below): follow
   `menstrualFlow` and re-read the periods around what changed.
 
+### Aggregates (`aggregate`)
+
+- Totals and statistics come from the platform, not from adding up samples: `sum` for cumulative
+  types (steps, distance, energy, floors), `avg` / `min` / `max` for the rest, `count` of readings
+  where Health Connect has it (heart rate). `getSupportedTypes()` lists each type's `metrics`.
+- **Overlapping data:** HealthKit removes overlap between sources (phone and watch steps) for every
+  type. Health Connect removes it only for activity types (steps, distance, energy, floors,
+  elevation, wheelchair pushes), using the user's app priority; other types aggregate every app's
+  data. So the same data can give different averages on the two platforms.
+- Buckets start at `startDate`. Minute and hour buckets are fixed lengths; day, week and month buckets
+  follow the calendar in `timeZone` (default: the device's), so a bucket across a daylight-saving
+  change is an hour shorter or longer. Pass a `startDate` at local midnight (or on a Monday, or the
+  1st) for calendar-aligned buckets. Every bucket comes back, empty ones with no values.
+- `totalEnergy` on iOS and `basalEnergy` on Android exist only as aggregates.
+
 ### Blood pressure
 
 - A `bloodPressure` sample carries `systolic` and `diastolic` in mmHg, plus `bodyPosition` and
@@ -575,6 +590,7 @@ export default config;
 * [`openHealthSettings()`](#openhealthsettings)
 * [`openHealthConnectInstall()`](#openhealthconnectinstall)
 * [`readSamples(...)`](#readsamples)
+* [`aggregate(...)`](#aggregate)
 * [`getChanges(...)`](#getchanges)
 * [`saveSamples(...)`](#savesamples)
 * [`deleteSamples(...)`](#deletesamples)
@@ -714,6 +730,29 @@ permissions. On Android it rejects with `PERMISSION_DENIED`.
 --------------------
 
 
+### aggregate(...)
+
+```typescript
+aggregate(options: AggregateOptions) => Promise<AggregateResult>
+```
+
+Sums, averages, minimums and maximums of a quantity type over a range, optionally in buckets.
+Use it rather than adding up `readSamples()` values: phone and watch often record the same
+steps, and HealthKit removes that overlap when it aggregates. Health Connect removes it only for
+activity types (steps, distance, energy, floors…), using the user's app priority; for other types
+its aggregates cover every app's data.
+
+| Param         | Type                                                          |
+| ------------- | ------------------------------------------------------------- |
+| **`options`** | <code><a href="#aggregateoptions">AggregateOptions</a></code> |
+
+**Returns:** <code>Promise&lt;<a href="#aggregateresult">AggregateResult</a>&gt;</code>
+
+**Since:** 0.2.0
+
+--------------------
+
+
 ### getChanges(...)
 
 ```typescript
@@ -793,17 +832,18 @@ others are left alone and not counted. `ids` and `clientIds` that match nothing 
 
 #### TypeSupport
 
-| Prop               | Type                                                            | Description                                                                                                           | Since |
-| ------------------ | --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | ----- |
-| **`type`**         | <code><a href="#healthtype">HealthType</a></code>               |                                                                                                                       | 0.1.0 |
-| **`supported`**    | <code>boolean</code>                                            | The type exists on this device. When `false`, every call with it rejects with `UNSUPPORTED_TYPE`.                     | 0.1.0 |
-| **`readable`**     | <code>boolean</code>                                            |                                                                                                                       | 0.1.0 |
-| **`writable`**     | <code>boolean</code>                                            |                                                                                                                       | 0.1.0 |
-| **`aggregatable`** | <code>boolean</code>                                            | Whether `aggregate()` works for the type. `aggregate()` arrives in 0.2.0, so this is `false` for every type in 0.1.0. | 0.1.0 |
-| **`reason`**       | <code><a href="#unsupportedreason">UnsupportedReason</a></code> | Set when `supported`, `readable` or `writable` is `false`.                                                            | 0.1.0 |
-| **`minOS`**        | <code>string</code>                                             | iOS: the first iOS version with the type.                                                                             | 0.1.0 |
-| **`values`**       | <code>string[]</code>                                           | Values this platform can store, for types with a value set (category types).                                          | 0.1.0 |
-| **`units`**        | <code>string[]</code>                                           | Units `readSamples()` and `saveSamples()` accept, canonical unit first (quantity types).                              | 0.1.0 |
+| Prop               | Type                                                            | Description                                                                                                    | Since |
+| ------------------ | --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ----- |
+| **`type`**         | <code><a href="#healthtype">HealthType</a></code>               |                                                                                                                | 0.1.0 |
+| **`supported`**    | <code>boolean</code>                                            | The type exists on this device. When `false`, every call with it rejects with `UNSUPPORTED_TYPE`.              | 0.1.0 |
+| **`readable`**     | <code>boolean</code>                                            |                                                                                                                | 0.1.0 |
+| **`writable`**     | <code>boolean</code>                                            |                                                                                                                | 0.1.0 |
+| **`aggregatable`** | <code>boolean</code>                                            | Whether `aggregate()` works for the type on this device (always `false` in 0.1.0, which has no `aggregate()`). | 0.1.0 |
+| **`metrics`**      | <code>AggregateMetric[]</code>                                  | The metrics `aggregate()` computes for the type here. Set when `aggregatable` is `true`.                       | 0.2.0 |
+| **`reason`**       | <code><a href="#unsupportedreason">UnsupportedReason</a></code> | Set when `supported`, `readable` or `writable` is `false`.                                                     | 0.1.0 |
+| **`minOS`**        | <code>string</code>                                             | iOS: the first iOS version with the type.                                                                      | 0.1.0 |
+| **`values`**       | <code>string[]</code>                                           | Values this platform can store, for types with a value set (category types).                                   | 0.1.0 |
+| **`units`**        | <code>string[]</code>                                           | Units `readSamples()` and `saveSamples()` accept, canonical unit first (quantity types).                       | 0.1.0 |
 
 
 #### AuthorizationResult
@@ -960,6 +1000,45 @@ A blood pressure reading. iOS stores it as a correlation of a systolic and a dia
 | **`cursor`**    | <code>string</code>                               | `nextCursor` from the previous page. Pass the same other options with it.                                                                                                                                                                                                                   |                   | 0.1.0 |
 | **`unit`**      | <code>string</code>                               | Unit for quantity values; one of the type's units.                                                                                                                                                                                                                                          |                   | 0.1.0 |
 | **`sourceIds`** | <code>string[]</code>                             | Only samples written by these apps (bundle ids / package names).                                                                                                                                                                                                                            |                   | 0.1.0 |
+
+
+#### AggregateResult
+
+| Prop          | Type                           | Description                                               | Since |
+| ------------- | ------------------------------ | --------------------------------------------------------- | ----- |
+| **`buckets`** | <code>AggregateBucket[]</code> | Every bucket of the range in order, including empty ones. | 0.2.0 |
+
+
+#### AggregateBucket
+
+| Prop            | Type                                                                                                                                          | Description                                                                                                                                                  | Since |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----- |
+| **`startDate`** | <code>string</code>                                                                                                                           |                                                                                                                                                              | 0.2.0 |
+| **`endDate`**   | <code>string</code>                                                                                                                           |                                                                                                                                                              | 0.2.0 |
+| **`values`**    | <code><a href="#partial">Partial</a>&lt;<a href="#record">Record</a>&lt;<a href="#aggregatemetric">AggregateMetric</a>, number&gt;&gt;</code> | The metrics asked for; a metric is absent when the bucket has no data for it. `count` is a number of readings, `duration` seconds; the others are in `unit`. | 0.2.0 |
+| **`unit`**      | <code>string</code>                                                                                                                           |                                                                                                                                                              | 0.2.0 |
+
+
+#### AggregateOptions
+
+| Prop            | Type                                                                      | Description                                                                                                                                                                                                                                                                                                              | Since |
+| --------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----- |
+| **`type`**      | <code><a href="#healthtype">HealthType</a></code>                         | A quantity type (or `bloodPressure`, later) whose `getSupportedTypes()` entry is `aggregatable`.                                                                                                                                                                                                                         | 0.2.0 |
+| **`startDate`** | <code>string</code>                                                       | Start of the range and of the first bucket. ISO 8601 with an offset.                                                                                                                                                                                                                                                     | 0.2.0 |
+| **`endDate`**   | <code>string</code>                                                       | End of the range; the last bucket stops here.                                                                                                                                                                                                                                                                            | 0.2.0 |
+| **`metrics`**   | <code>AggregateMetric[]</code>                                            | What to compute: `sum` for cumulative types (steps, energy, distance), `avg` / `min` / `max` for the others, `count` (number of readings) where the platform has it. <a href="#typesupport">`TypeSupport</a>.metrics` lists them per type.                                                                               | 0.2.0 |
+| **`bucket`**    | <code><a href="#aggregatebucketoptions">AggregateBucketOptions</a></code> | Split the range into buckets that start at `startDate`. Without it the result is one bucket for the whole range. Minute and hour buckets are exact lengths of time; day, week and month buckets follow the calendar in `timeZone`, so a day across a daylight-saving change lasts 23 or 25 hours. At most 5,000 buckets. | 0.2.0 |
+| **`timeZone`**  | <code>string</code>                                                       | Time zone for day, week and month buckets (IANA, e.g. `Europe/Berlin`). Defaults to the device's zone.                                                                                                                                                                                                                   | 0.2.0 |
+| **`unit`**      | <code>string</code>                                                       | Unit for `sum`, `avg`, `min` and `max`; one of the type's units. Defaults to its canonical unit.                                                                                                                                                                                                                         | 0.2.0 |
+| **`sourceIds`** | <code>string[]</code>                                                     | Only data written by these apps (bundle ids / package names).                                                                                                                                                                                                                                                            | 0.2.0 |
+
+
+#### AggregateBucketOptions
+
+| Prop       | Type                                                                | Description                         | Default        | Since |
+| ---------- | ------------------------------------------------------------------- | ----------------------------------- | -------------- | ----- |
+| **`unit`** | <code><a href="#aggregatebucketunit">AggregateBucketUnit</a></code> |                                     |                | 0.2.0 |
+| **`size`** | <code>number</code>                                                 | How many `unit`s each bucket spans. | <code>1</code> | 0.2.0 |
 
 
 #### GetChangesResult
@@ -1130,6 +1209,13 @@ A unified health data type. Which platforms support it, and how, is in {@link RE
 <code>(typeof HEALTH_TYPES)[number]</code>
 
 
+#### AggregateMetric
+
+A statistic `aggregate()` can compute.
+
+<code>'sum' | 'avg' | 'min' | 'max' | 'count' | 'duration'</code>
+
+
 #### UnsupportedReason
 
 Why a type can't be read or written here.
@@ -1155,14 +1241,18 @@ Status per type, for the types passed in.
 
 Make all properties in T optional
 
-<code>{ [P in keyof T]?: T[P]; }</code>
+<code>{
+ [P in keyof T]?: T[P];
+ }</code>
 
 
 #### Record
 
 Construct a type with a set of properties K of type T
 
-<code>{ [P in K]: T; }</code>
+<code>{
+ [P in K]: T;
+ }</code>
 
 
 #### AuthorizationStatus
@@ -1204,6 +1294,13 @@ Types whose samples hold one value from a fixed set (flow level, test result, se
 Types whose samples have no value, only a time range (the event happened).
 
 <code>'intermenstrualBleeding' | 'sexualActivity' | 'pregnancy' | 'lactation' | 'infrequentMenstrualCycles' | 'irregularMenstrualCycles' | 'persistentIntermenstrualBleeding' | 'prolongedMenstrualPeriods' | 'highHeartRateEvent' | 'lowHeartRateEvent' | 'irregularHeartRhythmEvent' | 'hypertensionEvent' | 'sleepApneaEvent'</code>
+
+
+#### AggregateBucketUnit
+
+Bucket length for `aggregate()`.
+
+<code>'minute' | 'hour' | 'day' | 'week' | 'month'</code>
 
 
 #### NewSample

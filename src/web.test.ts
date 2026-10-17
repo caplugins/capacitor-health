@@ -21,6 +21,7 @@ describe('CapacitorHealthWeb', () => {
     ['openHealthSettings', (web) => web.openHealthSettings()],
     ['openHealthConnectInstall', (web) => web.openHealthConnectInstall()],
     ['readSamples', (web) => web.readSamples({ type: 'menstrualFlow', ...range })],
+    ['aggregate', (web) => web.aggregate({ type: 'steps', metrics: ['sum'], ...range })],
     ['getChanges', (web) => web.getChanges({ types: ['menstrualFlow'] })],
     ['saveSamples', (web) => web.saveSamples({ samples: [{ type: 'menstrualFlow', value: 'light', ...range }] })],
     ['deleteSamples', (web) => web.deleteSamples({ type: 'menstrualFlow', ids: ['x'] })],

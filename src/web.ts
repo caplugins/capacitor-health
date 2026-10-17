@@ -1,6 +1,7 @@
 import { WebPlugin } from '@capacitor/core';
 
 import type {
+  AggregateResult,
   AuthorizationResult,
   AvailabilityResult,
   CapacitorHealthPlugin,
@@ -38,6 +39,10 @@ export class CapacitorHealthWeb extends WebPlugin implements CapacitorHealthPlug
   }
 
   async readSamples(): Promise<ReadSamplesResult> {
+    throw this.notOnWeb();
+  }
+
+  async aggregate(): Promise<AggregateResult> {
     throw this.notOnWeb();
   }
 
