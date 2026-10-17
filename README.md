@@ -217,7 +217,8 @@ Android), `measurementLocation` (`basalBodyTemperature`, `skinTemperature`), `pr
   `getChanges`.
 - `deleteSamples` takes `ids`, `clientIds` or a `startDate`–`endDate` range. Both platforms only let
   an app delete what it wrote; other apps' samples are left alone. Ids and `clientIds` that match
-  nothing are skipped.
+  nothing are skipped. On Android, other apps' ids cost extra Health Connect calls (one each on
+  Android 14+), so pass only your own (check `source.id`) when you can.
 - Read-only types (Apple-computed ones like `wristTemperature`) reject writes with `READ_ONLY_TYPE`.
 
 ### Changes (`getChanges`)

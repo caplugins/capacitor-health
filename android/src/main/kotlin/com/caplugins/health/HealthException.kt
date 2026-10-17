@@ -81,18 +81,29 @@ class HealthException(
             generateSequence(error) { it.cause }.any { it.message?.contains("invalid uid", ignoreCase = true) == true }
 
         /**
-         * The Health Connect app's rejection of a delete by ids that names other apps' records: a `SecurityException`
-         * "<package> doesn't own data points of the following UIDs: [<id>, …]" that lists every such id (decision #46).
-         * Returns those ids, lowercased (empty if the list can't be found), or null for any other error, including a
+         * Health Connect's rejection of a delete by ids that names other apps' records; it deletes nothing then:
+         * - the Health Connect app (Android 13 and lower) throws a `SecurityException` "<package> doesn't own data
+         *   points of the following UIDs: [<id>, …]" that lists every such id (decision #46);
+         * - Android 14+ throws an `IllegalArgumentException` "<app id> is not the owner for <id>" that names only the
+         *   first such id it finds (decision #47).
+         * Returns those ids, lowercased (empty if they can't be found), or null for any other error, including a
          * missing permission.
          */
         fun otherAppsRecordIds(error: Throwable): Set<String>? {
-            val message = generateSequence(error) { it.cause }
+            val chain = generateSequence(error) { it.cause }
+            chain.mapNotNull { it.message }.firstOrNull { it.contains(NOT_THE_OWNER, ignoreCase = true) }?.let { message ->
+                val id = message.substring(message.indexOf(NOT_THE_OWNER, ignoreCase = true) + NOT_THE_OWNER.length)
+                    .trim().takeWhile { !it.isWhitespace() }.lowercase()
+                return setOfNotNull(id.ifEmpty { null })
+            }
+            val message = chain
                 .firstOrNull { it is SecurityException && it.message?.contains("own data points", ignoreCase = true) == true }
                 ?.message ?: return null
             val list = message.substringAfterLast('[', "").substringBefore(']')
             return list.split(',').map { it.trim().lowercase() }.filter { it.isNotEmpty() }.toSet()
         }
+
+        private const val NOT_THE_OWNER = "is not the owner for"
 
         private fun isRateLimit(error: Throwable): Boolean {
             var current: Throwable? = error
