@@ -117,7 +117,8 @@ The plugin supports iOS 15 and later. Types newer than the running iOS (for exam
    `android/variables.gradle`.
 4. **Health Connect itself.** It's part of Android 14 and later. On Android 9–13 users install the
    Health Connect app; `isAvailable()` reports `notInstalled` or `updateRequired`, and
-   `openHealthConnectInstall()` opens it in the Play Store.
+   `openHealthConnectInstall()` opens it in the Play Store. There, `skinTemperature` is unsupported
+   (`featureUnavailable`): `connect-client` 1.1.0 only offers it on Android 14 and later.
 5. **Google Play:** fill in the Health apps declaration (Play Console → App content) with a reason
    for every Health Connect permission tied to a visible feature, and the Data safety form.
    Reproductive data gets extra scrutiny: describe the cycle-tracking feature it serves.
