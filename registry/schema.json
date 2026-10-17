@@ -1,0 +1,208 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/caplugins/capacitor-health/registry/schema.json",
+  "title": "capacitor-health type registry",
+  "description": "Single source for every unified health type (decision #12). scripts/gen-registry.mjs turns it into the TypeScript, Swift and Kotlin registries. Semantic checks the schema can't express (cross-references, maps covering every value) live in scripts/lib/registry.mjs.",
+  "type": "object",
+  "required": ["valueSets", "types"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "valueSets": {
+      "description": "Enumerations shared by types and fields, keyed by name.",
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/camelId" },
+      "additionalProperties": { "$ref": "#/$defs/valueSet" }
+    },
+    "types": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/type" }
+    }
+  },
+  "$defs": {
+    "camelId": { "type": "string", "pattern": "^[a-z][A-Za-z0-9]*$" },
+    "osVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+$" },
+    "notes": { "type": "string", "minLength": 1 },
+    "unit": { "type": "string", "enum": ["degC", "degF"] },
+    "hcConstant": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+    "hcPermission": { "type": "string", "pattern": "^android\\.permission\\.health\\.(READ|WRITE)_[A-Z_]+$" },
+
+    "valueSet": {
+      "type": "object",
+      "required": ["values"],
+      "additionalProperties": false,
+      "properties": {
+        "values": {
+          "description": "Unified values, in display order.",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/camelId" }
+        },
+        "ios": {
+          "type": "object",
+          "required": ["enum", "minOS", "map"],
+          "additionalProperties": false,
+          "properties": {
+            "enum": {
+              "description": "The HealthKit enum holding the raw values (pinned by the generated XCTest).",
+              "type": "string",
+              "pattern": "^HK[A-Za-z]+$"
+            },
+            "minOS": { "$ref": "#/$defs/osVersion" },
+            "map": {
+              "description": "Unified value → raw value. null = no HealthKit equivalent (writes reject, reads never produce it).",
+              "type": "object",
+              "additionalProperties": { "type": ["integer", "null"] }
+            },
+            "cases": {
+              "description": "Swift case name where it differs from the unified value.",
+              "type": "object",
+              "additionalProperties": { "$ref": "#/$defs/camelId" }
+            },
+            "notes": { "$ref": "#/$defs/notes" }
+          }
+        },
+        "android": {
+          "type": "object",
+          "required": ["constants", "map"],
+          "additionalProperties": false,
+          "properties": {
+            "constants": {
+              "description": "Class in androidx.health.connect.client.records holding the constants.",
+              "type": "string",
+              "pattern": "^[A-Z][A-Za-z]+$"
+            },
+            "map": {
+              "description": "Unified value → constant name. null = no Health Connect equivalent.",
+              "type": "object",
+              "additionalProperties": { "oneOf": [{ "$ref": "#/$defs/hcConstant" }, { "type": "null" }] }
+            },
+            "absent": {
+              "description": "Constant meaning 'not recorded'. Reads map it to an absent field; writes without the field use it (decision #33).",
+              "$ref": "#/$defs/hcConstant"
+            },
+            "notes": { "$ref": "#/$defs/notes" }
+          }
+        },
+        "notes": { "$ref": "#/$defs/notes" }
+      }
+    },
+
+    "field": {
+      "description": "A typed field beyond the main value (decision #20).",
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "enum": ["boolean", "enum"] },
+        "values": { "description": "Value set name, for enum fields.", "$ref": "#/$defs/camelId" },
+        "ios": {
+          "type": "object",
+          "required": ["metadata", "key"],
+          "additionalProperties": false,
+          "properties": {
+            "metadata": { "description": "Swift symbol of the metadata key.", "type": "string", "pattern": "^HKMetadataKey[A-Za-z]+$" },
+            "key": { "description": "Runtime string of the key (differs from the symbol for iOS 8/9 keys, T06 S7).", "type": "string", "pattern": "^HK[A-Za-z]+$" },
+            "requiredOnWrite": { "type": "boolean" }
+          }
+        },
+        "android": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "property": { "description": "Record property holding the value.", "$ref": "#/$defs/camelId" },
+            "computed": { "description": "Derived by the plugin, not stored on the record.", "type": "string", "minLength": 1 },
+            "constants": { "type": "string", "pattern": "^[A-Z][A-Za-z]+$" },
+            "true": { "$ref": "#/$defs/hcConstant" },
+            "false": { "$ref": "#/$defs/hcConstant" },
+            "absent": { "$ref": "#/$defs/hcConstant" }
+          },
+          "oneOf": [{ "required": ["property"] }, { "required": ["computed"] }]
+        },
+        "notes": { "$ref": "#/$defs/notes" }
+      },
+      "allOf": [
+        { "if": { "properties": { "type": { "const": "enum" } } }, "then": { "required": ["values"] } },
+        { "if": { "properties": { "type": { "const": "boolean" } } }, "then": { "not": { "required": ["values"] } } }
+      ]
+    },
+
+    "type": {
+      "type": "object",
+      "required": ["id", "kind", "group"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/camelId" },
+        "kind": {
+          "description": "quantity: number + unit. category: one value from a value set. event: no value, only start/end. special: bespoke codec in Special/ (still registered).",
+          "enum": ["quantity", "category", "event", "special"]
+        },
+        "group": { "enum": ["reproductiveHealth", "symptoms"] },
+        "values": { "description": "Value set name of the main value (category kind).", "$ref": "#/$defs/camelId" },
+        "unit": { "description": "Canonical unit returned by default.", "$ref": "#/$defs/unit" },
+        "units": { "description": "Units callers may ask for.", "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/unit" } },
+        "fields": {
+          "type": "object",
+          "propertyNames": { "$ref": "#/$defs/camelId" },
+          "additionalProperties": { "$ref": "#/$defs/field" }
+        },
+        "ios": { "$ref": "#/$defs/iosMapping" },
+        "android": { "$ref": "#/$defs/androidMapping" },
+        "notes": { "$ref": "#/$defs/notes" }
+      },
+      "anyOf": [{ "required": ["ios"] }, { "required": ["android"] }],
+      "allOf": [
+        { "if": { "properties": { "kind": { "const": "category" } } }, "then": { "required": ["values"] } },
+        { "if": { "properties": { "kind": { "const": "quantity" } } }, "then": { "required": ["unit", "units"] } },
+        {
+          "if": { "properties": { "kind": { "enum": ["event", "quantity"] } } },
+          "then": { "not": { "required": ["values"] } }
+        }
+      ]
+    },
+
+    "iosMapping": {
+      "type": "object",
+      "required": ["identifier", "minOS", "writable"],
+      "additionalProperties": false,
+      "properties": {
+        "identifier": {
+          "description": "Runtime identifier string. For a derived type, the identifier it's derived from (authorization uses it).",
+          "type": "string",
+          "pattern": "^HK(Category|Quantity)TypeIdentifier[A-Z][A-Za-z0-9]*$"
+        },
+        "minOS": { "$ref": "#/$defs/osVersion" },
+        "writable": { "type": "boolean" },
+        "time": {
+          "description": "any: start ≤ end (default). instant: start must equal end or the save fails.",
+          "enum": ["any", "instant"]
+        },
+        "aggregation": {
+          "description": "HKQuantityAggregationStyle, quantity types only.",
+          "enum": ["cumulative", "discreteArithmetic", "discreteTemporallyWeighted", "discreteEquivalentContinuousLevel"]
+        },
+        "derivedFrom": { "description": "Unified id this type is derived from (no HealthKit object of its own).", "$ref": "#/$defs/camelId" },
+        "notes": { "$ref": "#/$defs/notes" }
+      }
+    },
+
+    "androidMapping": {
+      "type": "object",
+      "required": ["record", "time", "readPermission", "writePermission", "writable"],
+      "additionalProperties": false,
+      "properties": {
+        "record": { "description": "Class in androidx.health.connect.client.records.", "type": "string", "pattern": "^[A-Z][A-Za-z0-9]*Record$" },
+        "time": { "enum": ["instant", "interval", "series"] },
+        "readPermission": { "$ref": "#/$defs/hcPermission" },
+        "writePermission": { "$ref": "#/$defs/hcPermission" },
+        "writable": { "type": "boolean" },
+        "valueProperty": { "description": "Record property holding the main value.", "$ref": "#/$defs/camelId" },
+        "feature": { "description": "HealthConnectFeatures constant gating the record.", "type": "string", "pattern": "^FEATURE_[A-Z_]+$" },
+        "maxDurationDays": { "description": "Longest interval the record accepts (inclusive).", "type": "integer", "minimum": 1 },
+        "notes": { "$ref": "#/$defs/notes" }
+      }
+    }
+  }
+}

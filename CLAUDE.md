@@ -6,8 +6,8 @@ first-class citizen. Public MIT package on npm under `@caplugins` (same scope as
 `@caplugins/capacitor-meta-sdk` and `@caplugins/capacitor-clevertap`); repo
 `caplugins/capacitor-health` on GitHub.
 
-**Status (2026-10-15): planning done, no code yet.** The next piece of work is always the first
-unchecked task in [docs/tasks.md](docs/tasks.md) (currently T01, scaffold).
+**Status (2026-10-17): M0 nearly done (spikes and registry in; T10 closes it).** The next piece of
+work is always the first unchecked task in [docs/tasks.md](docs/tasks.md).
 
 ## Read first
 
@@ -35,9 +35,10 @@ unchecked task in [docs/tasks.md](docs/tasks.md) (currently T01, scaffold).
   the plugin checks at runtime and fails with `MISSING_DECLARATION`.
 - **Never log health values**, in native or JS code, except behind the opt-in `debugLogging` config
   flag. No analytics, no network calls.
-- **Every type goes through the registry.** Don't hand-code a type in a bridge method. If a type
-  needs bespoke logic (workouts, sleep, menstruation periods, correlations), put it in the
-  `Special/` area and still register it.
+- **Every type goes through the registry.** Don't hand-code a type in a bridge method. Edit
+  `registry/types.json`, run `npm run registry:gen`, commit the generated files; never edit those by
+  hand. If a type needs bespoke logic (workouts, sleep, menstruation periods, correlations), put it
+  in the `Special/` area and still register it (kind `special`).
 - **Gate by OS version.** iOS floor is 15.0; any newer HealthKit symbol must sit inside
   `if #available`. Android gates newer records with Health Connect feature checks.
 - **iOS read permission is unknowable.** Never write code or docs that claim to know whether
@@ -57,8 +58,9 @@ unchecked task in [docs/tasks.md](docs/tasks.md) (currently T01, scaffold).
   `androidx.health.connect:connect-client` pinned to **1.1.0**, plugin `minSdk 26`. Dependency
   versions overridable from the app's `variables.gradle` `ext` (see how the CleverTap plugin reads
   `rootProject.ext`).
-- Scripts: `build` (clean → docgen → tsc → rollup), `verify` (`verify:ios`, `verify:android`,
-  `verify:web`), `lint`, `fmt`. Ionic eslint / prettier (+ java plugin) / swiftlint configs.
+- Scripts: `build` (clean → docgen → tsc → rollup), `verify` (`registry:check`, `verify:ios`,
+  `verify:android`, `verify:web`), `lint`, `fmt`, `registry:gen` / `registry:check` /
+  `registry:coverage`. Ionic eslint / prettier (+ java plugin) / swiftlint configs.
 - `peerDependencies`: `@capacitor/core ^8.0.0`. Author `Vish <hello@iamvishnu.dev>`, MIT,
   `publishConfig.access: public`, CHANGELOG kept per release.
 - Commits: conventional style (`feat(ios): …`, `fix(android): …`, `docs: …`).

@@ -23,12 +23,12 @@ jobs:
           distribution: temurin
           java-version: 21
       - run: npm ci
+      - run: npm run registry:check
       - run: npm run eslint
       - run: npm run prettier -- --check
       - run: npm test
       - run: npm run verify:web
       - run: npm run verify:android
-      # registry:check joins here once T09 adds it.
 
   ios:
     runs-on: macos-26

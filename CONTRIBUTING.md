@@ -41,7 +41,10 @@ on a keychain prompt for github.com credentials. The only package dependency is 
 - **Adding a method:** add it to `src/definitions.ts`, `src/web.ts`, `CapacitorHealthPlugin.kt` (as a
   `@PluginMethod`) and `CapacitorHealthPlugin.swift` (both the method and the `pluginMethods`
   list). A method missing from one platform rejects with "not implemented" at runtime.
-- **Adding a type:** add it to the registry, not to a bridge method. See
+- **Adding a type:** add it to [`registry/types.json`](registry/types.json) (format:
+  [`registry/schema.json`](registry/schema.json)), not to a bridge method, then run
+  `npm run registry:gen` and commit the generated files. `npm test` and `npm run test:ios` check the
+  entry against the schema and the HealthKit SDK; `npm run registry:coverage` shows what's left. See
   [`docs/04-type-mapping.md`](docs/04-type-mapping.md) and the per-type acceptance checklist in
   [`docs/06-testing.md`](docs/06-testing.md).
 - **Android plugin methods must not throw.** Capacitor rethrows exceptions from `@PluginMethod`s on

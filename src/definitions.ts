@@ -1,3 +1,5 @@
+export type { HealthType } from './generated/registry';
+
 /**
  * Whether health data can be used on this device.
  *

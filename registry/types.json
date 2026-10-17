@@ -1,0 +1,655 @@
+{
+  "$schema": "./schema.json",
+  "valueSets": {
+    "bleeding": {
+      "values": ["unspecified", "light", "medium", "heavy", "none"],
+      "ios": {
+        "enum": "HKCategoryValueVaginalBleeding",
+        "minOS": "18.0",
+        "map": {"unspecified": 1, "light": 2, "medium": 3, "heavy": 4, "none": 5},
+        "notes": "Before iOS 18 the same raw values were HKCategoryValueMenstrualFlow (deprecated)"
+      },
+      "android": {
+        "constants": "MenstruationFlowRecord",
+        "map": {
+          "unspecified": "FLOW_UNKNOWN",
+          "light": "FLOW_LIGHT",
+          "medium": "FLOW_MEDIUM",
+          "heavy": "FLOW_HEAVY",
+          "none": null
+        }
+      }
+    },
+    "cervicalMucusAppearance": {
+      "values": ["dry", "sticky", "creamy", "watery", "eggWhite", "unusual", "unknown"],
+      "ios": {
+        "enum": "HKCategoryValueCervicalMucusQuality",
+        "minOS": "9.0",
+        "map": {"dry": 1, "sticky": 2, "creamy": 3, "watery": 4, "eggWhite": 5, "unusual": null, "unknown": null}
+      },
+      "android": {
+        "constants": "CervicalMucusRecord",
+        "map": {
+          "dry": "APPEARANCE_DRY",
+          "sticky": "APPEARANCE_STICKY",
+          "creamy": "APPEARANCE_CREAMY",
+          "watery": "APPEARANCE_WATERY",
+          "eggWhite": "APPEARANCE_EGG_WHITE",
+          "unusual": "APPEARANCE_UNUSUAL",
+          "unknown": "APPEARANCE_UNKNOWN"
+        }
+      }
+    },
+    "cervicalMucusSensation": {
+      "values": ["light", "medium", "heavy"],
+      "android": {
+        "constants": "CervicalMucusRecord",
+        "map": {"light": "SENSATION_LIGHT", "medium": "SENSATION_MEDIUM", "heavy": "SENSATION_HEAVY"},
+        "absent": "SENSATION_UNKNOWN"
+      }
+    },
+    "ovulationTestResult": {
+      "values": ["negative", "lhSurge", "estrogenSurge", "indeterminate"],
+      "ios": {
+        "enum": "HKCategoryValueOvulationTestResult",
+        "minOS": "9.0",
+        "map": {"negative": 1, "lhSurge": 2, "estrogenSurge": 4, "indeterminate": 3},
+        "cases": {"lhSurge": "luteinizingHormoneSurge"}
+      },
+      "android": {
+        "constants": "OvulationTestRecord",
+        "map": {
+          "negative": "RESULT_NEGATIVE",
+          "lhSurge": "RESULT_POSITIVE",
+          "estrogenSurge": "RESULT_HIGH",
+          "indeterminate": "RESULT_INCONCLUSIVE"
+        },
+        "notes": "RESULT_HIGH is 'a rise in estrogen or luteinizing hormone' (T08), so an LH-driven HIGH also reads as estrogenSurge"
+      }
+    },
+    "pregnancyTestResult": {
+      "values": ["negative", "positive", "indeterminate"],
+      "ios": {
+        "enum": "HKCategoryValuePregnancyTestResult",
+        "minOS": "15.0",
+        "map": {"negative": 1, "positive": 2, "indeterminate": 3}
+      }
+    },
+    "progesteroneTestResult": {
+      "values": ["negative", "positive", "indeterminate"],
+      "ios": {
+        "enum": "HKCategoryValueProgesteroneTestResult",
+        "minOS": "15.0",
+        "map": {"negative": 1, "positive": 2, "indeterminate": 3}
+      }
+    },
+    "contraceptive": {
+      "values": ["unspecified", "implant", "injection", "intrauterineDevice", "intravaginalRing", "oral", "patch"],
+      "ios": {
+        "enum": "HKCategoryValueContraceptive",
+        "minOS": "14.3",
+        "map": {
+          "unspecified": 1,
+          "implant": 2,
+          "injection": 3,
+          "intrauterineDevice": 4,
+          "intravaginalRing": 5,
+          "oral": 6,
+          "patch": 7
+        }
+      }
+    },
+    "menopausalState": {
+      "values": ["menopause", "perimenopause", "none"],
+      "ios": {
+        "enum": "HKCategoryValueMenopausalState",
+        "minOS": "27.0",
+        "map": {"menopause": 1, "perimenopause": 2, "none": 3}
+      }
+    },
+    "bodyTemperatureLocation": {
+      "values": [
+        "armpit",
+        "body",
+        "ear",
+        "earDrum",
+        "finger",
+        "forehead",
+        "gastroIntestinal",
+        "mouth",
+        "rectum",
+        "temporalArtery",
+        "toe",
+        "vagina",
+        "wrist",
+        "other"
+      ],
+      "ios": {
+        "enum": "HKBodyTemperatureSensorLocation",
+        "minOS": "8.0",
+        "map": {
+          "armpit": 1,
+          "body": 2,
+          "ear": 3,
+          "earDrum": 9,
+          "finger": 4,
+          "forehead": 11,
+          "gastroIntestinal": 5,
+          "mouth": 6,
+          "rectum": 7,
+          "temporalArtery": 10,
+          "toe": 8,
+          "vagina": null,
+          "wrist": null,
+          "other": 0
+        }
+      },
+      "android": {
+        "constants": "BodyTemperatureMeasurementLocation",
+        "map": {
+          "armpit": "MEASUREMENT_LOCATION_ARMPIT",
+          "body": null,
+          "ear": "MEASUREMENT_LOCATION_EAR",
+          "earDrum": null,
+          "finger": "MEASUREMENT_LOCATION_FINGER",
+          "forehead": "MEASUREMENT_LOCATION_FOREHEAD",
+          "gastroIntestinal": null,
+          "mouth": "MEASUREMENT_LOCATION_MOUTH",
+          "rectum": "MEASUREMENT_LOCATION_RECTUM",
+          "temporalArtery": "MEASUREMENT_LOCATION_TEMPORAL_ARTERY",
+          "toe": "MEASUREMENT_LOCATION_TOE",
+          "vagina": "MEASUREMENT_LOCATION_VAGINA",
+          "wrist": "MEASUREMENT_LOCATION_WRIST",
+          "other": null
+        },
+        "absent": "MEASUREMENT_LOCATION_UNKNOWN"
+      }
+    },
+    "skinTemperatureLocation": {
+      "values": ["finger", "toe", "wrist"],
+      "android": {
+        "constants": "SkinTemperatureRecord",
+        "map": {
+          "finger": "MEASUREMENT_LOCATION_FINGER",
+          "toe": "MEASUREMENT_LOCATION_TOE",
+          "wrist": "MEASUREMENT_LOCATION_WRIST"
+        },
+        "absent": "MEASUREMENT_LOCATION_UNKNOWN"
+      }
+    },
+    "severity": {
+      "values": ["unspecified", "notPresent", "mild", "moderate", "severe"],
+      "ios": {
+        "enum": "HKCategoryValueSeverity",
+        "minOS": "13.6",
+        "map": {"unspecified": 0, "notPresent": 1, "mild": 2, "moderate": 3, "severe": 4}
+      }
+    },
+    "presence": {
+      "values": ["present", "notPresent"],
+      "ios": {"enum": "HKCategoryValuePresence", "minOS": "13.6", "map": {"present": 0, "notPresent": 1}}
+    },
+    "appetiteChanges": {
+      "values": ["unspecified", "noChange", "decreased", "increased"],
+      "ios": {
+        "enum": "HKCategoryValueAppetiteChanges",
+        "minOS": "13.6",
+        "map": {"unspecified": 0, "noChange": 1, "decreased": 2, "increased": 3}
+      }
+    }
+  },
+  "types": [
+    {
+      "id": "menstrualFlow",
+      "kind": "category",
+      "group": "reproductiveHealth",
+      "values": "bleeding",
+      "fields": {
+        "isCycleStart": {
+          "type": "boolean",
+          "ios": {
+            "metadata": "HKMetadataKeyMenstrualCycleStart",
+            "key": "HKMenstrualCycleStart",
+            "requiredOnWrite": true
+          },
+          "android": {
+            "computed": "true when a MenstruationPeriodRecord from the same data origin starts on the record's local date, false when one covers it but started earlier, absent otherwise (decision #16)"
+          }
+        }
+      },
+      "ios": {
+        "identifier": "HKCategoryTypeIdentifierMenstrualFlow",
+        "minOS": "9.0",
+        "writable": true,
+        "notes": "HealthKit requires the cycle-start key on every sample; Apple Health writes false even on day 1 (T07)"
+      },
+      "android": {
+        "record": "MenstruationFlowRecord",
+        "time": "instant",
+        "readPermission": "android.permission.health.READ_MENSTRUATION",
+        "writePermission": "android.permission.health.WRITE_MENSTRUATION",
+        "writable": true,
+        "valueProperty": "flow"
+      }
+    },
+    {
+      "id": "menstruationPeriod",
+      "kind": "special",
+      "group": "reproductiveHealth",
+      "ios": {
+        "identifier": "HKCategoryTypeIdentifierMenstrualFlow",
+        "minOS": "9.0",
+        "writable": true,
+        "derivedFrom": "menstrualFlow",
+        "notes": "Derived from flow samples on read, expanded into per-day flow samples on write (03-architecture, decision #29)"
+      },
+      "android": {
+        "record": "MenstruationPeriodRecord",
+        "time": "interval",
+        "readPermission": "android.permission.health.READ_MENSTRUATION",
+        "writePermission": "android.permission.health.WRITE_MENSTRUATION",
+        "writable": true,
+        "maxDurationDays": 31,
+        "notes": "Ends inside the last local day on write, read end-exclusive (decision #30)"
+      }
+    },
+    {
+      "id": "intermenstrualBleeding",
+      "kind": "event",
+      "group": "reproductiveHealth",
+      "ios": {"identifier": "HKCategoryTypeIdentifierIntermenstrualBleeding", "minOS": "9.0", "writable": true},
+      "android": {
+        "record": "IntermenstrualBleedingRecord",
+        "time": "instant",
+        "readPermission": "android.permission.health.READ_INTERMENSTRUAL_BLEEDING",
+        "writePermission": "android.permission.health.WRITE_INTERMENSTRUAL_BLEEDING",
+        "writable": true
+      }
+    },
+    {
+      "id": "cervicalMucus",
+      "kind": "category",
+      "group": "reproductiveHealth",
+      "values": "cervicalMucusAppearance",
+      "fields": {
+        "sensation": {"type": "enum", "values": "cervicalMucusSensation", "android": {"property": "sensation"}}
+      },
+      "ios": {"identifier": "HKCategoryTypeIdentifierCervicalMucusQuality", "minOS": "9.0", "writable": true},
+      "android": {
+        "record": "CervicalMucusRecord",
+        "time": "instant",
+        "readPermission": "android.permission.health.READ_CERVICAL_MUCUS",
+        "writePermission": "android.permission.health.WRITE_CERVICAL_MUCUS",
+        "writable": true,
+        "valueProperty": "appearance"
+      }
+    },
+    {
+      "id": "ovulationTest",
+      "kind": "category",
+      "group": "reproductiveHealth",
+      "values": "ovulationTestResult",
+      "ios": {"identifier": "HKCategoryTypeIdentifierOvulationTestResult", "minOS": "9.0", "writable": true},
+      "android": {
+        "record": "OvulationTestRecord",
+        "time": "instant",
+        "readPermission": "android.permission.health.READ_OVULATION_TEST",
+        "writePermission": "android.permission.health.WRITE_OVULATION_TEST",
+        "writable": true,
+        "valueProperty": "result"
+      }
+    },
+    {
+      "id": "sexualActivity",
+      "kind": "event",
+      "group": "reproductiveHealth",
+      "fields": {
+        "protectionUsed": {
+          "type": "boolean",
+          "ios": {"metadata": "HKMetadataKeySexualActivityProtectionUsed", "key": "HKSexualActivityProtectionUsed"},
+          "android": {
+            "property": "protectionUsed",
+            "constants": "SexualActivityRecord",
+            "true": "PROTECTION_USED_PROTECTED",
+            "false": "PROTECTION_USED_UNPROTECTED",
+            "absent": "PROTECTION_USED_UNKNOWN"
+          }
+        }
+      },
+      "ios": {"identifier": "HKCategoryTypeIdentifierSexualActivity", "minOS": "9.0", "writable": true},
+      "android": {
+        "record": "SexualActivityRecord",
+        "time": "instant",
+        "readPermission": "android.permission.health.READ_SEXUAL_ACTIVITY",
+        "writePermission": "android.permission.health.WRITE_SEXUAL_ACTIVITY",
+        "writable": true
+      }
+    },
+    {
+      "id": "basalBodyTemperature",
+      "kind": "quantity",
+      "group": "reproductiveHealth",
+      "unit": "degC",
+      "units": ["degC", "degF"],
+      "fields": {
+        "measurementLocation": {
+          "type": "enum",
+          "values": "bodyTemperatureLocation",
+          "ios": {"metadata": "HKMetadataKeyBodyTemperatureSensorLocation", "key": "HKBodyTemperatureSensorLocation"},
+          "android": {"property": "measurementLocation"}
+        }
+      },
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierBasalBodyTemperature",
+        "minOS": "9.0",
+        "writable": true,
+        "aggregation": "discreteArithmetic"
+      },
+      "android": {
+        "record": "BasalBodyTemperatureRecord",
+        "time": "instant",
+        "readPermission": "android.permission.health.READ_BASAL_BODY_TEMPERATURE",
+        "writePermission": "android.permission.health.WRITE_BASAL_BODY_TEMPERATURE",
+        "writable": true,
+        "valueProperty": "temperature"
+      }
+    },
+    {
+      "id": "wristTemperature",
+      "kind": "quantity",
+      "group": "reproductiveHealth",
+      "unit": "degC",
+      "units": ["degC", "degF"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierAppleSleepingWristTemperature",
+        "minOS": "16.0",
+        "writable": false,
+        "aggregation": "discreteArithmetic",
+        "notes": "Written by Apple Watch. Read-only until T19 confirms HealthKit allows sharing it: a disallowed share type throws an Objective-C exception (decision #35)"
+      }
+    },
+    {
+      "id": "skinTemperature",
+      "kind": "special",
+      "group": "reproductiveHealth",
+      "unit": "degC",
+      "units": ["degC", "degF"],
+      "fields": {
+        "measurementLocation": {"type": "enum", "values": "skinTemperatureLocation", "android": {"property": "measurementLocation"}}
+      },
+      "android": {
+        "record": "SkinTemperatureRecord",
+        "time": "interval",
+        "readPermission": "android.permission.health.READ_SKIN_TEMPERATURE",
+        "writePermission": "android.permission.health.WRITE_SKIN_TEMPERATURE",
+        "writable": true,
+        "feature": "FEATURE_SKIN_TEMPERATURE",
+        "notes": "Baseline plus a list of timed deltas, so it stays separate from wristTemperature (absolute values)"
+      }
+    },
+    {
+      "id": "pregnancyTest",
+      "kind": "category",
+      "group": "reproductiveHealth",
+      "values": "pregnancyTestResult",
+      "ios": {"identifier": "HKCategoryTypeIdentifierPregnancyTestResult", "minOS": "15.0", "writable": true}
+    },
+    {
+      "id": "progesteroneTest",
+      "kind": "category",
+      "group": "reproductiveHealth",
+      "values": "progesteroneTestResult",
+      "ios": {"identifier": "HKCategoryTypeIdentifierProgesteroneTestResult", "minOS": "15.0", "writable": true}
+    },
+    {
+      "id": "contraceptive",
+      "kind": "category",
+      "group": "reproductiveHealth",
+      "values": "contraceptive",
+      "ios": {"identifier": "HKCategoryTypeIdentifierContraceptive", "minOS": "14.3", "writable": true}
+    },
+    {
+      "id": "pregnancy",
+      "kind": "event",
+      "group": "reproductiveHealth",
+      "ios": {"identifier": "HKCategoryTypeIdentifierPregnancy", "minOS": "14.3", "writable": true}
+    },
+    {
+      "id": "lactation",
+      "kind": "event",
+      "group": "reproductiveHealth",
+      "ios": {"identifier": "HKCategoryTypeIdentifierLactation", "minOS": "14.3", "writable": true}
+    },
+    {
+      "id": "bleedingDuringPregnancy",
+      "kind": "category",
+      "group": "reproductiveHealth",
+      "values": "bleeding",
+      "ios": {"identifier": "HKCategoryTypeIdentifierBleedingDuringPregnancy", "minOS": "18.0", "writable": true}
+    },
+    {
+      "id": "bleedingAfterPregnancy",
+      "kind": "category",
+      "group": "reproductiveHealth",
+      "values": "bleeding",
+      "ios": {"identifier": "HKCategoryTypeIdentifierBleedingAfterPregnancy", "minOS": "18.0", "writable": true}
+    },
+    {
+      "id": "bleedingAfterMenopause",
+      "kind": "category",
+      "group": "reproductiveHealth",
+      "values": "bleeding",
+      "ios": {"identifier": "HKCategoryTypeIdentifierBleedingAfterMenopause", "minOS": "27.0", "writable": true}
+    },
+    {
+      "id": "menopausalState",
+      "kind": "category",
+      "group": "reproductiveHealth",
+      "values": "menopausalState",
+      "ios": {
+        "identifier": "HKCategoryTypeIdentifierMenopausalState",
+        "minOS": "27.0",
+        "writable": true,
+        "time": "instant"
+      }
+    },
+    {
+      "id": "infrequentMenstrualCycles",
+      "kind": "event",
+      "group": "reproductiveHealth",
+      "ios": {
+        "identifier": "HKCategoryTypeIdentifierInfrequentMenstrualCycles",
+        "minOS": "16.0",
+        "writable": false,
+        "notes": "Written by Apple's cycle-deviation detection. Read-only until T19 checks whether sharing is allowed (decision #35)"
+      }
+    },
+    {
+      "id": "irregularMenstrualCycles",
+      "kind": "event",
+      "group": "reproductiveHealth",
+      "ios": {
+        "identifier": "HKCategoryTypeIdentifierIrregularMenstrualCycles",
+        "minOS": "16.0",
+        "writable": false,
+        "notes": "Written by Apple's cycle-deviation detection. Read-only until T19 checks whether sharing is allowed (decision #35)"
+      }
+    },
+    {
+      "id": "persistentIntermenstrualBleeding",
+      "kind": "event",
+      "group": "reproductiveHealth",
+      "ios": {
+        "identifier": "HKCategoryTypeIdentifierPersistentIntermenstrualBleeding",
+        "minOS": "16.0",
+        "writable": false,
+        "notes": "Written by Apple's cycle-deviation detection. Read-only until T19 checks whether sharing is allowed (decision #35)"
+      }
+    },
+    {
+      "id": "prolongedMenstrualPeriods",
+      "kind": "event",
+      "group": "reproductiveHealth",
+      "ios": {
+        "identifier": "HKCategoryTypeIdentifierProlongedMenstrualPeriods",
+        "minOS": "16.0",
+        "writable": false,
+        "notes": "Written by Apple's cycle-deviation detection. Read-only until T19 checks whether sharing is allowed (decision #35)"
+      }
+    },
+    {
+      "id": "abdominalCramps",
+      "kind": "category",
+      "group": "symptoms",
+      "values": "severity",
+      "ios": {"identifier": "HKCategoryTypeIdentifierAbdominalCramps", "minOS": "13.6", "writable": true}
+    },
+    {
+      "id": "acne",
+      "kind": "category",
+      "group": "symptoms",
+      "values": "severity",
+      "ios": {"identifier": "HKCategoryTypeIdentifierAcne", "minOS": "13.6", "writable": true}
+    },
+    {
+      "id": "appetiteChanges",
+      "kind": "category",
+      "group": "symptoms",
+      "values": "appetiteChanges",
+      "ios": {"identifier": "HKCategoryTypeIdentifierAppetiteChanges", "minOS": "13.6", "writable": true}
+    },
+    {
+      "id": "bladderIncontinence",
+      "kind": "category",
+      "group": "symptoms",
+      "values": "severity",
+      "ios": {"identifier": "HKCategoryTypeIdentifierBladderIncontinence", "minOS": "14.0", "writable": true}
+    },
+    {
+      "id": "bloating",
+      "kind": "category",
+      "group": "symptoms",
+      "values": "severity",
+      "ios": {"identifier": "HKCategoryTypeIdentifierBloating", "minOS": "13.6", "writable": true}
+    },
+    {
+      "id": "breastPain",
+      "kind": "category",
+      "group": "symptoms",
+      "values": "severity",
+      "ios": {"identifier": "HKCategoryTypeIdentifierBreastPain", "minOS": "13.6", "writable": true}
+    },
+    {
+      "id": "chills",
+      "kind": "category",
+      "group": "symptoms",
+      "values": "severity",
+      "ios": {"identifier": "HKCategoryTypeIdentifierChills", "minOS": "13.6", "writable": true}
+    },
+    {
+      "id": "constipation",
+      "kind": "category",
+      "group": "symptoms",
+      "values": "severity",
+      "ios": {"identifier": "HKCategoryTypeIdentifierConstipation", "minOS": "13.6", "writable": true}
+    },
+    {
+      "id": "diarrhea",
+      "kind": "category",
+      "group": "symptoms",
+      "values": "severity",
+      "ios": {"identifier": "HKCategoryTypeIdentifierDiarrhea", "minOS": "13.6", "writable": true}
+    },
+    {
+      "id": "drySkin",
+      "kind": "category",
+      "group": "symptoms",
+      "values": "severity",
+      "ios": {"identifier": "HKCategoryTypeIdentifierDrySkin", "minOS": "14.0", "writable": true}
+    },
+    {
+      "id": "fatigue",
+      "kind": "category",
+      "group": "symptoms",
+      "values": "severity",
+      "ios": {"identifier": "HKCategoryTypeIdentifierFatigue", "minOS": "13.6", "writable": true}
+    },
+    {
+      "id": "hairLoss",
+      "kind": "category",
+      "group": "symptoms",
+      "values": "severity",
+      "ios": {"identifier": "HKCategoryTypeIdentifierHairLoss", "minOS": "14.0", "writable": true}
+    },
+    {
+      "id": "headache",
+      "kind": "category",
+      "group": "symptoms",
+      "values": "severity",
+      "ios": {"identifier": "HKCategoryTypeIdentifierHeadache", "minOS": "13.6", "writable": true}
+    },
+    {
+      "id": "hotFlashes",
+      "kind": "category",
+      "group": "symptoms",
+      "values": "severity",
+      "ios": {"identifier": "HKCategoryTypeIdentifierHotFlashes", "minOS": "13.6", "writable": true}
+    },
+    {
+      "id": "lowerBackPain",
+      "kind": "category",
+      "group": "symptoms",
+      "values": "severity",
+      "ios": {"identifier": "HKCategoryTypeIdentifierLowerBackPain", "minOS": "13.6", "writable": true}
+    },
+    {
+      "id": "memoryLapse",
+      "kind": "category",
+      "group": "symptoms",
+      "values": "severity",
+      "ios": {"identifier": "HKCategoryTypeIdentifierMemoryLapse", "minOS": "14.0", "writable": true}
+    },
+    {
+      "id": "moodChanges",
+      "kind": "category",
+      "group": "symptoms",
+      "values": "presence",
+      "ios": {"identifier": "HKCategoryTypeIdentifierMoodChanges", "minOS": "13.6", "writable": true}
+    },
+    {
+      "id": "nausea",
+      "kind": "category",
+      "group": "symptoms",
+      "values": "severity",
+      "ios": {"identifier": "HKCategoryTypeIdentifierNausea", "minOS": "13.6", "writable": true}
+    },
+    {
+      "id": "nightSweats",
+      "kind": "category",
+      "group": "symptoms",
+      "values": "severity",
+      "ios": {"identifier": "HKCategoryTypeIdentifierNightSweats", "minOS": "14.0", "writable": true}
+    },
+    {
+      "id": "pelvicPain",
+      "kind": "category",
+      "group": "symptoms",
+      "values": "severity",
+      "ios": {"identifier": "HKCategoryTypeIdentifierPelvicPain", "minOS": "13.6", "writable": true}
+    },
+    {
+      "id": "sleepChanges",
+      "kind": "category",
+      "group": "symptoms",
+      "values": "presence",
+      "ios": {"identifier": "HKCategoryTypeIdentifierSleepChanges", "minOS": "13.6", "writable": true}
+    },
+    {
+      "id": "vaginalDryness",
+      "kind": "category",
+      "group": "symptoms",
+      "values": "severity",
+      "ios": {"identifier": "HKCategoryTypeIdentifierVaginalDryness", "minOS": "14.0", "writable": true}
+    }
+  ]
+}
