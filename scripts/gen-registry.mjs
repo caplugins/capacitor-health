@@ -37,7 +37,9 @@ function iosMetrics(t, registry) {
   if (!t.ios) return null;
   const style = t.ios.aggregation ?? registry.types.find((x) => x.id === t.ios.members?.[0])?.ios?.aggregation;
   if (!style) return null;
-  return style === 'cumulative' ? ['sum'] : ['avg', 'min', 'max'];
+  if (style === 'cumulative') return ['sum'];
+  // A combined discrete id has no average: per-member averages can't be combined without their weights.
+  return t.ios.members ? ['min', 'max'] : ['avg', 'min', 'max'];
 }
 
 const METRIC_ORDER = ['sum', 'avg', 'min', 'max', 'count', 'duration'];

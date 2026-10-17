@@ -2,6 +2,7 @@ import { CapacitorHealth, HEALTH_TYPES } from '@caplugins/capacitor-health';
 import type { HealthType } from '@caplugins/capacitor-health';
 
 import { runAcceptance } from './acceptance';
+import { runAggregateCheck } from './aggregate';
 import { changes, deleteByClientId, deleteRange, loadTypes, read, updateValues, write } from './explore';
 import { runChangesCheck, runPeriodCheck, runRoundTrips } from './roundtrip';
 import { deleteTestData, seedTestData } from './seed';
@@ -96,6 +97,12 @@ bind('acceptance-denied', 'acceptance-output', async () => {
   return rows.map((row) => `${row.status.toUpperCase()} ${row.type} ${Object.values(row.steps).join(' | ')}`);
 });
 
+bind('aggregate-check', 'aggregate-output', async () => {
+  const lines = await runAggregateCheck();
+  lines.forEach((line) => console.log(`[aggregate] ${line}`));
+  return lines;
+});
+
 // For scripted runs (DevTools / Web Inspector): `await window.example.runChangesCheck()`.
 (window as unknown as { example: unknown }).example = {
   CapacitorHealth,
@@ -103,6 +110,7 @@ bind('acceptance-denied', 'acceptance-output', async () => {
   runChangesCheck,
   runPeriodCheck,
   runAcceptance,
+  runAggregateCheck,
   seedTestData,
   deleteTestData,
   loadTypes,

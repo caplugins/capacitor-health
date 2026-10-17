@@ -389,11 +389,6 @@ export function validateAggregate(options: AggregateOptions, platform: NativePla
     }
     result.bucket = { unit, size };
   }
-  if (o.timeZone !== undefined) {
-    const zone = nonEmptyString(o.timeZone, 'timeZone');
-    if (!isValidTimeZone(zone)) throw invalid('timeZone', 'must be an IANA time zone, e.g. Europe/Berlin');
-    result.timeZone = zone;
-  }
   const u = unit(o.unit, 'unit', entry);
   if (u) result.unit = u;
   if (o.sourceIds !== undefined) result.sourceIds = stringList(o.sourceIds, 'sourceIds');

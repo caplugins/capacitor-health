@@ -82,6 +82,8 @@ enum HealthTypes {
             result.merge(["supported": false, "readable": false, "writable": false, "reason": reason.rawValue]) { $1 }
             return result
         }
+        let metrics = Aggregation.metrics(for: entry)
+        if !metrics.isEmpty { result.merge(["aggregatable": true, "metrics": metrics]) { $1 } }
         if entry.aggregateOnly {
             result.merge(["supported": true, "readable": false, "writable": false, "reason": "aggregateOnly"]) { $1 }
             return result

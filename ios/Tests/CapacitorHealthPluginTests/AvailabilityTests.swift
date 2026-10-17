@@ -24,6 +24,7 @@ final class AvailabilityTests: XCTestCase {
             "openHealthSettings",
             "openHealthConnectInstall",
             "readSamples",
+            "aggregate",
             "getChanges",
             "saveSamples",
             "deleteSamples"

@@ -869,12 +869,11 @@ describe('aggregate', () => {
         type: 'heartRate',
         metrics: ['avg', 'max', 'avg'],
         bucket: { unit: 'day' },
-        timeZone: 'Asia/Kolkata',
         sourceIds: ['com.example.watch'],
       },
       'android',
     );
-    expect(full).toMatchObject({ metrics: ['avg', 'max'], bucket: { unit: 'day', size: 1 }, timeZone: 'Asia/Kolkata' });
+    expect(full).toMatchObject({ metrics: ['avg', 'max'], bucket: { unit: 'day', size: 1 } });
     expect(validateAggregate({ ...steps, type: 'distance', unit: 'km' }, 'ios').unit).toBe('km');
   });
 
@@ -914,7 +913,7 @@ describe('aggregate', () => {
     );
   });
 
-  it('checks the range, bucket, zone and unit', () => {
+  it('checks the range, bucket and unit', () => {
     rejection(
       () => validateAggregate({ ...steps, endDate: START }, 'ios'),
       'INVALID_ARGUMENT',
@@ -944,7 +943,6 @@ describe('aggregate', () => {
     expect(
       validateAggregate({ ...steps, endDate: '2030-01-01T00:00:00Z', bucket: { unit: 'month' } }, 'ios').bucket?.unit,
     ).toBe('month');
-    rejection(() => validateAggregate({ ...steps, timeZone: 'Mars/Olympus' }, 'ios'), 'INVALID_ARGUMENT', 'timeZone');
     rejection(() => validateAggregate({ ...steps, unit: 'kg' }, 'ios'), 'INVALID_ARGUMENT', 'unit', 'unknownUnit');
   });
 });

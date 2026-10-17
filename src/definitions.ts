@@ -1112,19 +1112,12 @@ export interface AggregateOptions {
   /**
    * Split the range into buckets that start at `startDate`. Without it the result is one bucket for
    * the whole range. Minute and hour buckets are exact lengths of time; day, week and month buckets
-   * follow the calendar in `timeZone`, so a day across a daylight-saving change lasts 23 or 25 hours.
-   * At most 5,000 buckets.
+   * follow the calendar in the device's time zone, so a day across a daylight-saving change lasts 23
+   * or 25 hours. At most 5,000 buckets.
    *
    * @since 0.2.0
    */
   bucket?: AggregateBucketOptions;
-  /**
-   * Time zone for day, week and month buckets (IANA, e.g. `Europe/Berlin`). Defaults to the device's
-   * zone.
-   *
-   * @since 0.2.0
-   */
-  timeZone?: string;
   /**
    * Unit for `sum`, `avg`, `min` and `max`; one of the type's units. Defaults to its canonical unit.
    *

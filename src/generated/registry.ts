@@ -1327,7 +1327,7 @@ export const REGISTRY: Readonly<Record<HealthType, RegistryEntry>> = {
         'rowingSpeed',
       ],
       writeTo: 'walkingSpeed',
-      metrics: ['avg', 'min', 'max'],
+      metrics: ['min', 'max'],
     },
     android: {
       record: 'SpeedRecord',
@@ -1434,7 +1434,7 @@ export const REGISTRY: Readonly<Record<HealthType, RegistryEntry>> = {
       time: 'any',
       members: ['runningPower', 'cyclingPower'],
       writeTo: 'runningPower',
-      metrics: ['avg', 'min', 'max'],
+      metrics: ['min', 'max'],
     },
     android: {
       record: 'PowerRecord',
