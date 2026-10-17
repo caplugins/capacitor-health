@@ -6,21 +6,4 @@
     <queries>
         <package android:name="com.google.android.apps.healthdata" />
     </queries>
-
-    <application>
-        <!-- M0 spike rationale screen (removed in T10; T14 ships the real one, decision #19). -->
-        <activity
-            android:name="com.caplugins.health.spike.SpikeRationaleActivity"
-            android:exported="true" />
-        <activity-alias
-            android:name="com.caplugins.health.spike.SpikeViewPermissionUsageActivity"
-            android:exported="true"
-            android:permission="android.permission.START_VIEW_PERMISSION_USAGE"
-            android:targetActivity="com.caplugins.health.spike.SpikeRationaleActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
-                <category android:name="android.intent.category.HEALTH_PERMISSIONS" />
-            </intent-filter>
-        </activity-alias>
-    </application>
 </manifest>

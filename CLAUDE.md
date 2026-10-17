@@ -6,8 +6,9 @@ first-class citizen. Public MIT package on npm under `@caplugins` (same scope as
 `@caplugins/capacitor-meta-sdk` and `@caplugins/capacitor-clevertap`); repo
 `caplugins/capacitor-health` on GitHub.
 
-**Status (2026-10-17): M0 nearly done (spikes and registry in; T10 closes it).** The next piece of
-work is always the first unchecked task in [docs/tasks.md](docs/tasks.md).
+**Status (2026-10-17): M1 in progress** (M0 closed: spikes in [docs/spikes/m0.md](docs/spikes/m0.md),
+registry in `registry/`). The next piece of work is always the first unchecked task in
+[docs/tasks.md](docs/tasks.md).
 
 ## Read first
 
