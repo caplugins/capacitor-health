@@ -111,7 +111,9 @@ final class Changes {
 
     private func anchoredQuery(_ type: HKSampleType, anchor: HKQueryAnchor?, predicate: NSPredicate?, limit: Int) async throws -> Page {
         try await withCheckedThrowingContinuation { continuation in
-            let query = HKAnchoredObjectQuery(type: type, predicate: predicate, anchor: anchor, limit: limit) { _, samples, deleted, newAnchor, error in
+            let query = HKAnchoredObjectQuery(
+                type: type, predicate: predicate, anchor: anchor, limit: limit
+            ) { _, samples, deleted, newAnchor, error in
                 if let error {
                     continuation.resume(throwing: error)
                 } else {
