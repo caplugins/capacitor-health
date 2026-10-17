@@ -21,10 +21,22 @@ enum HealthTypes {
         return HKObjectType.categoryType(forIdentifier: HKCategoryTypeIdentifier(rawValue: entry.identifier))
     }
 
+    /// The HealthKit types `entry` reads, each with its own entry: one, or for a combined id every member this
+    /// iOS has (decision #14). A member's samples still report the combined id as their type.
+    static func readTypes(for entry: RegistryEntry, registry: [String: RegistryEntry] = Registry.byId) -> [(RegistryEntry, HKSampleType)] {
+        guard !entry.members.isEmpty else { return sampleType(for: entry).map { [(entry, $0)] } ?? [] }
+        return entry.members.compactMap { registry[$0] }.compactMap { member in sampleType(for: member).map { (member, $0) } }
+    }
+
+    /// Rejects aggregate-only types (`totalEnergy`), which have no samples to read, follow or delete.
+    static func requireSamples(_ entry: RegistryEntry) throws {
+        if entry.aggregateOnly { throw HealthError.unsupportedType(entry.typeId, reason: "aggregateOnly") }
+    }
+
     /// The entry and HealthKit type for `typeId`, or why there is none.
     static func lookup(_ typeId: String, registry: [String: RegistryEntry] = Registry.byId)
         -> Result<(RegistryEntry, HKSampleType), Unavailability> {
-        guard let entry = registry[typeId] else { return .failure(.notOnPlatform) }
+        guard let entry = registry[typeId], !entry.isCorrelation else { return .failure(.notOnPlatform) }
         guard let type = sampleType(for: entry) else { return .failure(.osVersion) }
         return .success((entry, type))
     }
@@ -54,8 +66,12 @@ enum HealthTypes {
         result["minOS"] = entry.minOS
         if let valueSet = entry.valueSet, let set = Registry.valueSets[valueSet] { result["values"] = set.values }
         if !entry.units.isEmpty { result["units"] = entry.units }
-        guard sampleType(for: entry) != nil else {
-            result.merge(["supported": false, "readable": false, "writable": false, "reason": "osVersion"]) { $1 }
+        if case .failure(let reason) = lookup(typeId, registry: registry) {
+            result.merge(["supported": false, "readable": false, "writable": false, "reason": reason.rawValue]) { $1 }
+            return result
+        }
+        if entry.aggregateOnly {
+            result.merge(["supported": true, "readable": false, "writable": false, "reason": "aggregateOnly"]) { $1 }
             return result
         }
         result.merge(["supported": true, "readable": true, "writable": entry.writable]) { $1 }

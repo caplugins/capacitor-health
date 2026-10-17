@@ -668,6 +668,101 @@ describe('saveSamples', () => {
   });
 });
 
+describe('M2 types', () => {
+  it('validates the new typed fields per platform', () => {
+    const vo2 = { type: 'vo2Max', startDate: START, value: 42 };
+    expect(save({ ...vo2, testType: 'predictionStepTest' }).testType).toBe('predictionStepTest');
+    expect(save({ ...vo2, measurementMethod: 'heartRateRatio' }, 'android').measurementMethod).toBe('heartRateRatio');
+    rejection(
+      () => save({ ...vo2, measurementMethod: 'heartRateRatio' }),
+      'INVALID_ARGUMENT',
+      'samples[0].measurementMethod',
+      'valueUnsupportedOnPlatform',
+    );
+    const glucose = { type: 'bloodGlucose', startDate: START, value: 5.5, unit: 'mmol/L' };
+    expect(save({ ...glucose, relationToMeal: 'afterMeal' })).toMatchObject({
+      unit: 'mmol/L',
+      relationToMeal: 'afterMeal',
+    });
+    rejection(
+      () => save({ ...glucose, relationToMeal: 'fasting' }),
+      'INVALID_ARGUMENT',
+      'samples[0].relationToMeal',
+      'valueUnsupportedOnPlatform',
+    );
+    expect(save({ ...glucose, relationToMeal: 'fasting', specimenSource: 'capillaryBlood' }, 'android')).toMatchObject({
+      relationToMeal: 'fasting',
+    });
+    rejection(
+      () => save({ ...glucose, testType: 'maxExercise' }),
+      'INVALID_ARGUMENT',
+      'samples[0].testType',
+      'notApplicable',
+    );
+  });
+
+  it('enforces HealthKit ranges and minimum durations on iOS', () => {
+    const effort = { type: 'workoutEffortScore', startDate: START, value: 11 };
+    rejection(() => save(effort), 'INVALID_ARGUMENT', 'samples[0].value', 'outOfRange');
+    expect(save({ ...effort, value: 10 }).value).toBe(10);
+    const audio = { type: 'headphoneAudioExposure', startDate: START, value: 70 };
+    rejection(() => save(audio), 'INVALID_ARGUMENT', 'samples[0].endDate', 'intervalOnly');
+    rejection(
+      () => save({ ...audio, endDate: '2026-10-01T08:00:00.999+05:30' }),
+      'INVALID_ARGUMENT',
+      'samples[0].endDate',
+      'intervalOnly',
+    );
+    expect(save({ ...audio, endDate: END }).endDate).toBe('2026-10-01T09:00:00.000+05:30');
+  });
+
+  it('requires an insulin delivery reason on iOS', () => {
+    const insulin = { type: 'insulinDelivery', startDate: START, value: 2 };
+    rejection(() => save(insulin), 'INVALID_ARGUMENT', 'samples[0].reason', 'required');
+    expect(save({ ...insulin, reason: 'bolus' })).toMatchObject({ unit: 'IU', reason: 'bolus' });
+  });
+
+  it('accepts combined ids and their units', () => {
+    expect(save({ type: 'distance', startDate: START, endDate: END, value: 2, unit: 'km' })).toMatchObject({
+      type: 'distance',
+      unit: 'km',
+    });
+    expect(validateReadSamples({ type: 'speed', startDate: START, endDate: END, unit: 'mph' }, 'ios').unit).toBe('mph');
+    rejection(
+      () => save({ type: 'distance', startDate: START, value: 2, unit: 'kcal' }),
+      'INVALID_ARGUMENT',
+      'samples[0].unit',
+      'unknownUnit',
+    );
+  });
+
+  it('rejects samples of aggregate-only types', () => {
+    const range = { startDate: START, endDate: END };
+    rejection(
+      () => validateReadSamples({ type: 'totalEnergy', ...range }, 'ios'),
+      'UNSUPPORTED_TYPE',
+      'type',
+      'aggregateOnly',
+    );
+    rejection(
+      () => validateGetChanges({ types: ['basalEnergy'] }, 'android'),
+      'UNSUPPORTED_TYPE',
+      'types[0]',
+      'aggregateOnly',
+    );
+    expect(validateReadSamples({ type: 'totalEnergy', ...range }, 'android').type).toBe('totalEnergy');
+    expect(validateReadSamples({ type: 'basalEnergy', ...range }, 'ios').type).toBe('basalEnergy');
+    expect(validateCheckAuthorization({ read: ['totalEnergy'] }, 'ios').read).toEqual(['totalEnergy']);
+    rejection(() => save({ type: 'totalEnergy', startDate: START, value: 1 }), 'READ_ONLY_TYPE', 'samples[0].type');
+  });
+
+  it('rejects writes of types HealthKit disallows sharing', () => {
+    for (const type of ['exerciseTime', 'walkingSteadiness', 'highHeartRateEvent', 'nikeFuel']) {
+      rejection(() => validateCheckAuthorization({ write: [type as never] }, 'ios'), 'READ_ONLY_TYPE', 'write[0]');
+    }
+  });
+});
+
 describe('deleteSamples', () => {
   it('accepts exactly one selector', () => {
     expect(validateDeleteSamples({ type: 'menstrualFlow', ids: ['a'] }, 'ios')).toEqual({

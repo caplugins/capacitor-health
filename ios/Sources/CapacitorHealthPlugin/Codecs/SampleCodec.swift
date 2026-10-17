@@ -10,18 +10,20 @@ enum SampleCodec {
 
     // MARK: - Units
 
+    /// The registry's definition of a unit id. Callers pass ids from a type's `units`, which the registry
+    /// check keeps inside the unit table.
+    private static func definition(_ unit: String) -> RegistryUnit { Registry.units[unit] ?? RegistryUnit(unit) }
+
+    static func hkUnit(_ unit: String) -> HKUnit { HKUnit(from: definition(unit).ios) }
+
     /// HealthKit stores percentages as 0–1; the bridge uses 0–100 (decision #15).
-    private static func isPercent(_ unit: String) -> Bool { unit == "%" }
-
-    static func hkUnit(_ unit: String) -> HKUnit { isPercent(unit) ? .percent() : HKUnit(from: unit) }
-
     static func bridgeValue(_ quantity: HKQuantity, unit: String) -> Double {
         let value = quantity.doubleValue(for: hkUnit(unit))
-        return isPercent(unit) ? value * 100 : value
+        return definition(unit).percent ? value * 100 : value
     }
 
     static func quantity(_ value: Double, unit: String) -> HKQuantity {
-        HKQuantity(unit: hkUnit(unit), doubleValue: isPercent(unit) ? value / 100 : value)
+        HKQuantity(unit: hkUnit(unit), doubleValue: definition(unit).percent ? value / 100 : value)
     }
 
     // MARK: - Values
@@ -73,10 +75,13 @@ enum SampleCodec {
     static func encode(_ sample: HKSample, entry: RegistryEntry, unit: String? = nil) -> [String: Any] {
         var json = encodeBase(sample, typeId: entry.typeId, kind: kindName(entry.kind))
         var native: [String: Any] = ["type": sample.sampleType.identifier]
+        var extra: [String: Any] = [:]
         if let quantitySample = sample as? HKQuantitySample, let canonical = entry.unit {
-            let unit = unit ?? canonical
+            let unit = unit.flatMap { entry.units.contains($0) ? $0 : nil } ?? canonical
             json["value"] = bridgeValue(quantitySample.quantity, unit: unit)
             json["unit"] = unit
+            // A series sample (several values in one object) reads as one sample: HealthKit's sum or mean.
+            if quantitySample.count > 1 { extra["hk.count"] = quantitySample.count }
         } else if let categorySample = sample as? HKCategorySample, entry.kind == .category {
             json["value"] = unifiedValue(raw: categorySample.value, valueSet: entry.valueSet)
             native["value"] = categorySample.value
@@ -93,7 +98,6 @@ enum SampleCodec {
             case .enumeration: json[field.name] = unifiedValue(raw: number.intValue, valueSet: field.valueSet)
             }
         }
-        var extra: [String: Any] = [:]
         for (key, value) in metadata where !consumed.contains(key) {
             extra["hk.\(key)"] = MetadataValue.bridge(value)
         }
@@ -168,6 +172,9 @@ enum SampleCodec {
         if entry.instantOnly && end != start {
             throw HealthError.invalidArgument(fields.field("endDate"), "must equal startDate", reason: "instantOnly")
         }
+        if entry.intervalOnly && end.timeIntervalSince(start) < 1 {
+            throw HealthError.invalidArgument(fields.field("endDate"), "must be at least a second after startDate", reason: "intervalOnly")
+        }
         var metadata = try baseMetadata(fields)
         try metadata.merge(fieldMetadata(fields, entry: entry)) { $1 }
         return try sample(fields, entry: entry, type: type, start: start, end: end, metadata: metadata)
@@ -187,6 +194,9 @@ enum SampleCodec {
             case .enumeration:
                 if let value = fields.optionalString(field.name), let valueSet = field.valueSet {
                     metadata[field.key] = NSNumber(value: try rawValue(value, valueSet: valueSet, field: fields.field(field.name)))
+                } else if field.requiredOnWrite {
+                    // HealthKit rejects the save without it (insulinDelivery's reason).
+                    throw HealthError.invalidArgument(fields.field(field.name), "is required on iOS", reason: "required")
                 }
             }
         }
@@ -204,6 +214,12 @@ enum SampleCodec {
             let unit = fields.optionalString("unit") ?? canonical
             guard entry.units.contains(unit) else { throw HealthError.invalidArgument(fields.field("unit"), "isn't a unit of \(entry.typeId)") }
             let quantity = quantity(try fields.double("value"), unit: unit)
+            // HealthKit raises an exception for values outside its range, which would crash the app.
+            if let range = entry.range, !range.contains(bridgeValue(quantity, unit: canonical)) {
+                throw HealthError.invalidArgument(
+                    fields.field("value"), "must be from \(range.lowerBound) to \(range.upperBound) \(canonical)", reason: "outOfRange"
+                )
+            }
             return HKQuantitySample(type: quantityType, quantity: quantity, start: start, end: end, device: device, metadata: metadata)
         case .category:
             guard let categoryType = type as? HKCategoryType, let valueSet = entry.valueSet else { break }

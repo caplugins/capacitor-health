@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.2.0 (unreleased)
+
+### Added
+
+- 98 activity, vitals and body types: steps, distance, energy, speed, power, heart rate and HRV,
+  SpO2, respiration, body temperature, blood glucose, weight and body composition, VO2 max, walking
+  and running metrics, audio exposure, Apple's heart and fitness notifications, and more. See the
+  type table in the README.
+- iOS: combined ids `distance`, `speed` and `power` read every matching HealthKit type.
+- Typed fields `testType` / `measurementMethod` (`vo2Max`), `relationToMeal`, `mealType`,
+  `specimenSource` (`bloodGlucose`) and `reason` (`insulinDelivery`).
+- `UnsupportedReason` `aggregateOnly` for types that only have aggregates on a platform.
+- iOS: values HealthKit would refuse with an exception (effort scores outside 0–10, audio exposure
+  samples without a duration) reject with `INVALID_ARGUMENT` before reaching HealthKit.
+
 ## 0.1.0 (unreleased)
 
 First release: availability, permissions and reproductive health on iOS (HealthKit) and Android

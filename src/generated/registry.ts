@@ -366,8 +366,10 @@ export interface RegistryEntry {
     identifier?: string;
     minOS: string;
     writable: boolean;
-    /** `instant`: start must equal end. */
-    time: 'any' | 'instant';
+    /** `instant`: start must equal end. `interval`: end must be at least a second after start. */
+    time: 'any' | 'instant' | 'interval';
+    /** Values HealthKit accepts, in the type's only unit. */
+    range?: { min: number; max: number };
     derivedFrom?: HealthType;
     /** Combined id: the split ids it reads together (decision #14). */
     members?: readonly HealthType[];
@@ -1585,6 +1587,7 @@ export const REGISTRY: Readonly<Record<HealthType, RegistryEntry>> = {
       minOS: '18.0',
       writable: true,
       time: 'any',
+      range: { min: 0, max: 10 },
       metrics: ['avg', 'min', 'max'],
     },
   },
@@ -1599,6 +1602,7 @@ export const REGISTRY: Readonly<Record<HealthType, RegistryEntry>> = {
       minOS: '18.0',
       writable: true,
       time: 'any',
+      range: { min: 0, max: 10 },
       metrics: ['avg', 'min', 'max'],
     },
   },
@@ -2363,7 +2367,7 @@ export const REGISTRY: Readonly<Record<HealthType, RegistryEntry>> = {
       identifier: 'HKQuantityTypeIdentifierEnvironmentalAudioExposure',
       minOS: '13.0',
       writable: true,
-      time: 'any',
+      time: 'interval',
       metrics: ['avg', 'min', 'max'],
     },
   },
@@ -2377,7 +2381,7 @@ export const REGISTRY: Readonly<Record<HealthType, RegistryEntry>> = {
       identifier: 'HKQuantityTypeIdentifierHeadphoneAudioExposure',
       minOS: '13.0',
       writable: true,
-      time: 'any',
+      time: 'interval',
       metrics: ['avg', 'min', 'max'],
     },
   },
@@ -2445,7 +2449,7 @@ export const REGISTRY: Readonly<Record<HealthType, RegistryEntry>> = {
     kind: 'category',
     group: 'other',
     values: 'environmentalAudioExposureEvent',
-    ios: { identifier: 'HKCategoryTypeIdentifierAudioExposureEvent', minOS: '14.0', writable: true, time: 'any' },
+    ios: { identifier: 'HKCategoryTypeIdentifierAudioExposureEvent', minOS: '14.0', writable: false, time: 'any' },
   },
   headphoneAudioExposureEvent: {
     id: 'headphoneAudioExposureEvent',

@@ -8,13 +8,69 @@ import { localIso } from './roundtrip';
 export interface AcceptanceRow {
   type: HealthType;
   platform: string;
-  status: 'pass' | 'fail' | 'readOnly' | 'unsupported';
+  status: 'pass' | 'fail' | 'readOnly' | 'aggregateOnly' | 'unsupported';
   steps: Record<string, string>;
   notes: string[];
 }
 
 const platform = Capacitor.getPlatform();
 const errorCode = (e: unknown) => (e as { code?: string }).code ?? String(e);
+
+/** Plausible values for quantity types in their canonical unit; others get 1. */
+const QUANTITY_VALUES: Partial<Record<HealthType, number>> = {
+  steps: 1200,
+  distance: 850,
+  activeEnergy: 120,
+  basalEnergy: 60,
+  basalMetabolicRate: 1600,
+  totalEnergy: 200,
+  floorsClimbed: 3,
+  elevationGained: 12,
+  wheelchairPushes: 40,
+  stepsCadence: 100,
+  speed: 1.4,
+  power: 180,
+  cyclingCadence: 85,
+  vo2Max: 42,
+  physicalEffort: 3.5,
+  workoutEffortScore: 5,
+  estimatedWorkoutEffortScore: 5,
+  walkingStepLength: 0.7,
+  walkingDoubleSupport: 28,
+  sixMinuteWalkTestDistance: 450,
+  runningStrideLength: 1.1,
+  runningVerticalOscillation: 8,
+  runningGroundContactTime: 250,
+  swimmingStrokeCount: 20,
+  heartRate: 72,
+  restingHeartRate: 58,
+  heartRateVariabilitySdnn: 45,
+  heartRateVariabilityRmssd: 40,
+  heartRateRecovery: 25,
+  oxygenSaturation: 97,
+  respiratoryRate: 14,
+  bodyTemperature: 36.8,
+  bloodGlucose: 95,
+  peripheralPerfusionIndex: 2,
+  weight: 70,
+  height: 1.75,
+  bodyFat: 22,
+  leanBodyMass: 55,
+  boneMass: 3,
+  bodyWaterMass: 40,
+  bmi: 22.9,
+  waistCircumference: 0.8,
+  forcedVitalCapacity: 4.5,
+  forcedExpiratoryVolume1: 3.5,
+  peakExpiratoryFlowRate: 450,
+  timeInDaylight: 30,
+  environmentalAudioExposure: 60,
+  headphoneAudioExposure: 70,
+  environmentalSoundReduction: 20,
+  underwaterDepth: 3,
+  waterTemperature: 24,
+  insulinDelivery: 2,
+};
 
 /** A new sample of `support.type` at `at`, with the type's first (or second) value. */
 function sampleFor(support: TypeSupport, at: Date, clientId: string, variant: 0 | 1): NewSample {
@@ -40,16 +96,46 @@ function sampleFor(support: TypeSupport, at: Date, clientId: string, variant: 0 
       };
     }
     case 'basalBodyTemperature':
-      return { ...base, type: 'basalBodyTemperature', value: 36.4 + variant / 10, unit: 'degC', measurementLocation: 'mouth' };
+      return {
+        ...base,
+        type: 'basalBodyTemperature',
+        value: 36.4 + variant / 10,
+        unit: 'degC',
+        measurementLocation: 'mouth',
+      };
     case 'sexualActivity':
       return { ...base, type: 'sexualActivity', protectionUsed: variant === 0 };
     case 'cervicalMucus':
       return { ...base, type: 'cervicalMucus', value, ...(platform === 'android' ? { sensation: 'light' } : {}) };
     case 'menstrualFlow':
       return { ...base, type: 'menstrualFlow', value, ...(platform === 'ios' ? { isCycleStart: variant === 0 } : {}) };
+    case 'insulinDelivery':
+      return {
+        ...base,
+        type: 'insulinDelivery',
+        value: 2 + variant,
+        reason: variant === 0 ? 'basal' : 'bolus',
+        endDate: later(at),
+      };
     default:
-      return (value !== undefined ? { ...base, type: support.type, value } : { ...base, type: support.type }) as NewSample;
+      if (support.units) {
+        // Quantities cover five minutes on iOS, which some types need (audio exposure).
+        const quantity = {
+          ...base,
+          type: support.type,
+          value: (QUANTITY_VALUES[support.type] ?? 1) + variant,
+          unit: support.units[0],
+        };
+        return (platform === 'ios' ? { ...quantity, endDate: later(at) } : quantity) as NewSample;
+      }
+      return (
+        value !== undefined ? { ...base, type: support.type, value } : { ...base, type: support.type }
+      ) as NewSample;
   }
+}
+
+function later(at: Date): string {
+  return localIso(new Date(at.getTime() + 5 * 60_000));
 }
 
 function sameValue(sample: Sample | undefined, expected: NewSample): boolean {
@@ -61,7 +147,8 @@ function sameValue(sample: Sample | undefined, expected: NewSample): boolean {
     return (sample as { lastDay?: string }).lastDay === expected.endDate?.slice(0, 10);
   }
   if (expected.type === 'skinTemperature') return (sample as { baseline?: number }).baseline === expected.baseline;
-  if (expected.type === 'sexualActivity') return (sample as { protectionUsed?: boolean }).protectionUsed === expected.protectionUsed;
+  if (expected.type === 'sexualActivity')
+    return (sample as { protectionUsed?: boolean }).protectionUsed === expected.protectionUsed;
   return wanted === undefined || actual === wanted;
 }
 
@@ -122,7 +209,11 @@ async function checkWritable(support: TypeSupport, at: Date, row: AcceptanceRow)
 
   if (nextCursor) {
     const changes = await CapacitorHealth.getChanges({ types: [type], cursor: nextCursor });
-    step('changes', upsertSeen && changes.deleted.length >= 1, `upsert ${upsertSeen ? 'seen' : 'missing'}, ${changes.deleted.length} deleted`);
+    step(
+      'changes',
+      upsertSeen && changes.deleted.length >= 1,
+      `upsert ${upsertSeen ? 'seen' : 'missing'}, ${changes.deleted.length} deleted`,
+    );
   } else {
     row.steps.changes = 'n/a (follow menstrualFlow, decision #41)';
   }
@@ -147,10 +238,13 @@ export async function runAcceptance(mode: 'granted' | 'denied' = 'granted'): Pro
     try {
       if (!support.supported) {
         row.status = 'unsupported';
-        const error = await CapacitorHealth.readSamples({ type, startDate: localIso(at), endDate: localIso(new Date()) }).catch(
-          errorCode,
-        );
-        row.steps.read = error === 'UNSUPPORTED_TYPE' ? `✓ UNSUPPORTED_TYPE (${support.reason})` : `✗ ${JSON.stringify(error)}`;
+        const error = await CapacitorHealth.readSamples({
+          type,
+          startDate: localIso(at),
+          endDate: localIso(new Date()),
+        }).catch(errorCode);
+        row.steps.read =
+          error === 'UNSUPPORTED_TYPE' ? `✓ UNSUPPORTED_TYPE (${support.reason})` : `✗ ${JSON.stringify(error)}`;
         continue;
       }
       if (mode === 'denied') {
@@ -169,9 +263,25 @@ export async function runAcceptance(mode: 'granted' | 'denied' = 'granted'): Pro
         if (!readOk) row.status = 'fail';
         continue;
       }
+      if (!support.readable) {
+        row.status = 'aggregateOnly';
+        const error = await CapacitorHealth.readSamples({
+          type,
+          startDate: localIso(at),
+          endDate: localIso(new Date()),
+        }).catch(errorCode);
+        row.steps.read =
+          error === 'UNSUPPORTED_TYPE' ? `✓ UNSUPPORTED_TYPE (${support.reason})` : `✗ ${JSON.stringify(error)}`;
+        if (error !== 'UNSUPPORTED_TYPE') row.status = 'fail';
+        continue;
+      }
       if (!support.writable) {
         row.status = 'readOnly';
-        const { samples } = await CapacitorHealth.readSamples({ type, startDate: localIso(at), endDate: localIso(new Date()) });
+        const { samples } = await CapacitorHealth.readSamples({
+          type,
+          startDate: localIso(at),
+          endDate: localIso(new Date()),
+        });
         row.steps.read = `✓ ${samples.length} samples`;
         const write = await CapacitorHealth.saveSamples({ samples: [sampleFor(support, at, 'x', 0)] }).catch(errorCode);
         row.steps.write = write === 'READ_ONLY_TYPE' ? '✓ READ_ONLY_TYPE' : `✗ ${JSON.stringify(write)}`;

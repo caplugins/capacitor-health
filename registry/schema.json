@@ -230,8 +230,15 @@
         "minOS": { "$ref": "#/$defs/osVersion" },
         "writable": { "type": "boolean" },
         "time": {
-          "description": "any: start ≤ end (default). instant: start must equal end or the save fails.",
-          "enum": ["any", "instant"]
+          "description": "any: start ≤ end (default). instant: start must equal end or the save fails. interval: end must be at least a second after start (HealthKit raises an exception below its minimum duration, 1 ms for the audio exposure types; a second keeps clear of rounding).",
+          "enum": ["any", "instant", "interval"]
+        },
+        "range": {
+          "description": "Values HealthKit accepts, in the type's only unit (bridge scale). Outside it HealthKit raises an exception, which would crash the app, so writes outside it are rejected first.",
+          "type": "object",
+          "required": ["min", "max"],
+          "additionalProperties": false,
+          "properties": { "min": { "type": "number" }, "max": { "type": "number" } }
         },
         "aggregation": {
           "description": "HKQuantityAggregationStyle, quantity types only.",

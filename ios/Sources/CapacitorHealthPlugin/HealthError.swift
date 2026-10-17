@@ -33,9 +33,11 @@ struct HealthError: Error {
     }
 
     static func unsupportedType(_ typeId: String, reason: String) -> HealthError {
-        let message = reason == "osVersion"
-            ? "\(typeId) needs a newer iOS version."
-            : "\(typeId) isn't available on iOS."
+        let message = switch reason {
+        case "osVersion": "\(typeId) needs a newer iOS version."
+        case "aggregateOnly": "\(typeId) has no samples on iOS, only aggregates."
+        default: "\(typeId) isn't available on iOS."
+        }
         return HealthError(.unsupportedType, message, data: ["type": typeId, "reason": reason])
     }
 

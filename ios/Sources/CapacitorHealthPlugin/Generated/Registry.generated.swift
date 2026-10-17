@@ -66,6 +66,8 @@ struct RegistryEntry {
     let writable: Bool
     /// Start must equal end, or HealthKit rejects the save.
     let instantOnly: Bool
+    /// End must be at least a second after start: HealthKit raises an exception below its minimum duration.
+    let intervalOnly: Bool
     let valueSet: String?
     /// Canonical unit (quantity types).
     let unit: String?
@@ -80,6 +82,8 @@ struct RegistryEntry {
     let writeTo: String?
     /// No samples of its own; only `aggregate()` serves it.
     let aggregateOnly: Bool
+    /// Values HealthKit accepts, in the canonical unit; outside it HealthKit raises an exception.
+    let range: ClosedRange<Double>?
     let fields: [RegistryMetadataField]
 
     var isQuantity: Bool { identifier.hasPrefix("HKQuantityTypeIdentifier") }
@@ -93,6 +97,7 @@ struct RegistryEntry {
         isAvailable: @escaping () -> Bool = { true },
         writable: Bool = true,
         instantOnly: Bool = false,
+        intervalOnly: Bool = false,
         valueSet: String? = nil,
         unit: String? = nil,
         units: [String] = [],
@@ -101,6 +106,7 @@ struct RegistryEntry {
         members: [String] = [],
         writeTo: String? = nil,
         aggregateOnly: Bool = false,
+        range: ClosedRange<Double>? = nil,
         fields: [RegistryMetadataField] = []
     ) {
         self.typeId = typeId
@@ -110,6 +116,7 @@ struct RegistryEntry {
         self.isAvailable = isAvailable
         self.writable = writable
         self.instantOnly = instantOnly
+        self.intervalOnly = intervalOnly
         self.valueSet = valueSet
         self.unit = unit
         self.units = units
@@ -118,6 +125,7 @@ struct RegistryEntry {
         self.members = members
         self.writeTo = writeTo
         self.aggregateOnly = aggregateOnly
+        self.range = range
         self.fields = fields
     }
 }
@@ -851,7 +859,8 @@ enum Registry {
             isAvailable: { if #available(iOS 18.0, *) { return true }; return false },
             unit: "appleEffortScore",
             units: ["appleEffortScore"],
-            aggregation: .discrete
+            aggregation: .discrete,
+            range: 0.0...10.0
         ),
         RegistryEntry(
             "estimatedWorkoutEffortScore",
@@ -861,7 +870,8 @@ enum Registry {
             isAvailable: { if #available(iOS 18.0, *) { return true }; return false },
             unit: "appleEffortScore",
             units: ["appleEffortScore"],
-            aggregation: .discrete
+            aggregation: .discrete,
+            range: 0.0...10.0
         ),
         RegistryEntry(
             "walkingStepLength",
@@ -1298,6 +1308,7 @@ enum Registry {
             .quantity,
             "HKQuantityTypeIdentifierEnvironmentalAudioExposure",
             minOS: "13.0",
+            intervalOnly: true,
             unit: "dBASPL",
             units: ["dBASPL"],
             aggregation: .discrete
@@ -1307,6 +1318,7 @@ enum Registry {
             .quantity,
             "HKQuantityTypeIdentifierHeadphoneAudioExposure",
             minOS: "13.0",
+            intervalOnly: true,
             unit: "dBASPL",
             units: ["dBASPL"],
             aggregation: .discrete
@@ -1362,6 +1374,7 @@ enum Registry {
             .category,
             "HKCategoryTypeIdentifierAudioExposureEvent",
             minOS: "14.0",
+            writable: false,
             valueSet: "environmentalAudioExposureEvent"
         ),
         RegistryEntry(

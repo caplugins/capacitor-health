@@ -45,7 +45,7 @@ final class Authorization {
     // MARK: - Calls
 
     func request(read: [String], write: [String]) async throws -> [String: Any] {
-        let readTypes = Set(read.compactMap { try? HealthTypes.resolve($0).1 }.map { $0 as HKObjectType })
+        let readTypes = Set(read.flatMap(Self.readTypes).map { $0 as HKObjectType })
         var shareTypes = Set<HKSampleType>()
         for typeId in write {
             guard let entry = Registry.byId[typeId], HealthTypes.sampleType(for: entry) != nil else { continue }
@@ -66,17 +66,23 @@ final class Authorization {
         return try await check(read: read, write: write)
     }
 
+    /// The HealthKit types reading `typeId` needs: a combined or aggregate-only id needs every member.
+    private static func readTypes(_ typeId: String) -> [HKSampleType] {
+        Registry.byId[typeId].map { HealthTypes.readTypes(for: $0).map(\.1) } ?? []
+    }
+
     func check(read: [String], write: [String]) async throws -> [String: Any] {
         var readStatuses: [String: String] = [:]
-        var readTypes: [HKObjectType: String] = [:]
+        var readTypes: [String: [HKSampleType]] = [:]
         for typeId in read {
-            guard let (_, type) = try? HealthTypes.resolve(typeId) else {
+            let types = Self.readTypes(typeId)
+            guard !types.isEmpty else {
                 readStatuses[typeId] = "unsupported"
                 continue
             }
-            let status = try await store.statusForAuthorizationRequest(toShare: [], read: [type])
+            let status = try await store.statusForAuthorizationRequest(toShare: [], read: Set(types))
             readStatuses[typeId] = Self.readStatus(status)
-            readTypes[type] = typeId
+            readTypes[typeId] = types
         }
 
         var writeStatuses: [String: String] = [:]
@@ -89,14 +95,13 @@ final class Authorization {
         }
 
         var result: [String: Any] = ["read": readStatuses, "write": writeStatuses]
-        let dates = try await store.earliestAuthorizedSampleDates(for: Set(readTypes.keys))
+        let dates = try await store.earliestAuthorizedSampleDates(for: Set(readTypes.values.flatMap { $0 }))
         if !dates.isEmpty {
             var byId: [String: String] = [:]
-            for (type, date) in dates {
-                // menstrualFlow and menstruationPeriod share a HealthKit type: report it for both.
-                for typeId in read where (try? HealthTypes.resolve(typeId).1) == type {
-                    byId[typeId] = DateCoding.string(from: date)
-                }
+            // Types can share a HealthKit type (menstrualFlow and menstruationPeriod; a combined id and its
+            // members). A combined id reports its latest member date: before it, part of its history is hidden.
+            for (typeId, types) in readTypes {
+                if let date = types.compactMap({ dates[$0] }).max() { byId[typeId] = DateCoding.string(from: date) }
             }
             result["earliestAuthorizedDates"] = byId
         }

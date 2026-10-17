@@ -163,10 +163,12 @@ export interface AvailabilityResult {
  * - `osVersion`: iOS, the type needs a newer iOS (see `minOS`).
  * - `featureUnavailable`: Android, this device's Health Connect doesn't have the feature the type needs.
  * - `readOnly`: the type can be read but the platform doesn't let apps write it.
+ * - `aggregateOnly`: the platform has no samples of the type, only aggregates (`totalEnergy` on iOS,
+ *   `basalEnergy` on Android). Since 0.2.0.
  *
  * @since 0.1.0
  */
-export type UnsupportedReason = 'notOnPlatform' | 'osVersion' | 'featureUnavailable' | 'readOnly';
+export type UnsupportedReason = 'notOnPlatform' | 'osVersion' | 'featureUnavailable' | 'readOnly' | 'aggregateOnly';
 
 /**
  * @since 0.1.0
@@ -192,7 +194,7 @@ export interface TypeSupport {
    */
   aggregatable: boolean;
   /**
-   * Set when `supported` or `writable` is `false`.
+   * Set when `supported`, `readable` or `writable` is `false`.
    *
    * @since 0.1.0
    */
@@ -530,11 +532,49 @@ export interface QuantitySample extends SampleBase {
    */
   unit: string;
   /**
-   * `basalBodyTemperature`: where the temperature was taken. Absent when not recorded.
+   * `basalBodyTemperature`, `bodyTemperature`: where the temperature was taken. Absent when not
+   * recorded.
    *
    * @since 0.1.0
    */
   measurementLocation?: string;
+  /**
+   * `vo2Max`, iOS: how the value was measured or estimated (`vo2MaxTestType` values).
+   *
+   * @since 0.2.0
+   */
+  testType?: string;
+  /**
+   * `vo2Max`, Android: how the value was measured (`vo2MaxMeasurementMethod` values).
+   *
+   * @since 0.2.0
+   */
+  measurementMethod?: string;
+  /**
+   * `bloodGlucose`: when the reading was taken relative to a meal. iOS stores only `beforeMeal` and
+   * `afterMeal`.
+   *
+   * @since 0.2.0
+   */
+  relationToMeal?: string;
+  /**
+   * `bloodGlucose`, Android: the meal the reading relates to.
+   *
+   * @since 0.2.0
+   */
+  mealType?: string;
+  /**
+   * `bloodGlucose`, Android: what the reading was taken from (capillary blood, interstitial fluid, …).
+   *
+   * @since 0.2.0
+   */
+  specimenSource?: string;
+  /**
+   * `insulinDelivery`, iOS: `basal` or `bolus`.
+   *
+   * @since 0.2.0
+   */
+  reason?: string;
 }
 
 /**
@@ -735,6 +775,22 @@ export interface NewQuantitySample extends NewSampleBase {
   unit?: string;
   /** @since 0.1.0 */
   measurementLocation?: string;
+  /** @since 0.2.0 */
+  testType?: string;
+  /** @since 0.2.0 */
+  measurementMethod?: string;
+  /** @since 0.2.0 */
+  relationToMeal?: string;
+  /** @since 0.2.0 */
+  mealType?: string;
+  /** @since 0.2.0 */
+  specimenSource?: string;
+  /**
+   * `insulinDelivery`: required on iOS, which rejects the sample without it.
+   *
+   * @since 0.2.0
+   */
+  reason?: string;
 }
 
 /**
@@ -846,7 +902,13 @@ export type NewSample =
  * @since 0.1.0
  */
 export interface ReadSamplesOptions {
-  /** @since 0.1.0 */
+  /**
+   * A combined id (`distance`, `speed`, `power`) reads every member type HealthKit has on iOS; each
+   * sample keeps the combined id as its `type` and names its member in `native.type`. Aggregate-only
+   * types (`reason: 'aggregateOnly'` in `getSupportedTypes()`) reject with `UNSUPPORTED_TYPE`.
+   *
+   * @since 0.1.0
+   */
   type: HealthType;
   /**
    * Returns samples that overlap `startDate`–`endDate`. ISO 8601 with an offset.

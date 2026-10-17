@@ -22,7 +22,8 @@ final class Samples {
 
     func read(_ options: JSONFields) async throws -> [String: Any] {
         let typeId = try options.string("type")
-        let (entry, type) = try HealthTypes.resolve(typeId)
+        let (entry, _) = try HealthTypes.resolve(typeId)
+        try HealthTypes.requireSamples(entry)
         let start = try options.date("startDate")
         let end = try options.date("endDate")
         let limit = min(max(options.optionalInt("limit") ?? Self.defaultLimit, 1), Self.maxLimit)
@@ -35,29 +36,47 @@ final class Samples {
             return try await periodService().read(options, start: start, end: end, limit: limit, ascending: ascending)
         }
 
-        var predicates = [HKQuery.predicateForSamples(withStart: start, end: end, options: [])]
-        if let sourceIds = options.strings("sourceIds") {
-            let sources = try await store.sources(of: type).filter { sourceIds.contains($0.bundleIdentifier) }
-            if sources.isEmpty { return ["samples": [Any]()] }
-            predicates.append(HKQuery.predicateForObjects(from: sources))
-        }
         let cursor = try options.optionalString("cursor").map { try ReadCursor.decode($0, typeId: typeId) }
+        var predicates = [HKQuery.predicateForSamples(withStart: start, end: end, options: [])]
         if let cursor {
             predicates.append(NSPredicate(format: ascending ? "%K >= %@" : "%K <= %@", HKPredicateKeyPathStartDate, cursor.startDate as NSDate))
         }
         let skip = cursor?.skip ?? 0
-        let fetched = try await store.samples(
-            of: type,
-            predicate: NSCompoundPredicate(andPredicateWithSubpredicates: predicates),
-            limit: skip + limit + 1,
-            sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: ascending)]
-        )
+        let sourceIds = options.strings("sourceIds")
+        // A combined id queries each member; every list is fetched as deep as a single type would be.
+        var lists: [[HKSample]] = []
+        for (_, type) in HealthTypes.readTypes(for: entry) {
+            var typePredicates = predicates
+            if let sourceIds {
+                let sources = try await store.sources(of: type).filter { sourceIds.contains($0.bundleIdentifier) }
+                if sources.isEmpty { continue }
+                typePredicates.append(HKQuery.predicateForObjects(from: sources))
+            }
+            lists.append(try await store.samples(
+                of: type,
+                predicate: NSCompoundPredicate(andPredicateWithSubpredicates: typePredicates),
+                limit: skip + limit + 1,
+                sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: ascending)]
+            ))
+        }
+        let fetched = Self.merge(lists, ascending: ascending)
         let page = Array(fetched.dropFirst(skip).prefix(limit))
         var result: [String: Any] = ["samples": page.map { SampleCodec.encode($0, entry: entry, unit: unit) }]
         let next = ReadCursor.next(typeId: typeId, pageStarts: page.map(\.startDate), hasMore: fetched.count > skip + limit, previous: cursor)
         if let next { result["nextCursor"] = next.encoded() }
         HealthLog.debug("readSamples \(typeId): \(page.count) samples")
         return result
+    }
+
+    /// Lists sorted by start date, merged in one deterministic order: by start date, then by list, then by
+    /// position in the list. Paging relies on ties keeping their order from page to page.
+    static func merge(_ lists: [[HKSample]], ascending: Bool) -> [HKSample] {
+        guard lists.count > 1 else { return lists.first ?? [] }
+        let keyed = lists.enumerated().flatMap { list, samples in samples.enumerated().map { (list, $0, $1) } }
+        return keyed.sorted { lhs, rhs in
+            if lhs.2.startDate != rhs.2.startDate { return ascending == (lhs.2.startDate < rhs.2.startDate) }
+            return (lhs.0, lhs.1) < (rhs.0, rhs.1)
+        }.map(\.2)
     }
 
     // MARK: - Save
@@ -112,7 +131,18 @@ final class Samples {
         if entry.derivedFrom != nil {
             return ["deleted": try await periodService().delete(options)]
         }
-        return ["deleted": try await store.deleteOwnObjects(of: type, matching: try Self.deletePredicate(options))]
+        let predicate = try Self.deletePredicate(options)
+        var types = [type]
+        if !entry.members.isEmpty {
+            // A combined id deletes from every member the app may write; HealthKit rejects deletes from the others.
+            let members = HealthTypes.readTypes(for: entry).map(\.1).filter { store.authorizationStatus(for: $0) == .sharingAuthorized }
+            if !members.isEmpty { types = members }
+        }
+        var deleted = 0
+        for type in types {
+            deleted += try await store.deleteOwnObjects(of: type, matching: predicate)
+        }
+        return ["deleted": deleted]
     }
 
     static func deletePredicate(_ options: JSONFields) throws -> NSPredicate {

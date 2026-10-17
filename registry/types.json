@@ -1499,6 +1499,7 @@
         "identifier": "HKQuantityTypeIdentifierWorkoutEffortScore",
         "minOS": "18.0",
         "writable": true,
+        "range": {"min": 0, "max": 10},
         "aggregation": "discreteArithmetic"
       }
     },
@@ -1512,6 +1513,7 @@
         "identifier": "HKQuantityTypeIdentifierEstimatedWorkoutEffortScore",
         "minOS": "18.0",
         "writable": true,
+        "range": {"min": 0, "max": 10},
         "aggregation": "discreteArithmetic"
       }
     },
@@ -2253,6 +2255,7 @@
         "identifier": "HKQuantityTypeIdentifierEnvironmentalAudioExposure",
         "minOS": "13.0",
         "writable": true,
+        "time": "interval",
         "aggregation": "discreteEquivalentContinuousLevel"
       }
     },
@@ -2266,6 +2269,7 @@
         "identifier": "HKQuantityTypeIdentifierHeadphoneAudioExposure",
         "minOS": "13.0",
         "writable": true,
+        "time": "interval",
         "aggregation": "discreteEquivalentContinuousLevel"
       }
     },
@@ -2338,9 +2342,10 @@
       "group": "other",
       "values": "environmentalAudioExposureEvent",
       "ios": {
-        "identifier": "HKCategoryTypeIdentifierEnvironmentalAudioExposureEvent", "rawValue": "HKCategoryTypeIdentifierAudioExposureEvent",
+        "identifier": "HKCategoryTypeIdentifierEnvironmentalAudioExposureEvent",
+        "rawValue": "HKCategoryTypeIdentifierAudioExposureEvent",
         "minOS": "14.0",
-        "writable": true
+        "writable": false
       }
     },
     {

@@ -1,10 +1,18 @@
 import Foundation
 import HealthKit
 
-/// The `getChanges` cursor on iOS: one archived `HKQueryAnchor` per type, `{ v: 1, anchors: { typeId: base64 } }`
-/// as base64 JSON. Opaque to apps.
+/// The `getChanges` cursor on iOS: one archived `HKQueryAnchor` per type, `{ v: 1, anchors: { key: base64 } }`
+/// as base64 JSON. Opaque to apps. The key is the type id, or `typeId/memberId` for each member of a combined id.
 struct ChangesCursor: Equatable {
     let anchors: [String: String]
+
+    static func key(typeId: String, member: String?) -> String {
+        member.map { "\(typeId)/\($0)" } ?? typeId
+    }
+
+    static func typeId(ofKey key: String) -> String {
+        String(key.prefix { $0 != "/" })
+    }
 
     func encoded() -> String {
         let json: [String: Any] = ["v": 1, "anchors": anchors]
@@ -17,7 +25,7 @@ struct ChangesCursor: Equatable {
               json["v"] as? Int == 1, let anchors = json["anchors"] as? [String: String] else {
             throw HealthError.invalidArgument("cursor", "isn't a getChanges cursor")
         }
-        guard Set(anchors.keys) == Set(types) else {
+        guard Set(anchors.keys.map(typeId(ofKey:))) == Set(types) else {
             throw HealthError.invalidArgument("cursor", "was created for other types", reason: "cursorMismatch")
         }
         return ChangesCursor(anchors: anchors)
@@ -48,9 +56,10 @@ final class Changes {
         guard let types = options.strings("types"), !types.isEmpty else {
             throw HealthError.invalidArgument("types", "must be a non-empty array of types")
         }
-        var resolved: [(entry: RegistryEntry, type: HKSampleType)] = []
+        var resolved: [(entry: RegistryEntry, key: String, type: HKSampleType)] = []
         for typeId in types {
-            let (entry, type) = try HealthTypes.resolve(typeId)
+            let (entry, _) = try HealthTypes.resolve(typeId)
+            try HealthTypes.requireSamples(entry)
             // A period is derived from several flow samples; its changes can't be expressed per sample.
             if entry.derivedFrom != nil {
                 throw HealthError(
@@ -59,11 +68,14 @@ final class Changes {
                     data: ["type": typeId, "reason": "derivedType"]
                 )
             }
-            resolved.append((entry, type))
+            let combined = !entry.members.isEmpty
+            for (member, type) in HealthTypes.readTypes(for: entry) {
+                resolved.append((entry, ChangesCursor.key(typeId: typeId, member: combined ? member.typeId : nil), type))
+            }
         }
         guard let cursorString = options.optionalString("cursor") else {
             var anchors: [String: String] = [:]
-            for (entry, type) in resolved { anchors[entry.typeId] = try ChangesCursor.archive(try await currentAnchor(type)) }
+            for (_, key, type) in resolved { anchors[key] = try ChangesCursor.archive(try await currentAnchor(type)) }
             return ["upserted": [Any](), "deleted": [Any](), "nextCursor": ChangesCursor(anchors: anchors).encoded(), "hasMore": false]
         }
 
@@ -75,8 +87,13 @@ final class Changes {
         var deleted: [[String: Any]] = []
         var anchors: [String: String] = [:]
         var hasMore = false
-        for (entry, type) in resolved {
-            let anchor = try ChangesCursor.unarchive(cursor.anchors[entry.typeId] ?? "")
+        for (entry, key, type) in resolved {
+            // A member that's new since the cursor was made (an iOS update) starts from now.
+            let anchor = if let archived = cursor.anchors[key] {
+                try ChangesCursor.unarchive(archived)
+            } else {
+                try await currentAnchor(type)
+            }
             let page = try await anchoredQuery(type, anchor: anchor, predicate: nil, limit: limit)
             upserted += page.samples
                 .filter { !excludeOwn || $0.sourceRevision.source != ownSource }
@@ -87,7 +104,7 @@ final class Changes {
                 if let clientId = object.metadata?[HKMetadataKeySyncIdentifier] as? String { json["clientId"] = clientId }
                 return json
             }
-            anchors[entry.typeId] = try ChangesCursor.archive(page.anchor ?? anchor)
+            anchors[key] = try ChangesCursor.archive(page.anchor ?? anchor)
             // HealthKit doesn't say whether more is waiting; a full page means there may be.
             if page.samples.count + page.deleted.count >= limit { hasMore = true }
         }

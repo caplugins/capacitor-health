@@ -195,11 +195,24 @@ Every sample has `id`, `type`, `kind` (`quantity`, `category`, `event` or `speci
 identifier or Health Connect record and raw value) and, when present, `device`, `clientId`,
 `clientVersion`, `zoneOffset` and `metadata` (native fields the shared shape has no place for, under
 `hk.` / `hc.` keys). Typed fields: `isCycleStart` (`menstrualFlow`), `sensation` (`cervicalMucus`,
-Android), `measurementLocation` (`basalBodyTemperature`, `skinTemperature`), `protectionUsed`
-(`sexualActivity`).
+Android), `measurementLocation` (`basalBodyTemperature`, `bodyTemperature`, `skinTemperature`),
+`protectionUsed` (`sexualActivity`), `testType` (`vo2Max`, iOS), `measurementMethod` (`vo2Max`,
+Android), `relationToMeal`, `mealType` and `specimenSource` (`bloodGlucose`; the last two Android only),
+`reason` (`insulinDelivery`, iOS, required).
 
-- Quantities come in the type's canonical unit unless you pass `unit` (`degC` or `degF` for
-  temperatures).
+- Quantities come in the type's canonical unit unless you pass `unit`; `getSupportedTypes()` lists
+  each type's units, canonical first. Percentages are 0–100 on both platforms.
+- **Combined ids** (`distance`, `speed`, `power`) read every matching HealthKit type on iOS
+  (walking + cycling + swimming distance, …). Each sample keeps the combined id as its `type` and
+  names its HealthKit type in `native.type`. iOS writes go to the first split (`distanceWalkingRunning`,
+  `walkingSpeed`, `runningPower`); write a split id (`distanceCycling`) to choose. On Android the
+  combined id is the one Health Connect record.
+- **Aggregate-only types** have no samples on one platform: `totalEnergy` on iOS, `basalEnergy` on
+  Android. `getSupportedTypes()` reports them `readable: false` with `reason: 'aggregateOnly'`, and
+  `readSamples` / `getChanges` reject them with `UNSUPPORTED_TYPE`.
+- HealthKit stores some values as one sample covering many readings (watch data). Such a sample reads
+  as one sample whose value is HealthKit's sum or average, with `metadata['hk.count']` holding the
+  number of readings.
 - Some values exist on one platform only, like flow `none` (iOS) or cervical mucus `unusual`
   (Android). Reads never invent them; writes on the other platform reject with
   `data.reason: 'valueUnsupportedOnPlatform'`. `getSupportedTypes()` lists each type's values here.
@@ -219,7 +232,13 @@ Android), `measurementLocation` (`basalBodyTemperature`, `skinTemperature`), `pr
   an app delete what it wrote; other apps' samples are left alone. Ids and `clientIds` that match
   nothing are skipped. On Android, other apps' ids cost extra Health Connect calls (one each on
   Android 14+), so pass only your own (check `source.id`) when you can.
-- Read-only types (Apple-computed ones like `wristTemperature`) reject writes with `READ_ONLY_TYPE`.
+- Read-only types (Apple-computed ones like `wristTemperature`, `exerciseTime`, the heart and audio
+  events) reject writes with `READ_ONLY_TYPE`.
+- HealthKit rejects a few values outright, and the plugin checks them first: effort scores
+  (`workoutEffortScore`, `estimatedWorkoutEffortScore`) must be 0–10 and `environmentalAudioExposure`
+  / `headphoneAudioExposure` samples need an `endDate` at least a second after `startDate`
+  (`INVALID_ARGUMENT` with `data.reason` `outOfRange` / `intervalOnly`). `insulinDelivery` needs a
+  `reason` on iOS.
 
 ### Changes (`getChanges`)
 
@@ -454,7 +473,7 @@ the `android.permission.health.` prefix.
 | `underwaterDepth` | quantity | `UnderwaterDepth` (iOS 16.0+) | — | `m`, `ft` |
 | `waterTemperature` | quantity | `WaterTemperature` (iOS 16.0+) | — | `degC`, `degF` |
 | `insulinDelivery` | quantity | `InsulinDelivery` (iOS 11.0+) | — | `IU` |
-| `environmentalAudioExposureEvent` | category | `EnvironmentalAudioExposureEvent` (iOS 14.0+) | — | `momentaryLimit` |
+| `environmentalAudioExposureEvent` | category | `EnvironmentalAudioExposureEvent` (iOS 14.0+, read-only) | — | `momentaryLimit` |
 | `headphoneAudioExposureEvent` | category | `HeadphoneAudioExposureEvent` (iOS 14.2+, read-only) | — | `sevenDayLimit` |
 | `nikeFuel` | quantity | `NikeFuel` (iOS 8.0+, read-only) | — | `count` |
 
@@ -758,7 +777,7 @@ others are left alone and not counted. `ids` and `clientIds` that match nothing 
 | **`readable`**     | <code>boolean</code>                                            |                                                                                                                       | 0.1.0 |
 | **`writable`**     | <code>boolean</code>                                            |                                                                                                                       | 0.1.0 |
 | **`aggregatable`** | <code>boolean</code>                                            | Whether `aggregate()` works for the type. `aggregate()` arrives in 0.2.0, so this is `false` for every type in 0.1.0. | 0.1.0 |
-| **`reason`**       | <code><a href="#unsupportedreason">UnsupportedReason</a></code> | Set when `supported` or `writable` is `false`.                                                                        | 0.1.0 |
+| **`reason`**       | <code><a href="#unsupportedreason">UnsupportedReason</a></code> | Set when `supported`, `readable` or `writable` is `false`.                                                            | 0.1.0 |
 | **`minOS`**        | <code>string</code>                                             | iOS: the first iOS version with the type.                                                                             | 0.1.0 |
 | **`values`**       | <code>string[]</code>                                           | Values this platform can store, for types with a value set (category types).                                          | 0.1.0 |
 | **`units`**        | <code>string[]</code>                                           | Units `readSamples()` and `saveSamples()` accept, canonical unit first (quantity types).                              | 0.1.0 |
@@ -812,13 +831,19 @@ others are left alone and not counted. `ids` and `clientIds` that match nothing 
 
 A number with a unit (`basalBodyTemperature`, …).
 
-| Prop                      | Type                                                              | Description                                                                        | Since |
-| ------------------------- | ----------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ----- |
-| **`kind`**                | <code>'quantity'</code>                                           |                                                                                    | 0.1.0 |
-| **`type`**                | <code><a href="#quantityhealthtype">QuantityHealthType</a></code> |                                                                                    | 0.1.0 |
-| **`value`**               | <code>number</code>                                               |                                                                                    | 0.1.0 |
-| **`unit`**                | <code>string</code>                                               | The type's canonical unit, or the `unit` asked for in `readSamples()`.             | 0.1.0 |
-| **`measurementLocation`** | <code>string</code>                                               | `basalBodyTemperature`: where the temperature was taken. Absent when not recorded. | 0.1.0 |
+| Prop                      | Type                                                              | Description                                                                                                  | Since |
+| ------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ----- |
+| **`kind`**                | <code>'quantity'</code>                                           |                                                                                                              | 0.1.0 |
+| **`type`**                | <code><a href="#quantityhealthtype">QuantityHealthType</a></code> |                                                                                                              | 0.1.0 |
+| **`value`**               | <code>number</code>                                               |                                                                                                              | 0.1.0 |
+| **`unit`**                | <code>string</code>                                               | The type's canonical unit, or the `unit` asked for in `readSamples()`.                                       | 0.1.0 |
+| **`measurementLocation`** | <code>string</code>                                               | `basalBodyTemperature`, `bodyTemperature`: where the temperature was taken. Absent when not recorded.        | 0.1.0 |
+| **`testType`**            | <code>string</code>                                               | `vo2Max`, iOS: how the value was measured or estimated (`vo2MaxTestType` values).                            | 0.2.0 |
+| **`measurementMethod`**   | <code>string</code>                                               | `vo2Max`, Android: how the value was measured (`vo2MaxMeasurementMethod` values).                            | 0.2.0 |
+| **`relationToMeal`**      | <code>string</code>                                               | `bloodGlucose`: when the reading was taken relative to a meal. iOS stores only `beforeMeal` and `afterMeal`. | 0.2.0 |
+| **`mealType`**            | <code>string</code>                                               | `bloodGlucose`, Android: the meal the reading relates to.                                                    | 0.2.0 |
+| **`specimenSource`**      | <code>string</code>                                               | `bloodGlucose`, Android: what the reading was taken from (capillary blood, interstitial fluid, …).           | 0.2.0 |
+| **`reason`**              | <code>string</code>                                               | `insulinDelivery`, iOS: `basal` or `bolus`.                                                                  | 0.2.0 |
 
 
 #### CategorySample
@@ -886,16 +911,16 @@ One change from the baseline in a `skinTemperature` sample.
 
 #### ReadSamplesOptions
 
-| Prop            | Type                                              | Description                                                                  | Default           | Since |
-| --------------- | ------------------------------------------------- | ---------------------------------------------------------------------------- | ----------------- | ----- |
-| **`type`**      | <code><a href="#healthtype">HealthType</a></code> |                                                                              |                   | 0.1.0 |
-| **`startDate`** | <code>string</code>                               | Returns samples that overlap `startDate`–`endDate`. ISO 8601 with an offset. |                   | 0.1.0 |
-| **`endDate`**   | <code>string</code>                               |                                                                              |                   | 0.1.0 |
-| **`limit`**     | <code>number</code>                               | Page size. Default 1,000, maximum 10,000.                                    | <code>1000</code> | 0.1.0 |
-| **`ascending`** | <code>boolean</code>                              | Oldest first.                                                                | <code>true</code> | 0.1.0 |
-| **`cursor`**    | <code>string</code>                               | `nextCursor` from the previous page. Pass the same other options with it.    |                   | 0.1.0 |
-| **`unit`**      | <code>string</code>                               | Unit for quantity values; one of the type's units.                           |                   | 0.1.0 |
-| **`sourceIds`** | <code>string[]</code>                             | Only samples written by these apps (bundle ids / package names).             |                   | 0.1.0 |
+| Prop            | Type                                              | Description                                                                                                                                                                                                                                                                                 | Default           | Since |
+| --------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | ----- |
+| **`type`**      | <code><a href="#healthtype">HealthType</a></code> | A combined id (`distance`, `speed`, `power`) reads every member type HealthKit has on iOS; each sample keeps the combined id as its `type` and names its member in `native.type`. Aggregate-only types (`reason: 'aggregateOnly'` in `getSupportedTypes()`) reject with `UNSUPPORTED_TYPE`. |                   | 0.1.0 |
+| **`startDate`** | <code>string</code>                               | Returns samples that overlap `startDate`–`endDate`. ISO 8601 with an offset.                                                                                                                                                                                                                |                   | 0.1.0 |
+| **`endDate`**   | <code>string</code>                               |                                                                                                                                                                                                                                                                                             |                   | 0.1.0 |
+| **`limit`**     | <code>number</code>                               | Page size. Default 1,000, maximum 10,000.                                                                                                                                                                                                                                                   | <code>1000</code> | 0.1.0 |
+| **`ascending`** | <code>boolean</code>                              | Oldest first.                                                                                                                                                                                                                                                                               | <code>true</code> | 0.1.0 |
+| **`cursor`**    | <code>string</code>                               | `nextCursor` from the previous page. Pass the same other options with it.                                                                                                                                                                                                                   |                   | 0.1.0 |
+| **`unit`**      | <code>string</code>                               | Unit for quantity values; one of the type's units.                                                                                                                                                                                                                                          |                   | 0.1.0 |
+| **`sourceIds`** | <code>string[]</code>                             | Only samples written by these apps (bundle ids / package names).                                                                                                                                                                                                                            |                   | 0.1.0 |
 
 
 #### GetChangesResult
@@ -945,12 +970,18 @@ A deleted sample.
 
 #### NewQuantitySample
 
-| Prop                      | Type                                                              | Description                                              | Since |
-| ------------------------- | ----------------------------------------------------------------- | -------------------------------------------------------- | ----- |
-| **`type`**                | <code><a href="#quantityhealthtype">QuantityHealthType</a></code> |                                                          | 0.1.0 |
-| **`value`**               | <code>number</code>                                               |                                                          | 0.1.0 |
-| **`unit`**                | <code>string</code>                                               | One of the type's units. Defaults to its canonical unit. | 0.1.0 |
-| **`measurementLocation`** | <code>string</code>                                               |                                                          | 0.1.0 |
+| Prop                      | Type                                                              | Description                                                              | Since |
+| ------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------ | ----- |
+| **`type`**                | <code><a href="#quantityhealthtype">QuantityHealthType</a></code> |                                                                          | 0.1.0 |
+| **`value`**               | <code>number</code>                                               |                                                                          | 0.1.0 |
+| **`unit`**                | <code>string</code>                                               | One of the type's units. Defaults to its canonical unit.                 | 0.1.0 |
+| **`measurementLocation`** | <code>string</code>                                               |                                                                          | 0.1.0 |
+| **`testType`**            | <code>string</code>                                               |                                                                          | 0.2.0 |
+| **`measurementMethod`**   | <code>string</code>                                               |                                                                          | 0.2.0 |
+| **`relationToMeal`**      | <code>string</code>                                               |                                                                          | 0.2.0 |
+| **`mealType`**            | <code>string</code>                                               |                                                                          | 0.2.0 |
+| **`specimenSource`**      | <code>string</code>                                               |                                                                          | 0.2.0 |
+| **`reason`**              | <code>string</code>                                               | `insulinDelivery`: required on iOS, which rejects the sample without it. | 0.2.0 |
 
 
 #### NewCategorySample
@@ -1053,8 +1084,10 @@ Why a type can't be read or written here.
 - `osVersion`: iOS, the type needs a newer iOS (see `minOS`).
 - `featureUnavailable`: Android, this device's Health Connect doesn't have the feature the type needs.
 - `readOnly`: the type can be read but the platform doesn't let apps write it.
+- `aggregateOnly`: the platform has no samples of the type, only aggregates (`totalEnergy` on iOS,
+  `basalEnergy` on Android). Since 0.2.0.
 
-<code>'notOnPlatform' | 'osVersion' | 'featureUnavailable' | 'readOnly'</code>
+<code>'notOnPlatform' | 'osVersion' | 'featureUnavailable' | 'readOnly' | 'aggregateOnly'</code>
 
 
 #### AuthorizationStatusMap
@@ -1068,14 +1101,18 @@ Status per type, for the types passed in.
 
 Make all properties in T optional
 
-<code>{ [P in keyof T]?: T[P]; }</code>
+<code>{
+ [P in keyof T]?: T[P];
+ }</code>
 
 
 #### Record
 
 Construct a type with a set of properties K of type T
 
-<code>{ [P in K]: T; }</code>
+<code>{
+ [P in K]: T;
+ }</code>
 
 
 #### AuthorizationStatus

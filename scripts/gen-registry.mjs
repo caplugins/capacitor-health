@@ -25,6 +25,8 @@ export const OUTPUTS = {
 };
 
 const q = (s) => JSON.stringify(s);
+/** A Swift Double literal. */
+const swiftNumber = (n) => (Number.isInteger(n) ? `${n}.0` : String(n));
 const supportedValues = (set, platform) =>
   set[platform] ? set.values.filter((v) => set[platform].map[v] !== null && set[platform].map[v] !== undefined) : null;
 
@@ -79,6 +81,7 @@ async function renderTypeScript(registry) {
         if (t.ios.members) entry.ios.members = t.ios.members;
         if (t.ios.writeTo) entry.ios.writeTo = t.ios.writeTo;
         if (t.ios.aggregateOnly) entry.ios.aggregateOnly = true;
+        if (t.ios.range) entry.ios.range = t.ios.range;
         const metrics = iosMetrics(t, registry);
         if (metrics) entry.ios.metrics = metrics;
       }
@@ -193,8 +196,10 @@ export interface RegistryEntry {
     identifier?: string;
     minOS: string;
     writable: boolean;
-    /** \`instant\`: start must equal end. */
-    time: 'any' | 'instant';
+    /** \`instant\`: start must equal end. \`interval\`: end must be at least a second after start. */
+    time: 'any' | 'instant' | 'interval';
+    /** Values HealthKit accepts, in the type's only unit. */
+    range?: { min: number; max: number };
     derivedFrom?: HealthType;
     /** Combined id: the split ids it reads together (decision #14). */
     members?: readonly HealthType[];
@@ -280,6 +285,7 @@ function renderSwift(registry) {
       if (availability) args.push(`isAvailable: ${availability}`);
       if (!t.ios.writable) args.push('writable: false');
       if (t.ios.time === 'instant') args.push('instantOnly: true');
+      if (t.ios.time === 'interval') args.push('intervalOnly: true');
       if (t.values) args.push(`valueSet: ${q(t.values)}`);
       if (t.unit) args.push(`unit: ${q(t.unit)}`, `units: [${t.units.map(q).join(', ')}]`);
       if (t.ios.derivedFrom) args.push(`derivedFrom: ${q(t.ios.derivedFrom)}`);
@@ -288,6 +294,7 @@ function renderSwift(registry) {
       if (t.ios.members) args.push(`members: [${t.ios.members.map(q).join(', ')}]`);
       if (t.ios.writeTo) args.push(`writeTo: ${q(t.ios.writeTo)}`);
       if (t.ios.aggregateOnly) args.push('aggregateOnly: true');
+      if (t.ios.range) args.push(`range: ${swiftNumber(t.ios.range.min)}...${swiftNumber(t.ios.range.max)}`);
       const fields = Object.entries(t.fields ?? {})
         .filter(([, f]) => f.ios)
         .map(([name, f]) => {
@@ -368,6 +375,8 @@ struct RegistryEntry {
     let writable: Bool
     /// Start must equal end, or HealthKit rejects the save.
     let instantOnly: Bool
+    /// End must be at least a second after start: HealthKit raises an exception below its minimum duration.
+    let intervalOnly: Bool
     let valueSet: String?
     /// Canonical unit (quantity types).
     let unit: String?
@@ -382,6 +391,8 @@ struct RegistryEntry {
     let writeTo: String?
     /// No samples of its own; only \`aggregate()\` serves it.
     let aggregateOnly: Bool
+    /// Values HealthKit accepts, in the canonical unit; outside it HealthKit raises an exception.
+    let range: ClosedRange<Double>?
     let fields: [RegistryMetadataField]
 
     var isQuantity: Bool { identifier.hasPrefix("HKQuantityTypeIdentifier") }
@@ -395,6 +406,7 @@ struct RegistryEntry {
         isAvailable: @escaping () -> Bool = { true },
         writable: Bool = true,
         instantOnly: Bool = false,
+        intervalOnly: Bool = false,
         valueSet: String? = nil,
         unit: String? = nil,
         units: [String] = [],
@@ -403,6 +415,7 @@ struct RegistryEntry {
         members: [String] = [],
         writeTo: String? = nil,
         aggregateOnly: Bool = false,
+        range: ClosedRange<Double>? = nil,
         fields: [RegistryMetadataField] = []
     ) {
         self.typeId = typeId
@@ -412,6 +425,7 @@ struct RegistryEntry {
         self.isAvailable = isAvailable
         self.writable = writable
         self.instantOnly = instantOnly
+        self.intervalOnly = intervalOnly
         self.valueSet = valueSet
         self.unit = unit
         self.units = units
@@ -420,6 +434,7 @@ struct RegistryEntry {
         self.members = members
         self.writeTo = writeTo
         self.aggregateOnly = aggregateOnly
+        self.range = range
         self.fields = fields
     }
 }

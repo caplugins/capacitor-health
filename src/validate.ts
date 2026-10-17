@@ -44,8 +44,10 @@ const DEVICE_TYPES: readonly string[] = [
   'smartDisplay',
 ];
 const DEVICE_STRINGS = ['name', 'manufacturer', 'model', 'hardwareVersion', 'softwareVersion'] as const;
-/** Typed sample fields (decision #20) that the registry declares per type. */
-const TYPED_FIELDS = ['isCycleStart', 'sensation', 'measurementLocation', 'protectionUsed'] as const;
+/** Typed sample fields (decision #20): every field the registry declares on some type. */
+const TYPED_FIELDS: readonly string[] = [
+  ...new Set(Object.values(REGISTRY).flatMap((entry: RegistryEntry) => Object.keys(entry.fields ?? {}))),
+];
 
 export function healthError(code: HealthErrorCode, message: string, data?: HealthErrorData): CapacitorException {
   // Capacitor types `code` as its own two-value enum; the bridge and apps treat it as a string.
@@ -186,6 +188,23 @@ function platformType(value: unknown, field: string, platform: NativePlatform): 
   return entry;
 }
 
+/** Like `platformType`, and the type must have samples there: aggregate-only types have only aggregates. */
+function sampleType(value: unknown, field: string, platform: NativePlatform): RegistryEntry {
+  const entry = platformType(value, field, platform);
+  if (entry[platform]?.aggregateOnly) {
+    throw healthError(
+      'UNSUPPORTED_TYPE',
+      `${entry.id} has no samples on ${PLATFORM_NAMES[platform]}, only aggregates.`,
+      {
+        field,
+        type: entry.id,
+        reason: 'aggregateOnly',
+      },
+    );
+  }
+  return entry;
+}
+
 function writableType(value: unknown, field: string, platform: NativePlatform): RegistryEntry {
   const entry = platformType(value, field, platform);
   if (!entry[platform]?.writable) {
@@ -272,7 +291,7 @@ export function validateRequestAuthorization(
 
 export function validateReadSamples(options: ReadSamplesOptions, platform: NativePlatform): ReadSamplesOptions {
   const o = object(options, 'options');
-  const entry = platformType(o.type, 'type', platform);
+  const entry = sampleType(o.type, 'type', platform);
   const [start, end] = dateRange(o.startDate, o.endDate, '');
   const result: ReadSamplesOptions = {
     type: entry.id,
@@ -293,7 +312,7 @@ export function validateGetChanges(options: GetChangesOptions, platform: NativeP
   if (!Array.isArray(o.types) || o.types.length === 0) throw invalid('types', 'must be a non-empty array of types');
   const types: HealthType[] = [];
   o.types.forEach((item, i) => {
-    const entry = platformType(item, `types[${i}]`, platform);
+    const entry = sampleType(item, `types[${i}]`, platform);
     if (!types.includes(entry.id)) types.push(entry.id);
   });
   const result: GetChangesOptions = {
@@ -357,8 +376,11 @@ function typedFields(s: Fields, at: string, entry: RegistryEntry, platform: Nati
     const field = entry.fields?.[name];
     const value = s[name];
     if (value === undefined) {
-      // HealthKit requires the cycle-start key on every flow sample.
-      if (platform === 'ios' && field?.requiredOnWriteIos) result[name] = false;
+      if (platform === 'ios' && field?.requiredOnWriteIos) {
+        // HealthKit requires the cycle-start key on every flow sample, and a reason on insulin.
+        if (field.type !== 'boolean') throw invalid(`${at}.${name}`, 'is required on iOS', 'required');
+        result[name] = false;
+      }
       continue;
     }
     if (!field) throw invalid(`${at}.${name}`, `doesn't apply to ${entry.id}`, 'notApplicable');
@@ -452,6 +474,13 @@ function newSample(raw: unknown, i: number, platform: NativePlatform): NewSample
     let end = start;
     if (s.endDate !== undefined) [, end] = dateRange(s.startDate, s.endDate, `${at}.`);
     const instant = platform === 'ios' ? entry.ios?.time === 'instant' : entry.android?.time === 'instant';
+    if (platform === 'ios' && entry.ios?.time === 'interval' && end.ms - start.ms < 1000) {
+      throw invalid(
+        `${at}.endDate`,
+        `must be at least a second after startDate: ${entry.id} covers a period of time on iOS`,
+        'intervalOnly',
+      );
+    }
     if (instant && end.ms !== start.ms) {
       throw invalid(
         `${at}.endDate`,
@@ -465,6 +494,11 @@ function newSample(raw: unknown, i: number, platform: NativePlatform): NewSample
     if (entry.kind === 'quantity') {
       result.value = finiteNumber(s.value, `${at}.value`);
       result.unit = unit(s.unit, `${at}.unit`, entry);
+      // The registry only gives ranges to single-unit types, so the value is in the range's unit.
+      const range = platform === 'ios' ? entry.ios?.range : undefined;
+      if (range && ((result.value as number) < range.min || (result.value as number) > range.max)) {
+        throw invalid(`${at}.value`, `must be from ${range.min} to ${range.max} ${entry.unit}`, 'outOfRange');
+      }
     } else if (entry.kind === 'category') {
       result.value = enumValue(s.value, `${at}.value`, entry.values as string, platform);
       rejectIfSet(s, at, entry, ['unit']);
