@@ -1015,6 +1015,7 @@ object Registry {
             readPermission = "android.permission.health.READ_SLEEP",
             writePermission = "android.permission.health.WRITE_SLEEP",
             writable = true,
+            aggregates = mapOf("duration" to SleepSessionRecord.SLEEP_DURATION_TOTAL),
         ),
         RegistryEntry(
             id = "mindfulSession",

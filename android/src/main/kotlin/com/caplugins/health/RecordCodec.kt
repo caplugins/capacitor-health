@@ -13,6 +13,7 @@ import androidx.health.connect.client.records.OvulationTestRecord
 import androidx.health.connect.client.records.Record
 import androidx.health.connect.client.records.SexualActivityRecord
 import androidx.health.connect.client.records.SkinTemperatureRecord
+import androidx.health.connect.client.records.SleepSessionRecord
 import androidx.health.connect.client.records.metadata.Device
 import androidx.health.connect.client.records.metadata.Metadata
 import androidx.health.connect.client.units.Pressure
@@ -171,6 +172,7 @@ object RecordCodec {
                 json.put("lastDay", PeriodDays.lastDay(record).toString())
                 json.put("derived", false)
             }
+            is SleepSessionRecord -> SleepSessions.encode(record, json, native)
         }
         return json.put("native", native)
     }
@@ -187,6 +189,7 @@ object RecordCodec {
             is SkinTemperatureRecord -> RecordTimes(record.startTime, record.startZoneOffset, record.endTime, record.endZoneOffset)
             is MindfulnessSessionRecord -> RecordTimes(record.startTime, record.startZoneOffset, record.endTime, record.endZoneOffset)
             is MenstruationPeriodRecord -> RecordTimes(record.startTime, record.startZoneOffset, record.endTime, record.endZoneOffset)
+            is SleepSessionRecord -> RecordTimes(record.startTime, record.startZoneOffset, record.endTime, record.endZoneOffset)
             else -> throw HealthException(HealthException.NATIVE_ERROR, "${record::class.simpleName} has no codec.")
         }
 
@@ -323,6 +326,7 @@ object RecordCodec {
             }
             BloodPressureRecord::class -> decodeBloodPressure(fields, entry, metadata)
             MenstruationPeriodRecord::class -> return decodePeriod(fields, metadata)
+            SleepSessionRecord::class -> SleepSessions.decode(fields, metadata)
             else -> throw HealthException(HealthException.NATIVE_ERROR, "${entry.id} has no codec.")
         }
         return Decoded(record)

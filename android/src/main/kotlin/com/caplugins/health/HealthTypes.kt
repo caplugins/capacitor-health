@@ -13,8 +13,6 @@ class HealthTypes(private val features: (Int) -> Boolean) {
     /** The entry for [typeId], or why there is none (`notOnPlatform`, `featureUnavailable`). */
     fun lookup(typeId: String): Result<RegistryEntry> {
         val entry = Registry.byId[typeId] ?: return Result.failure(HealthException.unsupportedType(typeId, "notOnPlatform"))
-        // Sleep sessions are registered for the TypeScript model (T43); reads and writes arrive in T45.
-        if (typeId == "sleepSession") return Result.failure(HealthException.unsupportedType(typeId, "notOnPlatform"))
         val feature = entry.feature
         if (feature != null && !features(feature)) return Result.failure(HealthException.unsupportedType(typeId, "featureUnavailable"))
         return Result.success(entry)
@@ -34,7 +32,9 @@ class HealthTypes(private val features: (Int) -> Boolean) {
         val result = JSObject().put("type", typeId).put("aggregatable", false)
         val entry = Registry.byId[typeId]
         if (entry != null) {
-            entry.valueSet?.let { Registry.valueSets[it] }?.let { result.put("values", JSArray(it.constants.keys)) }
+            // A sleep session's values are its stages' (`parts.stages`).
+            val valueSet = if (typeId == SleepSessions.TYPE_ID) "sleepStage" else entry.valueSet
+            valueSet?.let { Registry.valueSets[it] }?.let { result.put("values", JSArray(it.constants.keys)) }
             if (entry.units.isNotEmpty()) result.put("units", JSArray(entry.units))
         }
         val failure = lookup(typeId).exceptionOrNull() as HealthException?

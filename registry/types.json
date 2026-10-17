@@ -2609,9 +2609,11 @@
         "time": "interval",
         "readPermission": "android.permission.health.READ_SLEEP",
         "writePermission": "android.permission.health.WRITE_SLEEP",
-        "writable": true
+        "writable": true,
+        "aggregates": {"duration": "SLEEP_DURATION_TOTAL"},
+        "notes": "One SleepSessionRecord per session, stages as its stages (decision #66). Reads look back 24 hours so sessions that start before the range still overlap it"
       },
-      "notes": "Android support lands in T45; until then Android reports it unsupported. title and notes are Android only"
+      "notes": "title and notes are Android only"
     },
     {
       "id": "mindfulSession",

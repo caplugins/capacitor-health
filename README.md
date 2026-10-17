@@ -385,18 +385,23 @@ stage, so on iOS the plugin works sessions out. These rules are a contract, cove
   Android only.
 - **Both platforms:** stages must lie inside the session and may touch but not overlap (Health
   Connect's rules, checked before native code runs).
-- **Time asleep:** `aggregate({ type: 'sleepSession', metrics: ['duration'] })` gives seconds in
-  `asleep`, `light`, `deep` and `rem` stages per bucket (unit `s`). On iOS, time two apps both record
-  as asleep counts once, and a bucket no session touches has no value. This matches Apple Health's
-  "Time Asleep".
+- **Time asleep:** `aggregate({ type: 'sleepSession', metrics: ['duration'] })` gives seconds asleep
+  per bucket (unit `s`); a bucket no session touches has no value. On iOS it's the time in `asleep`,
+  `light`, `deep` and `rem` stages, time two apps both record counted once, as Apple Health's "Time
+  Asleep". On Android it's Health Connect's `SLEEP_DURATION_TOTAL`: session time minus `awake`,
+  `inBed` and `outOfBed` stages, so `unknown` stages and time without stages count as asleep; only
+  apps on the user's sleep priority list (Health Connect → Manage data → Data sources and priority)
+  count, the top one winning where sessions overlap. This matches Health Connect's sleep total.
 - **Deleting on iOS:** by session id, `clientId` or range, the plugin deletes your app's samples of the
   matching sessions. `deleted` counts sessions.
 - **Changes on iOS:** `getChanges` follows HealthKit's sleep samples and returns each session that holds
   a changed sample, derived whole. A deleted entry's `id` is a stage sample's, so match it against
   the `id` and `stageSampleIds` of sessions you hold. HealthKit doesn't say when a deleted sample was,
   so a session that only lost some stages isn't derived again: re-read its range.
-- Android support arrives in the next 0.3.0 builds; until then `getSupportedTypes()` reports
-  `sleepSession` as unsupported there.
+- **Android:** each session is one `SleepSessionRecord`, stages as stored (`derived: false`), with
+  `title` and `notes`. Reads look 24 hours before your range, since Health Connect matches sessions by
+  start time, so a night that started before the range is returned. Writing with a `clientId` again
+  replaces the record; deleting and `getChanges` work as for any record.
 
 ### Permissions
 
@@ -1188,15 +1193,15 @@ One stage of a sleep session.
 
 #### AggregateOptions
 
-| Prop            | Type                                                                      | Description                                                                                                                                                                                                                                                                                                                          | Since |
-| --------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----- |
-| **`type`**      | <code><a href="#healthtype">HealthType</a></code>                         | A type whose `getSupportedTypes()` entry is `aggregatable`: quantity types, and `sleepSession` (`duration`: seconds asleep, time two apps both record counted once).                                                                                                                                                                 | 0.2.0 |
-| **`startDate`** | <code>string</code>                                                       | Start of the range and of the first bucket. ISO 8601 with an offset.                                                                                                                                                                                                                                                                 | 0.2.0 |
-| **`endDate`**   | <code>string</code>                                                       | End of the range; the last bucket stops here.                                                                                                                                                                                                                                                                                        | 0.2.0 |
-| **`metrics`**   | <code>AggregateMetric[]</code>                                            | What to compute: `sum` for cumulative types (steps, energy, distance), `avg` / `min` / `max` for the others, `count` (number of readings) where the platform has it. <a href="#typesupport">`TypeSupport</a>.metrics` lists them per type.                                                                                           | 0.2.0 |
-| **`bucket`**    | <code><a href="#aggregatebucketoptions">AggregateBucketOptions</a></code> | Split the range into buckets that start at `startDate`. Without it the result is one bucket for the whole range. Minute and hour buckets are exact lengths of time; day, week and month buckets follow the calendar in the device's time zone, so a day across a daylight-saving change lasts 23 or 25 hours. At most 5,000 buckets. | 0.2.0 |
-| **`unit`**      | <code>string</code>                                                       | Unit for `sum`, `avg`, `min` and `max`; one of the type's units. Defaults to its canonical unit.                                                                                                                                                                                                                                     | 0.2.0 |
-| **`sourceIds`** | <code>string[]</code>                                                     | Only data written by these apps (bundle ids / package names).                                                                                                                                                                                                                                                                        | 0.2.0 |
+| Prop            | Type                                                                      | Description                                                                                                                                                                                                                                                                                                                                | Since |
+| --------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----- |
+| **`type`**      | <code><a href="#healthtype">HealthType</a></code>                         | A type whose `getSupportedTypes()` entry is `aggregatable`: quantity types, and `sleepSession` (`duration`: seconds asleep; iOS counts asleep stages with time two apps both record counted once, Android is Health Connect's total: session time minus awake, in-bed and out-of-bed stages, from apps on the user's sleep priority list). | 0.2.0 |
+| **`startDate`** | <code>string</code>                                                       | Start of the range and of the first bucket. ISO 8601 with an offset.                                                                                                                                                                                                                                                                       | 0.2.0 |
+| **`endDate`**   | <code>string</code>                                                       | End of the range; the last bucket stops here.                                                                                                                                                                                                                                                                                              | 0.2.0 |
+| **`metrics`**   | <code>AggregateMetric[]</code>                                            | What to compute: `sum` for cumulative types (steps, energy, distance), `avg` / `min` / `max` for the others, `count` (number of readings) where the platform has it. <a href="#typesupport">`TypeSupport</a>.metrics` lists them per type.                                                                                                 | 0.2.0 |
+| **`bucket`**    | <code><a href="#aggregatebucketoptions">AggregateBucketOptions</a></code> | Split the range into buckets that start at `startDate`. Without it the result is one bucket for the whole range. Minute and hour buckets are exact lengths of time; day, week and month buckets follow the calendar in the device's time zone, so a day across a daylight-saving change lasts 23 or 25 hours. At most 5,000 buckets.       | 0.2.0 |
+| **`unit`**      | <code>string</code>                                                       | Unit for `sum`, `avg`, `min` and `max`; one of the type's units. Defaults to its canonical unit.                                                                                                                                                                                                                                           | 0.2.0 |
+| **`sourceIds`** | <code>string[]</code>                                                     | Only data written by these apps (bundle ids / package names).                                                                                                                                                                                                                                                                              | 0.2.0 |
 
 
 #### AggregateBucketOptions

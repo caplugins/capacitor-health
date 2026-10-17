@@ -10,10 +10,10 @@
 - `mindfulSession` (HealthKit mindful sessions ⇄ `MindfulnessSessionRecord`, Android only where
   Health Connect has the feature), with `sessionType` on Android.
 - Units `mg`, `mcg`, `oz` and `flOz`.
-- `sleepSession` (decisions #64–#65): nights and naps with stages. iOS derives sessions from
-  `sleepAnalysis` samples and writes them back as an in-bed span plus one sample per stage; read,
-  write, delete, `getChanges` and `aggregate()` time asleep (`duration`). Android support is still to
-  come.
+- `sleepSession` (decisions #64–#66): nights and naps with stages. iOS derives sessions from
+  `sleepAnalysis` samples and writes them back as an in-bed span plus one sample per stage; Android
+  stores `SleepSessionRecord`s with `title` and `notes`. Read, write, delete, `getChanges` and
+  `aggregate()` time asleep (`duration`) on both.
 
 ### Changed
 

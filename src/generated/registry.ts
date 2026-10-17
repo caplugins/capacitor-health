@@ -2823,6 +2823,7 @@ export const REGISTRY: Readonly<Record<HealthType, RegistryEntry>> = {
       readPermission: 'android.permission.health.READ_SLEEP',
       writePermission: 'android.permission.health.WRITE_SLEEP',
       writable: true,
+      metrics: ['duration'],
     },
   },
   mindfulSession: {

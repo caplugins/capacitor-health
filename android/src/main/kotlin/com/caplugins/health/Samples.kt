@@ -60,8 +60,13 @@ class Samples(
         var token = options.optString("cursor")?.let { decodeCursor(it, typeId) }
         // Health Connect matches interval records by start time only (T16, API 34). For records with a
         // maximum length, query that much earlier and keep the ones that overlap, so reads mean "overlap"
-        // as on iOS. Interval records without one (skin temperature) keep start-time matching.
-        val lookBack = if (entry.time == RecordTime.INTERVAL) entry.maxDuration else null
+        // as on iOS; sleep sessions look back a day (decision #66). Other interval records without one
+        // (skin temperature) keep start-time matching.
+        val lookBack = when {
+            entry.id == SleepSessions.TYPE_ID -> SleepSessions.LOOK_BACK
+            entry.time == RecordTime.INTERVAL -> entry.maxDuration
+            else -> null
+        }
         val queryStart = lookBack?.let { start.minus(it) } ?: start
 
         // Equal page sizes that add up to at most `limit`: Health Connect pages are 5,000 at most.
