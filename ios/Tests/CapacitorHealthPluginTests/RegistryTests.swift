@@ -10,9 +10,13 @@ final class RegistryTests: XCTestCase {
 
     func testEveryAvailableIdentifierResolves() {
         for entry in Registry.entries where entry.isAvailable() {
-            let type: HKSampleType? = entry.isQuantity
-                ? HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier(rawValue: entry.identifier))
-                : HKObjectType.categoryType(forIdentifier: HKCategoryTypeIdentifier(rawValue: entry.identifier))
+            let type: HKSampleType? = if entry.isQuantity {
+                HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier(rawValue: entry.identifier))
+            } else if entry.isCorrelation {
+                HKObjectType.correlationType(forIdentifier: HKCorrelationTypeIdentifier(rawValue: entry.identifier))
+            } else {
+                HKObjectType.categoryType(forIdentifier: HKCategoryTypeIdentifier(rawValue: entry.identifier))
+            }
             XCTAssertNotNil(type, entry.typeId)
         }
     }

@@ -12,6 +12,9 @@ enum HealthTypes {
     /// to `menstrualFlow`, which its registry entry names.
     static func sampleType(for entry: RegistryEntry) -> HKSampleType? {
         guard entry.isAvailable() else { return nil }
+        // A correlation (bloodPressure) needs its own codec and authorizes its member types, so until that
+        // exists it stays unsupported rather than reaching HealthKit as a share type.
+        if entry.isCorrelation { return nil }
         if entry.isQuantity {
             return HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier(rawValue: entry.identifier))
         }

@@ -46,6 +46,104 @@ export const HEALTH_TYPES = [
   'pelvicPain',
   'sleepChanges',
   'vaginalDryness',
+  'steps',
+  'distance',
+  'distanceWalkingRunning',
+  'distanceCycling',
+  'distanceSwimming',
+  'distanceWheelchair',
+  'distanceDownhillSnowSports',
+  'distanceCrossCountrySkiing',
+  'distancePaddleSports',
+  'distanceRowing',
+  'distanceSkatingSports',
+  'activeEnergy',
+  'basalEnergy',
+  'basalMetabolicRate',
+  'totalEnergy',
+  'floorsClimbed',
+  'elevationGained',
+  'wheelchairPushes',
+  'stepsCadence',
+  'speed',
+  'walkingSpeed',
+  'runningSpeed',
+  'cyclingSpeed',
+  'crossCountrySkiingSpeed',
+  'paddleSportsSpeed',
+  'rowingSpeed',
+  'power',
+  'runningPower',
+  'cyclingPower',
+  'cyclingFunctionalThresholdPower',
+  'cyclingCadence',
+  'vo2Max',
+  'exerciseTime',
+  'standTime',
+  'moveTime',
+  'physicalEffort',
+  'workoutEffortScore',
+  'estimatedWorkoutEffortScore',
+  'walkingStepLength',
+  'walkingAsymmetry',
+  'walkingDoubleSupport',
+  'stairAscentSpeed',
+  'stairDescentSpeed',
+  'sixMinuteWalkTestDistance',
+  'runningStrideLength',
+  'runningVerticalOscillation',
+  'runningGroundContactTime',
+  'walkingSteadiness',
+  'swimmingStrokeCount',
+  'standHour',
+  'walkingSteadinessEvent',
+  'heartRate',
+  'restingHeartRate',
+  'walkingHeartRateAverage',
+  'heartRateVariabilitySdnn',
+  'heartRateVariabilityRmssd',
+  'heartRateRecovery',
+  'oxygenSaturation',
+  'respiratoryRate',
+  'bodyTemperature',
+  'bloodPressure',
+  'bloodGlucose',
+  'atrialFibrillationBurden',
+  'peripheralPerfusionIndex',
+  'highHeartRateEvent',
+  'lowHeartRateEvent',
+  'irregularHeartRhythmEvent',
+  'hypertensionEvent',
+  'sleepApneaEvent',
+  'lowCardioFitnessEvent',
+  'breathingDisturbances',
+  'weight',
+  'height',
+  'bodyFat',
+  'leanBodyMass',
+  'boneMass',
+  'bodyWaterMass',
+  'bmi',
+  'waistCircumference',
+  'electrodermalActivity',
+  'forcedVitalCapacity',
+  'forcedExpiratoryVolume1',
+  'peakExpiratoryFlowRate',
+  'inhalerUsage',
+  'bloodAlcoholContent',
+  'numberOfAlcoholicBeverages',
+  'numberOfTimesFallen',
+  'uvExposure',
+  'timeInDaylight',
+  'environmentalAudioExposure',
+  'headphoneAudioExposure',
+  'environmentalSoundReduction',
+  'underwaterDepth',
+  'waterTemperature',
+  'insulinDelivery',
+  'environmentalAudioExposureEvent',
+  'headphoneAudioExposureEvent',
+  'nikeFuel',
 ] as const;
 
 /**
@@ -60,7 +158,96 @@ export type HealthType = (typeof HEALTH_TYPES)[number];
  *
  * @since 0.1.0
  */
-export type QuantityHealthType = 'basalBodyTemperature' | 'wristTemperature';
+export type QuantityHealthType =
+  | 'basalBodyTemperature'
+  | 'wristTemperature'
+  | 'steps'
+  | 'distance'
+  | 'distanceWalkingRunning'
+  | 'distanceCycling'
+  | 'distanceSwimming'
+  | 'distanceWheelchair'
+  | 'distanceDownhillSnowSports'
+  | 'distanceCrossCountrySkiing'
+  | 'distancePaddleSports'
+  | 'distanceRowing'
+  | 'distanceSkatingSports'
+  | 'activeEnergy'
+  | 'basalEnergy'
+  | 'basalMetabolicRate'
+  | 'totalEnergy'
+  | 'floorsClimbed'
+  | 'elevationGained'
+  | 'wheelchairPushes'
+  | 'stepsCadence'
+  | 'speed'
+  | 'walkingSpeed'
+  | 'runningSpeed'
+  | 'cyclingSpeed'
+  | 'crossCountrySkiingSpeed'
+  | 'paddleSportsSpeed'
+  | 'rowingSpeed'
+  | 'power'
+  | 'runningPower'
+  | 'cyclingPower'
+  | 'cyclingFunctionalThresholdPower'
+  | 'cyclingCadence'
+  | 'vo2Max'
+  | 'exerciseTime'
+  | 'standTime'
+  | 'moveTime'
+  | 'physicalEffort'
+  | 'workoutEffortScore'
+  | 'estimatedWorkoutEffortScore'
+  | 'walkingStepLength'
+  | 'walkingAsymmetry'
+  | 'walkingDoubleSupport'
+  | 'stairAscentSpeed'
+  | 'stairDescentSpeed'
+  | 'sixMinuteWalkTestDistance'
+  | 'runningStrideLength'
+  | 'runningVerticalOscillation'
+  | 'runningGroundContactTime'
+  | 'walkingSteadiness'
+  | 'swimmingStrokeCount'
+  | 'heartRate'
+  | 'restingHeartRate'
+  | 'walkingHeartRateAverage'
+  | 'heartRateVariabilitySdnn'
+  | 'heartRateVariabilityRmssd'
+  | 'heartRateRecovery'
+  | 'oxygenSaturation'
+  | 'respiratoryRate'
+  | 'bodyTemperature'
+  | 'bloodGlucose'
+  | 'atrialFibrillationBurden'
+  | 'peripheralPerfusionIndex'
+  | 'breathingDisturbances'
+  | 'weight'
+  | 'height'
+  | 'bodyFat'
+  | 'leanBodyMass'
+  | 'boneMass'
+  | 'bodyWaterMass'
+  | 'bmi'
+  | 'waistCircumference'
+  | 'electrodermalActivity'
+  | 'forcedVitalCapacity'
+  | 'forcedExpiratoryVolume1'
+  | 'peakExpiratoryFlowRate'
+  | 'inhalerUsage'
+  | 'bloodAlcoholContent'
+  | 'numberOfAlcoholicBeverages'
+  | 'numberOfTimesFallen'
+  | 'uvExposure'
+  | 'timeInDaylight'
+  | 'environmentalAudioExposure'
+  | 'headphoneAudioExposure'
+  | 'environmentalSoundReduction'
+  | 'underwaterDepth'
+  | 'waterTemperature'
+  | 'insulinDelivery'
+  | 'nikeFuel';
 
 /**
  * Types whose samples hold one value from a fixed set (flow level, test result, severity…).
@@ -99,7 +286,12 @@ export type CategoryHealthType =
   | 'nightSweats'
   | 'pelvicPain'
   | 'sleepChanges'
-  | 'vaginalDryness';
+  | 'vaginalDryness'
+  | 'standHour'
+  | 'walkingSteadinessEvent'
+  | 'lowCardioFitnessEvent'
+  | 'environmentalAudioExposureEvent'
+  | 'headphoneAudioExposureEvent';
 
 /**
  * Types whose samples have no value, only a time range (the event happened).
@@ -114,7 +306,12 @@ export type EventHealthType =
   | 'infrequentMenstrualCycles'
   | 'irregularMenstrualCycles'
   | 'persistentIntermenstrualBleeding'
-  | 'prolongedMenstrualPeriods';
+  | 'prolongedMenstrualPeriods'
+  | 'highHeartRateEvent'
+  | 'lowHeartRateEvent'
+  | 'irregularHeartRhythmEvent'
+  | 'hypertensionEvent'
+  | 'sleepApneaEvent';
 
 export type RegistryKind = 'quantity' | 'category' | 'event' | 'special';
 export type RegistryGroup = 'reproductiveHealth' | 'symptoms' | 'activity' | 'vitals' | 'body' | 'other';
@@ -228,6 +425,12 @@ export const UNITS: Readonly<Record<string, RegistryUnit>> = {
   'mL/(kg·min)': { dimension: 'vo2Max', ios: true, android: true },
   L: { dimension: 'volume', ios: true, android: true },
   mL: { dimension: 'volume', ios: true, android: true },
+  'kcal/(kg·h)': { dimension: 'physicalEffort', ios: true, android: false },
+  appleEffortScore: { dimension: 'effortScore', ios: true, android: false },
+  mcS: { dimension: 'conductance', ios: true, android: false },
+  'L/min': { dimension: 'flow', ios: true, android: false },
+  IU: { dimension: 'insulin', ios: true, android: false },
+  dBASPL: { dimension: 'soundLevel', ios: true, android: false },
 };
 
 export const VALUE_SETS: Readonly<Record<string, RegistryValueSet>> = {
@@ -312,6 +515,41 @@ export const VALUE_SETS: Readonly<Record<string, RegistryValueSet>> = {
     ios: ['unspecified', 'noChange', 'decreased', 'increased'],
     android: null,
   },
+  appleStandHour: { values: ['stood', 'idle'], ios: ['stood', 'idle'], android: null },
+  walkingSteadinessEvent: {
+    values: ['initialLow', 'initialVeryLow', 'repeatLow', 'repeatVeryLow'],
+    ios: ['initialLow', 'initialVeryLow', 'repeatLow', 'repeatVeryLow'],
+    android: null,
+  },
+  lowCardioFitnessEvent: { values: ['lowFitness'], ios: ['lowFitness'], android: null },
+  environmentalAudioExposureEvent: { values: ['momentaryLimit'], ios: ['momentaryLimit'], android: null },
+  headphoneAudioExposureEvent: { values: ['sevenDayLimit'], ios: ['sevenDayLimit'], android: null },
+  vo2MaxTestType: {
+    values: ['maxExercise', 'predictionSubMaxExercise', 'predictionNonExercise', 'predictionStepTest'],
+    ios: ['maxExercise', 'predictionSubMaxExercise', 'predictionNonExercise', 'predictionStepTest'],
+    android: null,
+  },
+  vo2MaxMeasurementMethod: {
+    values: ['other', 'metabolicCart', 'heartRateRatio', 'cooperTest', 'multistageFitnessTest', 'rockportFitnessTest'],
+    ios: null,
+    android: ['other', 'metabolicCart', 'heartRateRatio', 'cooperTest', 'multistageFitnessTest', 'rockportFitnessTest'],
+  },
+  relationToMeal: {
+    values: ['general', 'fasting', 'beforeMeal', 'afterMeal'],
+    ios: ['beforeMeal', 'afterMeal'],
+    android: ['general', 'fasting', 'beforeMeal', 'afterMeal'],
+  },
+  mealType: {
+    values: ['breakfast', 'lunch', 'dinner', 'snack'],
+    ios: null,
+    android: ['breakfast', 'lunch', 'dinner', 'snack'],
+  },
+  specimenSource: {
+    values: ['interstitialFluid', 'capillaryBlood', 'plasma', 'serum', 'tears', 'wholeBlood'],
+    ios: null,
+    android: ['interstitialFluid', 'capillaryBlood', 'plasma', 'serum', 'tears', 'wholeBlood'],
+  },
+  insulinDeliveryReason: { values: ['basal', 'bolus'], ios: ['basal', 'bolus'], android: null },
 };
 
 export const REGISTRY: Readonly<Record<HealthType, RegistryEntry>> = {
@@ -716,5 +954,1523 @@ export const REGISTRY: Readonly<Record<HealthType, RegistryEntry>> = {
     group: 'symptoms',
     values: 'severity',
     ios: { identifier: 'HKCategoryTypeIdentifierVaginalDryness', minOS: '14.0', writable: true, time: 'any' },
+  },
+  steps: {
+    id: 'steps',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'count',
+    units: ['count'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierStepCount',
+      minOS: '8.0',
+      writable: true,
+      time: 'any',
+      metrics: ['sum'],
+    },
+    android: {
+      record: 'StepsRecord',
+      time: 'interval',
+      readPermission: 'android.permission.health.READ_STEPS',
+      writePermission: 'android.permission.health.WRITE_STEPS',
+      writable: true,
+      metrics: ['sum'],
+    },
+  },
+  distance: {
+    id: 'distance',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'm',
+    units: ['m', 'km', 'mi', 'ft'],
+    ios: {
+      minOS: '8.0',
+      writable: true,
+      time: 'any',
+      members: [
+        'distanceWalkingRunning',
+        'distanceCycling',
+        'distanceSwimming',
+        'distanceWheelchair',
+        'distanceDownhillSnowSports',
+        'distanceCrossCountrySkiing',
+        'distancePaddleSports',
+        'distanceRowing',
+        'distanceSkatingSports',
+      ],
+      writeTo: 'distanceWalkingRunning',
+      metrics: ['sum'],
+    },
+    android: {
+      record: 'DistanceRecord',
+      time: 'interval',
+      readPermission: 'android.permission.health.READ_DISTANCE',
+      writePermission: 'android.permission.health.WRITE_DISTANCE',
+      writable: true,
+      metrics: ['sum'],
+    },
+  },
+  distanceWalkingRunning: {
+    id: 'distanceWalkingRunning',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'm',
+    units: ['m', 'km', 'mi', 'ft'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierDistanceWalkingRunning',
+      minOS: '8.0',
+      writable: true,
+      time: 'any',
+      metrics: ['sum'],
+    },
+  },
+  distanceCycling: {
+    id: 'distanceCycling',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'm',
+    units: ['m', 'km', 'mi', 'ft'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierDistanceCycling',
+      minOS: '8.0',
+      writable: true,
+      time: 'any',
+      metrics: ['sum'],
+    },
+  },
+  distanceSwimming: {
+    id: 'distanceSwimming',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'm',
+    units: ['m', 'km', 'mi', 'ft'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierDistanceSwimming',
+      minOS: '10.0',
+      writable: true,
+      time: 'any',
+      metrics: ['sum'],
+    },
+  },
+  distanceWheelchair: {
+    id: 'distanceWheelchair',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'm',
+    units: ['m', 'km', 'mi', 'ft'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierDistanceWheelchair',
+      minOS: '10.0',
+      writable: true,
+      time: 'any',
+      metrics: ['sum'],
+    },
+  },
+  distanceDownhillSnowSports: {
+    id: 'distanceDownhillSnowSports',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'm',
+    units: ['m', 'km', 'mi', 'ft'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierDistanceDownhillSnowSports',
+      minOS: '11.2',
+      writable: true,
+      time: 'any',
+      metrics: ['sum'],
+    },
+  },
+  distanceCrossCountrySkiing: {
+    id: 'distanceCrossCountrySkiing',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'm',
+    units: ['m', 'km', 'mi', 'ft'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierDistanceCrossCountrySkiing',
+      minOS: '18.0',
+      writable: true,
+      time: 'any',
+      metrics: ['sum'],
+    },
+  },
+  distancePaddleSports: {
+    id: 'distancePaddleSports',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'm',
+    units: ['m', 'km', 'mi', 'ft'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierDistancePaddleSports',
+      minOS: '18.0',
+      writable: true,
+      time: 'any',
+      metrics: ['sum'],
+    },
+  },
+  distanceRowing: {
+    id: 'distanceRowing',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'm',
+    units: ['m', 'km', 'mi', 'ft'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierDistanceRowing',
+      minOS: '18.0',
+      writable: true,
+      time: 'any',
+      metrics: ['sum'],
+    },
+  },
+  distanceSkatingSports: {
+    id: 'distanceSkatingSports',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'm',
+    units: ['m', 'km', 'mi', 'ft'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierDistanceSkatingSports',
+      minOS: '18.0',
+      writable: true,
+      time: 'any',
+      metrics: ['sum'],
+    },
+  },
+  activeEnergy: {
+    id: 'activeEnergy',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'kcal',
+    units: ['kcal', 'kJ'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierActiveEnergyBurned',
+      minOS: '8.0',
+      writable: true,
+      time: 'any',
+      metrics: ['sum'],
+    },
+    android: {
+      record: 'ActiveCaloriesBurnedRecord',
+      time: 'interval',
+      readPermission: 'android.permission.health.READ_ACTIVE_CALORIES_BURNED',
+      writePermission: 'android.permission.health.WRITE_ACTIVE_CALORIES_BURNED',
+      writable: true,
+      metrics: ['sum'],
+    },
+  },
+  basalEnergy: {
+    id: 'basalEnergy',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'kcal',
+    units: ['kcal', 'kJ'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierBasalEnergyBurned',
+      minOS: '8.0',
+      writable: true,
+      time: 'any',
+      metrics: ['sum'],
+    },
+    android: {
+      record: 'BasalMetabolicRateRecord',
+      time: 'instant',
+      readPermission: 'android.permission.health.READ_BASAL_METABOLIC_RATE',
+      writePermission: 'android.permission.health.WRITE_BASAL_METABOLIC_RATE',
+      writable: false,
+      aggregateOnly: true,
+      metrics: ['sum'],
+    },
+  },
+  basalMetabolicRate: {
+    id: 'basalMetabolicRate',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'kcal/d',
+    units: ['kcal/d', 'W'],
+    android: {
+      record: 'BasalMetabolicRateRecord',
+      time: 'instant',
+      readPermission: 'android.permission.health.READ_BASAL_METABOLIC_RATE',
+      writePermission: 'android.permission.health.WRITE_BASAL_METABOLIC_RATE',
+      writable: true,
+    },
+  },
+  totalEnergy: {
+    id: 'totalEnergy',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'kcal',
+    units: ['kcal', 'kJ'],
+    ios: {
+      minOS: '8.0',
+      writable: false,
+      time: 'any',
+      members: ['activeEnergy', 'basalEnergy'],
+      aggregateOnly: true,
+      metrics: ['sum'],
+    },
+    android: {
+      record: 'TotalCaloriesBurnedRecord',
+      time: 'interval',
+      readPermission: 'android.permission.health.READ_TOTAL_CALORIES_BURNED',
+      writePermission: 'android.permission.health.WRITE_TOTAL_CALORIES_BURNED',
+      writable: true,
+      metrics: ['sum'],
+    },
+  },
+  floorsClimbed: {
+    id: 'floorsClimbed',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'count',
+    units: ['count'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierFlightsClimbed',
+      minOS: '8.0',
+      writable: true,
+      time: 'any',
+      metrics: ['sum'],
+    },
+    android: {
+      record: 'FloorsClimbedRecord',
+      time: 'interval',
+      readPermission: 'android.permission.health.READ_FLOORS_CLIMBED',
+      writePermission: 'android.permission.health.WRITE_FLOORS_CLIMBED',
+      writable: true,
+      metrics: ['sum'],
+    },
+  },
+  elevationGained: {
+    id: 'elevationGained',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'm',
+    units: ['m', 'ft'],
+    android: {
+      record: 'ElevationGainedRecord',
+      time: 'interval',
+      readPermission: 'android.permission.health.READ_ELEVATION_GAINED',
+      writePermission: 'android.permission.health.WRITE_ELEVATION_GAINED',
+      writable: true,
+      metrics: ['sum'],
+    },
+  },
+  wheelchairPushes: {
+    id: 'wheelchairPushes',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'count',
+    units: ['count'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierPushCount',
+      minOS: '10.0',
+      writable: true,
+      time: 'any',
+      metrics: ['sum'],
+    },
+    android: {
+      record: 'WheelchairPushesRecord',
+      time: 'interval',
+      readPermission: 'android.permission.health.READ_WHEELCHAIR_PUSHES',
+      writePermission: 'android.permission.health.WRITE_WHEELCHAIR_PUSHES',
+      writable: true,
+      metrics: ['sum'],
+    },
+  },
+  stepsCadence: {
+    id: 'stepsCadence',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'count/min',
+    units: ['count/min'],
+    android: {
+      record: 'StepsCadenceRecord',
+      time: 'series',
+      readPermission: 'android.permission.health.READ_STEPS',
+      writePermission: 'android.permission.health.WRITE_STEPS',
+      writable: true,
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  speed: {
+    id: 'speed',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'm/s',
+    units: ['m/s', 'km/h', 'mph'],
+    ios: {
+      minOS: '14.0',
+      writable: true,
+      time: 'any',
+      members: [
+        'walkingSpeed',
+        'runningSpeed',
+        'cyclingSpeed',
+        'crossCountrySkiingSpeed',
+        'paddleSportsSpeed',
+        'rowingSpeed',
+      ],
+      writeTo: 'walkingSpeed',
+      metrics: ['avg', 'min', 'max'],
+    },
+    android: {
+      record: 'SpeedRecord',
+      time: 'series',
+      readPermission: 'android.permission.health.READ_SPEED',
+      writePermission: 'android.permission.health.WRITE_SPEED',
+      writable: true,
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  walkingSpeed: {
+    id: 'walkingSpeed',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'm/s',
+    units: ['m/s', 'km/h', 'mph'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierWalkingSpeed',
+      minOS: '14.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  runningSpeed: {
+    id: 'runningSpeed',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'm/s',
+    units: ['m/s', 'km/h', 'mph'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierRunningSpeed',
+      minOS: '16.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  cyclingSpeed: {
+    id: 'cyclingSpeed',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'm/s',
+    units: ['m/s', 'km/h', 'mph'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierCyclingSpeed',
+      minOS: '17.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  crossCountrySkiingSpeed: {
+    id: 'crossCountrySkiingSpeed',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'm/s',
+    units: ['m/s', 'km/h', 'mph'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierCrossCountrySkiingSpeed',
+      minOS: '18.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  paddleSportsSpeed: {
+    id: 'paddleSportsSpeed',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'm/s',
+    units: ['m/s', 'km/h', 'mph'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierPaddleSportsSpeed',
+      minOS: '18.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  rowingSpeed: {
+    id: 'rowingSpeed',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'm/s',
+    units: ['m/s', 'km/h', 'mph'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierRowingSpeed',
+      minOS: '18.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  power: {
+    id: 'power',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'W',
+    units: ['W'],
+    ios: {
+      minOS: '16.0',
+      writable: true,
+      time: 'any',
+      members: ['runningPower', 'cyclingPower'],
+      writeTo: 'runningPower',
+      metrics: ['avg', 'min', 'max'],
+    },
+    android: {
+      record: 'PowerRecord',
+      time: 'series',
+      readPermission: 'android.permission.health.READ_POWER',
+      writePermission: 'android.permission.health.WRITE_POWER',
+      writable: true,
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  runningPower: {
+    id: 'runningPower',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'W',
+    units: ['W'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierRunningPower',
+      minOS: '16.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  cyclingPower: {
+    id: 'cyclingPower',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'W',
+    units: ['W'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierCyclingPower',
+      minOS: '17.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  cyclingFunctionalThresholdPower: {
+    id: 'cyclingFunctionalThresholdPower',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'W',
+    units: ['W'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierCyclingFunctionalThresholdPower',
+      minOS: '17.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  cyclingCadence: {
+    id: 'cyclingCadence',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'count/min',
+    units: ['count/min'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierCyclingCadence',
+      minOS: '17.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+    android: {
+      record: 'CyclingPedalingCadenceRecord',
+      time: 'series',
+      readPermission: 'android.permission.health.READ_EXERCISE',
+      writePermission: 'android.permission.health.WRITE_EXERCISE',
+      writable: true,
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  vo2Max: {
+    id: 'vo2Max',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'mL/(kg·min)',
+    units: ['mL/(kg·min)'],
+    fields: {
+      testType: { type: 'enum', values: 'vo2MaxTestType', ios: true, android: false },
+      measurementMethod: { type: 'enum', values: 'vo2MaxMeasurementMethod', ios: false, android: 'stored' },
+    },
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierVO2Max',
+      minOS: '11.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+    android: {
+      record: 'Vo2MaxRecord',
+      time: 'instant',
+      readPermission: 'android.permission.health.READ_VO2_MAX',
+      writePermission: 'android.permission.health.WRITE_VO2_MAX',
+      writable: true,
+    },
+  },
+  exerciseTime: {
+    id: 'exerciseTime',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'min',
+    units: ['min', 's', 'h'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierAppleExerciseTime',
+      minOS: '9.3',
+      writable: false,
+      time: 'any',
+      metrics: ['sum'],
+    },
+  },
+  standTime: {
+    id: 'standTime',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'min',
+    units: ['min', 's', 'h'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierAppleStandTime',
+      minOS: '13.0',
+      writable: false,
+      time: 'any',
+      metrics: ['sum'],
+    },
+  },
+  moveTime: {
+    id: 'moveTime',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'min',
+    units: ['min', 's', 'h'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierAppleMoveTime',
+      minOS: '14.5',
+      writable: false,
+      time: 'any',
+      metrics: ['sum'],
+    },
+  },
+  physicalEffort: {
+    id: 'physicalEffort',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'kcal/(kg·h)',
+    units: ['kcal/(kg·h)'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierPhysicalEffort',
+      minOS: '17.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  workoutEffortScore: {
+    id: 'workoutEffortScore',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'appleEffortScore',
+    units: ['appleEffortScore'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierWorkoutEffortScore',
+      minOS: '18.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  estimatedWorkoutEffortScore: {
+    id: 'estimatedWorkoutEffortScore',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'appleEffortScore',
+    units: ['appleEffortScore'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierEstimatedWorkoutEffortScore',
+      minOS: '18.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  walkingStepLength: {
+    id: 'walkingStepLength',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'm',
+    units: ['m', 'cm', 'ft', 'in'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierWalkingStepLength',
+      minOS: '14.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  walkingAsymmetry: {
+    id: 'walkingAsymmetry',
+    kind: 'quantity',
+    group: 'activity',
+    unit: '%',
+    units: ['%'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierWalkingAsymmetryPercentage',
+      minOS: '14.0',
+      writable: false,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  walkingDoubleSupport: {
+    id: 'walkingDoubleSupport',
+    kind: 'quantity',
+    group: 'activity',
+    unit: '%',
+    units: ['%'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierWalkingDoubleSupportPercentage',
+      minOS: '14.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  stairAscentSpeed: {
+    id: 'stairAscentSpeed',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'm/s',
+    units: ['m/s', 'km/h', 'mph'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierStairAscentSpeed',
+      minOS: '14.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  stairDescentSpeed: {
+    id: 'stairDescentSpeed',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'm/s',
+    units: ['m/s', 'km/h', 'mph'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierStairDescentSpeed',
+      minOS: '14.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  sixMinuteWalkTestDistance: {
+    id: 'sixMinuteWalkTestDistance',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'm',
+    units: ['m', 'km', 'mi', 'ft'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierSixMinuteWalkTestDistance',
+      minOS: '14.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  runningStrideLength: {
+    id: 'runningStrideLength',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'm',
+    units: ['m', 'cm', 'ft', 'in'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierRunningStrideLength',
+      minOS: '16.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  runningVerticalOscillation: {
+    id: 'runningVerticalOscillation',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'cm',
+    units: ['cm', 'm', 'in'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierRunningVerticalOscillation',
+      minOS: '16.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  runningGroundContactTime: {
+    id: 'runningGroundContactTime',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'ms',
+    units: ['ms'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierRunningGroundContactTime',
+      minOS: '16.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  walkingSteadiness: {
+    id: 'walkingSteadiness',
+    kind: 'quantity',
+    group: 'activity',
+    unit: '%',
+    units: ['%'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierAppleWalkingSteadiness',
+      minOS: '15.0',
+      writable: false,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  swimmingStrokeCount: {
+    id: 'swimmingStrokeCount',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'count',
+    units: ['count'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierSwimmingStrokeCount',
+      minOS: '10.0',
+      writable: true,
+      time: 'any',
+      metrics: ['sum'],
+    },
+  },
+  standHour: {
+    id: 'standHour',
+    kind: 'category',
+    group: 'activity',
+    values: 'appleStandHour',
+    ios: { identifier: 'HKCategoryTypeIdentifierAppleStandHour', minOS: '9.0', writable: false, time: 'any' },
+  },
+  walkingSteadinessEvent: {
+    id: 'walkingSteadinessEvent',
+    kind: 'category',
+    group: 'activity',
+    values: 'walkingSteadinessEvent',
+    ios: {
+      identifier: 'HKCategoryTypeIdentifierAppleWalkingSteadinessEvent',
+      minOS: '15.0',
+      writable: false,
+      time: 'any',
+    },
+  },
+  heartRate: {
+    id: 'heartRate',
+    kind: 'quantity',
+    group: 'vitals',
+    unit: 'count/min',
+    units: ['count/min'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierHeartRate',
+      minOS: '8.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+    android: {
+      record: 'HeartRateRecord',
+      time: 'series',
+      readPermission: 'android.permission.health.READ_HEART_RATE',
+      writePermission: 'android.permission.health.WRITE_HEART_RATE',
+      writable: true,
+      metrics: ['avg', 'min', 'max', 'count'],
+    },
+  },
+  restingHeartRate: {
+    id: 'restingHeartRate',
+    kind: 'quantity',
+    group: 'vitals',
+    unit: 'count/min',
+    units: ['count/min'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierRestingHeartRate',
+      minOS: '11.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+    android: {
+      record: 'RestingHeartRateRecord',
+      time: 'instant',
+      readPermission: 'android.permission.health.READ_RESTING_HEART_RATE',
+      writePermission: 'android.permission.health.WRITE_RESTING_HEART_RATE',
+      writable: true,
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  walkingHeartRateAverage: {
+    id: 'walkingHeartRateAverage',
+    kind: 'quantity',
+    group: 'vitals',
+    unit: 'count/min',
+    units: ['count/min'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierWalkingHeartRateAverage',
+      minOS: '11.0',
+      writable: false,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  heartRateVariabilitySdnn: {
+    id: 'heartRateVariabilitySdnn',
+    kind: 'quantity',
+    group: 'vitals',
+    unit: 'ms',
+    units: ['ms'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierHeartRateVariabilitySDNN',
+      minOS: '11.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  heartRateVariabilityRmssd: {
+    id: 'heartRateVariabilityRmssd',
+    kind: 'quantity',
+    group: 'vitals',
+    unit: 'ms',
+    units: ['ms'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierHeartRateVariabilityRMSSD',
+      minOS: '27.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+    android: {
+      record: 'HeartRateVariabilityRmssdRecord',
+      time: 'instant',
+      readPermission: 'android.permission.health.READ_HEART_RATE_VARIABILITY',
+      writePermission: 'android.permission.health.WRITE_HEART_RATE_VARIABILITY',
+      writable: true,
+    },
+  },
+  heartRateRecovery: {
+    id: 'heartRateRecovery',
+    kind: 'quantity',
+    group: 'vitals',
+    unit: 'count/min',
+    units: ['count/min'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierHeartRateRecoveryOneMinute',
+      minOS: '16.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  oxygenSaturation: {
+    id: 'oxygenSaturation',
+    kind: 'quantity',
+    group: 'vitals',
+    unit: '%',
+    units: ['%'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierOxygenSaturation',
+      minOS: '8.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+    android: {
+      record: 'OxygenSaturationRecord',
+      time: 'instant',
+      readPermission: 'android.permission.health.READ_OXYGEN_SATURATION',
+      writePermission: 'android.permission.health.WRITE_OXYGEN_SATURATION',
+      writable: true,
+    },
+  },
+  respiratoryRate: {
+    id: 'respiratoryRate',
+    kind: 'quantity',
+    group: 'vitals',
+    unit: 'count/min',
+    units: ['count/min'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierRespiratoryRate',
+      minOS: '8.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+    android: {
+      record: 'RespiratoryRateRecord',
+      time: 'instant',
+      readPermission: 'android.permission.health.READ_RESPIRATORY_RATE',
+      writePermission: 'android.permission.health.WRITE_RESPIRATORY_RATE',
+      writable: true,
+    },
+  },
+  bodyTemperature: {
+    id: 'bodyTemperature',
+    kind: 'quantity',
+    group: 'vitals',
+    unit: 'degC',
+    units: ['degC', 'degF'],
+    fields: { measurementLocation: { type: 'enum', values: 'bodyTemperatureLocation', ios: true, android: 'stored' } },
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierBodyTemperature',
+      minOS: '8.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+    android: {
+      record: 'BodyTemperatureRecord',
+      time: 'instant',
+      readPermission: 'android.permission.health.READ_BODY_TEMPERATURE',
+      writePermission: 'android.permission.health.WRITE_BODY_TEMPERATURE',
+      writable: true,
+    },
+  },
+  bloodPressure: {
+    id: 'bloodPressure',
+    kind: 'special',
+    group: 'vitals',
+    unit: 'mmHg',
+    units: ['mmHg'],
+    ios: { identifier: 'HKCorrelationTypeIdentifierBloodPressure', minOS: '8.0', writable: true, time: 'any' },
+    android: {
+      record: 'BloodPressureRecord',
+      time: 'instant',
+      readPermission: 'android.permission.health.READ_BLOOD_PRESSURE',
+      writePermission: 'android.permission.health.WRITE_BLOOD_PRESSURE',
+      writable: true,
+    },
+  },
+  bloodGlucose: {
+    id: 'bloodGlucose',
+    kind: 'quantity',
+    group: 'vitals',
+    unit: 'mg/dL',
+    units: ['mg/dL', 'mmol/L'],
+    fields: {
+      relationToMeal: { type: 'enum', values: 'relationToMeal', ios: true, android: 'stored' },
+      mealType: { type: 'enum', values: 'mealType', ios: false, android: 'stored' },
+      specimenSource: { type: 'enum', values: 'specimenSource', ios: false, android: 'stored' },
+    },
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierBloodGlucose',
+      minOS: '8.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+    android: {
+      record: 'BloodGlucoseRecord',
+      time: 'instant',
+      readPermission: 'android.permission.health.READ_BLOOD_GLUCOSE',
+      writePermission: 'android.permission.health.WRITE_BLOOD_GLUCOSE',
+      writable: true,
+    },
+  },
+  atrialFibrillationBurden: {
+    id: 'atrialFibrillationBurden',
+    kind: 'quantity',
+    group: 'vitals',
+    unit: '%',
+    units: ['%'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierAtrialFibrillationBurden',
+      minOS: '16.0',
+      writable: false,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  peripheralPerfusionIndex: {
+    id: 'peripheralPerfusionIndex',
+    kind: 'quantity',
+    group: 'vitals',
+    unit: '%',
+    units: ['%'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierPeripheralPerfusionIndex',
+      minOS: '8.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  highHeartRateEvent: {
+    id: 'highHeartRateEvent',
+    kind: 'event',
+    group: 'vitals',
+    ios: { identifier: 'HKCategoryTypeIdentifierHighHeartRateEvent', minOS: '12.2', writable: false, time: 'any' },
+  },
+  lowHeartRateEvent: {
+    id: 'lowHeartRateEvent',
+    kind: 'event',
+    group: 'vitals',
+    ios: { identifier: 'HKCategoryTypeIdentifierLowHeartRateEvent', minOS: '12.2', writable: false, time: 'any' },
+  },
+  irregularHeartRhythmEvent: {
+    id: 'irregularHeartRhythmEvent',
+    kind: 'event',
+    group: 'vitals',
+    ios: {
+      identifier: 'HKCategoryTypeIdentifierIrregularHeartRhythmEvent',
+      minOS: '12.2',
+      writable: false,
+      time: 'any',
+    },
+  },
+  hypertensionEvent: {
+    id: 'hypertensionEvent',
+    kind: 'event',
+    group: 'vitals',
+    ios: { identifier: 'HKCategoryTypeIdentifierHypertensionEvent', minOS: '26.2', writable: false, time: 'any' },
+  },
+  sleepApneaEvent: {
+    id: 'sleepApneaEvent',
+    kind: 'event',
+    group: 'vitals',
+    ios: { identifier: 'HKCategoryTypeIdentifierSleepApneaEvent', minOS: '18.0', writable: false, time: 'any' },
+  },
+  lowCardioFitnessEvent: {
+    id: 'lowCardioFitnessEvent',
+    kind: 'category',
+    group: 'vitals',
+    values: 'lowCardioFitnessEvent',
+    ios: { identifier: 'HKCategoryTypeIdentifierLowCardioFitnessEvent', minOS: '14.3', writable: false, time: 'any' },
+  },
+  breathingDisturbances: {
+    id: 'breathingDisturbances',
+    kind: 'quantity',
+    group: 'vitals',
+    unit: 'count',
+    units: ['count'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierAppleSleepingBreathingDisturbances',
+      minOS: '18.0',
+      writable: false,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  weight: {
+    id: 'weight',
+    kind: 'quantity',
+    group: 'body',
+    unit: 'kg',
+    units: ['kg', 'g', 'lb'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierBodyMass',
+      minOS: '8.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+    android: {
+      record: 'WeightRecord',
+      time: 'instant',
+      readPermission: 'android.permission.health.READ_WEIGHT',
+      writePermission: 'android.permission.health.WRITE_WEIGHT',
+      writable: true,
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  height: {
+    id: 'height',
+    kind: 'quantity',
+    group: 'body',
+    unit: 'm',
+    units: ['m', 'cm', 'ft', 'in'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierHeight',
+      minOS: '8.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+    android: {
+      record: 'HeightRecord',
+      time: 'instant',
+      readPermission: 'android.permission.health.READ_HEIGHT',
+      writePermission: 'android.permission.health.WRITE_HEIGHT',
+      writable: true,
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  bodyFat: {
+    id: 'bodyFat',
+    kind: 'quantity',
+    group: 'body',
+    unit: '%',
+    units: ['%'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierBodyFatPercentage',
+      minOS: '8.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+    android: {
+      record: 'BodyFatRecord',
+      time: 'instant',
+      readPermission: 'android.permission.health.READ_BODY_FAT',
+      writePermission: 'android.permission.health.WRITE_BODY_FAT',
+      writable: true,
+    },
+  },
+  leanBodyMass: {
+    id: 'leanBodyMass',
+    kind: 'quantity',
+    group: 'body',
+    unit: 'kg',
+    units: ['kg', 'g', 'lb'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierLeanBodyMass',
+      minOS: '8.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+    android: {
+      record: 'LeanBodyMassRecord',
+      time: 'instant',
+      readPermission: 'android.permission.health.READ_LEAN_BODY_MASS',
+      writePermission: 'android.permission.health.WRITE_LEAN_BODY_MASS',
+      writable: true,
+    },
+  },
+  boneMass: {
+    id: 'boneMass',
+    kind: 'quantity',
+    group: 'body',
+    unit: 'kg',
+    units: ['kg', 'g', 'lb'],
+    android: {
+      record: 'BoneMassRecord',
+      time: 'instant',
+      readPermission: 'android.permission.health.READ_BONE_MASS',
+      writePermission: 'android.permission.health.WRITE_BONE_MASS',
+      writable: true,
+    },
+  },
+  bodyWaterMass: {
+    id: 'bodyWaterMass',
+    kind: 'quantity',
+    group: 'body',
+    unit: 'kg',
+    units: ['kg', 'g', 'lb'],
+    android: {
+      record: 'BodyWaterMassRecord',
+      time: 'instant',
+      readPermission: 'android.permission.health.READ_BODY_WATER_MASS',
+      writePermission: 'android.permission.health.WRITE_BODY_WATER_MASS',
+      writable: true,
+    },
+  },
+  bmi: {
+    id: 'bmi',
+    kind: 'quantity',
+    group: 'body',
+    unit: 'count',
+    units: ['count'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierBodyMassIndex',
+      minOS: '8.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  waistCircumference: {
+    id: 'waistCircumference',
+    kind: 'quantity',
+    group: 'body',
+    unit: 'm',
+    units: ['m', 'cm', 'in'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierWaistCircumference',
+      minOS: '11.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  electrodermalActivity: {
+    id: 'electrodermalActivity',
+    kind: 'quantity',
+    group: 'body',
+    unit: 'mcS',
+    units: ['mcS'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierElectrodermalActivity',
+      minOS: '8.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  forcedVitalCapacity: {
+    id: 'forcedVitalCapacity',
+    kind: 'quantity',
+    group: 'other',
+    unit: 'L',
+    units: ['L', 'mL'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierForcedVitalCapacity',
+      minOS: '8.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  forcedExpiratoryVolume1: {
+    id: 'forcedExpiratoryVolume1',
+    kind: 'quantity',
+    group: 'other',
+    unit: 'L',
+    units: ['L', 'mL'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierForcedExpiratoryVolume1',
+      minOS: '8.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  peakExpiratoryFlowRate: {
+    id: 'peakExpiratoryFlowRate',
+    kind: 'quantity',
+    group: 'other',
+    unit: 'L/min',
+    units: ['L/min'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierPeakExpiratoryFlowRate',
+      minOS: '8.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  inhalerUsage: {
+    id: 'inhalerUsage',
+    kind: 'quantity',
+    group: 'other',
+    unit: 'count',
+    units: ['count'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierInhalerUsage',
+      minOS: '8.0',
+      writable: true,
+      time: 'any',
+      metrics: ['sum'],
+    },
+  },
+  bloodAlcoholContent: {
+    id: 'bloodAlcoholContent',
+    kind: 'quantity',
+    group: 'other',
+    unit: '%',
+    units: ['%'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierBloodAlcoholContent',
+      minOS: '8.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  numberOfAlcoholicBeverages: {
+    id: 'numberOfAlcoholicBeverages',
+    kind: 'quantity',
+    group: 'other',
+    unit: 'count',
+    units: ['count'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierNumberOfAlcoholicBeverages',
+      minOS: '15.0',
+      writable: true,
+      time: 'any',
+      metrics: ['sum'],
+    },
+  },
+  numberOfTimesFallen: {
+    id: 'numberOfTimesFallen',
+    kind: 'quantity',
+    group: 'other',
+    unit: 'count',
+    units: ['count'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierNumberOfTimesFallen',
+      minOS: '8.0',
+      writable: true,
+      time: 'any',
+      metrics: ['sum'],
+    },
+  },
+  uvExposure: {
+    id: 'uvExposure',
+    kind: 'quantity',
+    group: 'other',
+    unit: 'count',
+    units: ['count'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierUVExposure',
+      minOS: '9.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  timeInDaylight: {
+    id: 'timeInDaylight',
+    kind: 'quantity',
+    group: 'other',
+    unit: 'min',
+    units: ['min', 's', 'h'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierTimeInDaylight',
+      minOS: '17.0',
+      writable: true,
+      time: 'any',
+      metrics: ['sum'],
+    },
+  },
+  environmentalAudioExposure: {
+    id: 'environmentalAudioExposure',
+    kind: 'quantity',
+    group: 'other',
+    unit: 'dBASPL',
+    units: ['dBASPL'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierEnvironmentalAudioExposure',
+      minOS: '13.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  headphoneAudioExposure: {
+    id: 'headphoneAudioExposure',
+    kind: 'quantity',
+    group: 'other',
+    unit: 'dBASPL',
+    units: ['dBASPL'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierHeadphoneAudioExposure',
+      minOS: '13.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  environmentalSoundReduction: {
+    id: 'environmentalSoundReduction',
+    kind: 'quantity',
+    group: 'other',
+    unit: 'dBASPL',
+    units: ['dBASPL'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierEnvironmentalSoundReduction',
+      minOS: '16.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  underwaterDepth: {
+    id: 'underwaterDepth',
+    kind: 'quantity',
+    group: 'other',
+    unit: 'm',
+    units: ['m', 'ft'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierUnderwaterDepth',
+      minOS: '16.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  waterTemperature: {
+    id: 'waterTemperature',
+    kind: 'quantity',
+    group: 'other',
+    unit: 'degC',
+    units: ['degC', 'degF'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierWaterTemperature',
+      minOS: '16.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
+  },
+  insulinDelivery: {
+    id: 'insulinDelivery',
+    kind: 'quantity',
+    group: 'other',
+    unit: 'IU',
+    units: ['IU'],
+    fields: {
+      reason: { type: 'enum', values: 'insulinDeliveryReason', ios: true, android: false, requiredOnWriteIos: true },
+    },
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierInsulinDelivery',
+      minOS: '11.0',
+      writable: true,
+      time: 'any',
+      metrics: ['sum'],
+    },
+  },
+  environmentalAudioExposureEvent: {
+    id: 'environmentalAudioExposureEvent',
+    kind: 'category',
+    group: 'other',
+    values: 'environmentalAudioExposureEvent',
+    ios: { identifier: 'HKCategoryTypeIdentifierAudioExposureEvent', minOS: '14.0', writable: true, time: 'any' },
+  },
+  headphoneAudioExposureEvent: {
+    id: 'headphoneAudioExposureEvent',
+    kind: 'category',
+    group: 'other',
+    values: 'headphoneAudioExposureEvent',
+    ios: {
+      identifier: 'HKCategoryTypeIdentifierHeadphoneAudioExposureEvent',
+      minOS: '14.2',
+      writable: false,
+      time: 'any',
+    },
+  },
+  nikeFuel: {
+    id: 'nikeFuel',
+    kind: 'quantity',
+    group: 'activity',
+    unit: 'count',
+    units: ['count'],
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierNikeFuel',
+      minOS: '8.0',
+      writable: false,
+      time: 'any',
+      metrics: ['sum'],
+    },
   },
 };

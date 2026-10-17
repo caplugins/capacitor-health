@@ -3,35 +3,130 @@
   "units": {
     "count": {"dimension": "count", "ios": "count", "android": {"class": "Number"}},
     "count/min": {"dimension": "frequency", "ios": "count/min", "android": {"class": "Number"}},
-    "m": {"dimension": "length", "ios": "m", "android": {"class": "Length", "factory": "meters", "accessor": "inMeters"}},
-    "km": {"dimension": "length", "ios": "km", "android": {"class": "Length", "factory": "kilometers", "accessor": "inKilometers"}},
-    "cm": {"dimension": "length", "ios": "cm", "android": {"class": "Length", "factory": "meters", "accessor": "inMeters", "scale": 0.01}},
-    "mi": {"dimension": "length", "ios": "mi", "android": {"class": "Length", "factory": "miles", "accessor": "inMiles"}},
-    "ft": {"dimension": "length", "ios": "ft", "android": {"class": "Length", "factory": "feet", "accessor": "inFeet"}},
-    "in": {"dimension": "length", "ios": "in", "android": {"class": "Length", "factory": "inches", "accessor": "inInches"}},
-    "kcal": {"dimension": "energy", "ios": "kcal", "android": {"class": "Energy", "factory": "kilocalories", "accessor": "inKilocalories"}},
-    "kJ": {"dimension": "energy", "ios": "kJ", "android": {"class": "Energy", "factory": "kilojoules", "accessor": "inKilojoules"}},
-    "kg": {"dimension": "mass", "ios": "kg", "android": {"class": "Mass", "factory": "kilograms", "accessor": "inKilograms"}},
+    "m": {
+      "dimension": "length",
+      "ios": "m",
+      "android": {"class": "Length", "factory": "meters", "accessor": "inMeters"}
+    },
+    "km": {
+      "dimension": "length",
+      "ios": "km",
+      "android": {"class": "Length", "factory": "kilometers", "accessor": "inKilometers"}
+    },
+    "cm": {
+      "dimension": "length",
+      "ios": "cm",
+      "android": {"class": "Length", "factory": "meters", "accessor": "inMeters", "scale": 0.01}
+    },
+    "mi": {
+      "dimension": "length",
+      "ios": "mi",
+      "android": {"class": "Length", "factory": "miles", "accessor": "inMiles"}
+    },
+    "ft": {
+      "dimension": "length",
+      "ios": "ft",
+      "android": {"class": "Length", "factory": "feet", "accessor": "inFeet"}
+    },
+    "in": {
+      "dimension": "length",
+      "ios": "in",
+      "android": {"class": "Length", "factory": "inches", "accessor": "inInches"}
+    },
+    "kcal": {
+      "dimension": "energy",
+      "ios": "kcal",
+      "android": {"class": "Energy", "factory": "kilocalories", "accessor": "inKilocalories"}
+    },
+    "kJ": {
+      "dimension": "energy",
+      "ios": "kJ",
+      "android": {"class": "Energy", "factory": "kilojoules", "accessor": "inKilojoules"}
+    },
+    "kg": {
+      "dimension": "mass",
+      "ios": "kg",
+      "android": {"class": "Mass", "factory": "kilograms", "accessor": "inKilograms"}
+    },
     "g": {"dimension": "mass", "ios": "g", "android": {"class": "Mass", "factory": "grams", "accessor": "inGrams"}},
-    "lb": {"dimension": "mass", "ios": "lb", "android": {"class": "Mass", "factory": "pounds", "accessor": "inPounds"}},
-    "degC": {"dimension": "temperature", "ios": "degC", "android": {"class": "Temperature", "factory": "celsius", "accessor": "inCelsius"}},
-    "degF": {"dimension": "temperature", "ios": "degF", "android": {"class": "Temperature", "factory": "fahrenheit", "accessor": "inFahrenheit"}},
+    "lb": {
+      "dimension": "mass",
+      "ios": "lb",
+      "android": {"class": "Mass", "factory": "pounds", "accessor": "inPounds"}
+    },
+    "degC": {
+      "dimension": "temperature",
+      "ios": "degC",
+      "android": {"class": "Temperature", "factory": "celsius", "accessor": "inCelsius"}
+    },
+    "degF": {
+      "dimension": "temperature",
+      "ios": "degF",
+      "android": {"class": "Temperature", "factory": "fahrenheit", "accessor": "inFahrenheit"}
+    },
     "%": {"dimension": "percent", "ios": "%", "percent": true, "android": {"class": "Percentage"}},
     "ms": {"dimension": "duration", "ios": "ms", "android": {"class": "Number"}},
     "s": {"dimension": "duration", "ios": "s"},
     "min": {"dimension": "duration", "ios": "min"},
     "h": {"dimension": "duration", "ios": "hr"},
-    "mmHg": {"dimension": "pressure", "ios": "mmHg", "android": {"class": "Pressure", "factory": "millimetersOfMercury", "accessor": "inMillimetersOfMercury"}},
-    "mg/dL": {"dimension": "bloodGlucose", "ios": "mg/dL", "android": {"class": "BloodGlucose", "factory": "milligramsPerDeciliter", "accessor": "inMilligramsPerDeciliter"}},
-    "mmol/L": {"dimension": "bloodGlucose", "ios": "mmol<180.15588000005408>/L", "android": {"class": "BloodGlucose", "factory": "millimolesPerLiter", "accessor": "inMillimolesPerLiter"}, "notes": "HealthKit needs glucose's molar mass to convert mg/dL and mmol/L"},
-    "m/s": {"dimension": "speed", "ios": "m/s", "android": {"class": "Velocity", "factory": "metersPerSecond", "accessor": "inMetersPerSecond"}},
-    "km/h": {"dimension": "speed", "ios": "km/hr", "android": {"class": "Velocity", "factory": "kilometersPerHour", "accessor": "inKilometersPerHour"}},
-    "mph": {"dimension": "speed", "ios": "mi/hr", "android": {"class": "Velocity", "factory": "milesPerHour", "accessor": "inMilesPerHour"}},
-    "W": {"dimension": "power", "ios": "W", "android": {"class": "Power", "factory": "watts", "accessor": "inWatts"}},
-    "kcal/d": {"dimension": "power", "android": {"class": "Power", "factory": "kilocaloriesPerDay", "accessor": "inKilocaloriesPerDay"}, "notes": "Basal metabolic rate (decision #21); HealthKit has no rate type for it"},
+    "mmHg": {
+      "dimension": "pressure",
+      "ios": "mmHg",
+      "android": {"class": "Pressure", "factory": "millimetersOfMercury", "accessor": "inMillimetersOfMercury"}
+    },
+    "mg/dL": {
+      "dimension": "bloodGlucose",
+      "ios": "mg/dL",
+      "android": {"class": "BloodGlucose", "factory": "milligramsPerDeciliter", "accessor": "inMilligramsPerDeciliter"}
+    },
+    "mmol/L": {
+      "dimension": "bloodGlucose",
+      "ios": "mmol<180.15588000005408>/L",
+      "android": {"class": "BloodGlucose", "factory": "millimolesPerLiter", "accessor": "inMillimolesPerLiter"},
+      "notes": "HealthKit needs glucose's molar mass to convert mg/dL and mmol/L"
+    },
+    "m/s": {
+      "dimension": "speed",
+      "ios": "m/s",
+      "android": {"class": "Velocity", "factory": "metersPerSecond", "accessor": "inMetersPerSecond"}
+    },
+    "km/h": {
+      "dimension": "speed",
+      "ios": "km/hr",
+      "android": {"class": "Velocity", "factory": "kilometersPerHour", "accessor": "inKilometersPerHour"}
+    },
+    "mph": {
+      "dimension": "speed",
+      "ios": "mi/hr",
+      "android": {"class": "Velocity", "factory": "milesPerHour", "accessor": "inMilesPerHour"}
+    },
+    "W": {
+      "dimension": "power",
+      "ios": "W",
+      "android": {"class": "Power", "factory": "watts", "accessor": "inWatts"}
+    },
+    "kcal/d": {
+      "dimension": "power",
+      "android": {"class": "Power", "factory": "kilocaloriesPerDay", "accessor": "inKilocaloriesPerDay"},
+      "notes": "Basal metabolic rate (decision #21); HealthKit has no rate type for it"
+    },
     "mL/(kg·min)": {"dimension": "vo2Max", "ios": "mL/min·kg", "android": {"class": "Number"}},
-    "L": {"dimension": "volume", "ios": "L", "android": {"class": "Volume", "factory": "liters", "accessor": "inLiters"}},
-    "mL": {"dimension": "volume", "ios": "mL", "android": {"class": "Volume", "factory": "milliliters", "accessor": "inMilliliters"}}
+    "L": {
+      "dimension": "volume",
+      "ios": "L",
+      "android": {"class": "Volume", "factory": "liters", "accessor": "inLiters"}
+    },
+    "mL": {
+      "dimension": "volume",
+      "ios": "mL",
+      "android": {"class": "Volume", "factory": "milliliters", "accessor": "inMilliliters"}
+    },
+    "kcal/(kg·h)": {"dimension": "physicalEffort", "ios": "kcal/hr·kg"},
+    "appleEffortScore": {"dimension": "effortScore", "ios": "appleEffortScore"},
+    "mcS": {"dimension": "conductance", "ios": "mcS"},
+    "L/min": {"dimension": "flow", "ios": "L/min"},
+    "IU": {"dimension": "insulin", "ios": "IU"},
+    "dBASPL": {"dimension": "soundLevel", "ios": "dBASPL"}
   },
   "valueSets": {
     "bleeding": {
@@ -229,6 +324,115 @@
         "minOS": "13.6",
         "map": {"unspecified": 0, "noChange": 1, "decreased": 2, "increased": 3}
       }
+    },
+    "appleStandHour": {
+      "values": ["stood", "idle"],
+      "ios": {"enum": "HKCategoryValueAppleStandHour", "minOS": "9.0", "map": {"stood": 0, "idle": 1}}
+    },
+    "walkingSteadinessEvent": {
+      "values": ["initialLow", "initialVeryLow", "repeatLow", "repeatVeryLow"],
+      "ios": {
+        "enum": "HKCategoryValueAppleWalkingSteadinessEvent",
+        "minOS": "15.0",
+        "map": {"initialLow": 1, "initialVeryLow": 2, "repeatLow": 3, "repeatVeryLow": 4}
+      }
+    },
+    "lowCardioFitnessEvent": {
+      "values": ["lowFitness"],
+      "ios": {"enum": "HKCategoryValueLowCardioFitnessEvent", "minOS": "14.3", "map": {"lowFitness": 1}}
+    },
+    "environmentalAudioExposureEvent": {
+      "values": ["momentaryLimit"],
+      "ios": {
+        "enum": "HKCategoryValueEnvironmentalAudioExposureEvent",
+        "minOS": "14.0",
+        "map": {"momentaryLimit": 1}
+      }
+    },
+    "headphoneAudioExposureEvent": {
+      "values": ["sevenDayLimit"],
+      "ios": {"enum": "HKCategoryValueHeadphoneAudioExposureEvent", "minOS": "14.2", "map": {"sevenDayLimit": 1}}
+    },
+    "vo2MaxTestType": {
+      "values": ["maxExercise", "predictionSubMaxExercise", "predictionNonExercise", "predictionStepTest"],
+      "ios": {
+        "enum": "HKVO2MaxTestType",
+        "minOS": "11.0",
+        "valueMinOS": {"predictionStepTest": "26.0"},
+        "map": {"maxExercise": 1, "predictionSubMaxExercise": 2, "predictionNonExercise": 3, "predictionStepTest": 4}
+      }
+    },
+    "vo2MaxMeasurementMethod": {
+      "values": [
+        "other",
+        "metabolicCart",
+        "heartRateRatio",
+        "cooperTest",
+        "multistageFitnessTest",
+        "rockportFitnessTest"
+      ],
+      "android": {
+        "constants": "Vo2MaxRecord",
+        "map": {
+          "other": "MEASUREMENT_METHOD_OTHER",
+          "metabolicCart": "MEASUREMENT_METHOD_METABOLIC_CART",
+          "heartRateRatio": "MEASUREMENT_METHOD_HEART_RATE_RATIO",
+          "cooperTest": "MEASUREMENT_METHOD_COOPER_TEST",
+          "multistageFitnessTest": "MEASUREMENT_METHOD_MULTISTAGE_FITNESS_TEST",
+          "rockportFitnessTest": "MEASUREMENT_METHOD_ROCKPORT_FITNESS_TEST"
+        }
+      }
+    },
+    "relationToMeal": {
+      "values": ["general", "fasting", "beforeMeal", "afterMeal"],
+      "ios": {
+        "enum": "HKBloodGlucoseMealTime",
+        "minOS": "11.0",
+        "map": {"general": null, "fasting": null, "beforeMeal": 1, "afterMeal": 2},
+        "cases": {"beforeMeal": "preprandial", "afterMeal": "postprandial"}
+      },
+      "android": {
+        "constants": "BloodGlucoseRecord",
+        "map": {
+          "general": "RELATION_TO_MEAL_GENERAL",
+          "fasting": "RELATION_TO_MEAL_FASTING",
+          "beforeMeal": "RELATION_TO_MEAL_BEFORE_MEAL",
+          "afterMeal": "RELATION_TO_MEAL_AFTER_MEAL"
+        },
+        "absent": "RELATION_TO_MEAL_UNKNOWN"
+      }
+    },
+    "mealType": {
+      "values": ["breakfast", "lunch", "dinner", "snack"],
+      "android": {
+        "constants": "MealType",
+        "map": {
+          "breakfast": "MEAL_TYPE_BREAKFAST",
+          "lunch": "MEAL_TYPE_LUNCH",
+          "dinner": "MEAL_TYPE_DINNER",
+          "snack": "MEAL_TYPE_SNACK"
+        },
+        "absent": "MEAL_TYPE_UNKNOWN"
+      }
+    },
+    "specimenSource": {
+      "values": ["interstitialFluid", "capillaryBlood", "plasma", "serum", "tears", "wholeBlood"],
+      "android": {
+        "constants": "BloodGlucoseRecord",
+        "map": {
+          "interstitialFluid": "SPECIMEN_SOURCE_INTERSTITIAL_FLUID",
+          "capillaryBlood": "SPECIMEN_SOURCE_CAPILLARY_BLOOD",
+          "plasma": "SPECIMEN_SOURCE_PLASMA",
+          "serum": "SPECIMEN_SOURCE_SERUM",
+          "tears": "SPECIMEN_SOURCE_TEARS",
+          "wholeBlood": "SPECIMEN_SOURCE_WHOLE_BLOOD"
+        },
+        "absent": "SPECIMEN_SOURCE_UNKNOWN"
+      }
+    },
+    "insulinDeliveryReason": {
+      "values": ["basal", "bolus"],
+      "ios": {"enum": "HKInsulinDeliveryReason", "minOS": "11.0", "map": {"basal": 1, "bolus": 2}}
     }
   },
   "types": [
@@ -683,6 +887,1481 @@
       "group": "symptoms",
       "values": "severity",
       "ios": {"identifier": "HKCategoryTypeIdentifierVaginalDryness", "minOS": "14.0", "writable": true}
+    },
+    {
+      "id": "steps",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "count",
+      "units": ["count"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierStepCount",
+        "minOS": "8.0",
+        "writable": true,
+        "aggregation": "cumulative"
+      },
+      "android": {
+        "record": "StepsRecord",
+        "time": "interval",
+        "readPermission": "android.permission.health.READ_STEPS",
+        "writePermission": "android.permission.health.WRITE_STEPS",
+        "writable": true,
+        "valueProperty": "count",
+        "aggregates": {"sum": "COUNT_TOTAL"}
+      },
+      "notes": "Always aggregate: samples from phone and watch overlap"
+    },
+    {
+      "id": "distance",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "m",
+      "units": ["m", "km", "mi", "ft"],
+      "ios": {
+        "members": [
+          "distanceWalkingRunning",
+          "distanceCycling",
+          "distanceSwimming",
+          "distanceWheelchair",
+          "distanceDownhillSnowSports",
+          "distanceCrossCountrySkiing",
+          "distancePaddleSports",
+          "distanceRowing",
+          "distanceSkatingSports"
+        ],
+        "writeTo": "distanceWalkingRunning",
+        "minOS": "8.0",
+        "writable": true
+      },
+      "android": {
+        "record": "DistanceRecord",
+        "time": "interval",
+        "readPermission": "android.permission.health.READ_DISTANCE",
+        "writePermission": "android.permission.health.WRITE_DISTANCE",
+        "writable": true,
+        "valueProperty": "distance",
+        "aggregates": {"sum": "DISTANCE_TOTAL"}
+      },
+      "notes": "Combined id (decision #14)"
+    },
+    {
+      "id": "distanceWalkingRunning",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "m",
+      "units": ["m", "km", "mi", "ft"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierDistanceWalkingRunning",
+        "minOS": "8.0",
+        "writable": true,
+        "aggregation": "cumulative"
+      }
+    },
+    {
+      "id": "distanceCycling",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "m",
+      "units": ["m", "km", "mi", "ft"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierDistanceCycling",
+        "minOS": "8.0",
+        "writable": true,
+        "aggregation": "cumulative"
+      }
+    },
+    {
+      "id": "distanceSwimming",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "m",
+      "units": ["m", "km", "mi", "ft"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierDistanceSwimming",
+        "minOS": "10.0",
+        "writable": true,
+        "aggregation": "cumulative"
+      }
+    },
+    {
+      "id": "distanceWheelchair",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "m",
+      "units": ["m", "km", "mi", "ft"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierDistanceWheelchair",
+        "minOS": "10.0",
+        "writable": true,
+        "aggregation": "cumulative"
+      }
+    },
+    {
+      "id": "distanceDownhillSnowSports",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "m",
+      "units": ["m", "km", "mi", "ft"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierDistanceDownhillSnowSports",
+        "minOS": "11.2",
+        "writable": true,
+        "aggregation": "cumulative"
+      }
+    },
+    {
+      "id": "distanceCrossCountrySkiing",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "m",
+      "units": ["m", "km", "mi", "ft"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierDistanceCrossCountrySkiing",
+        "minOS": "18.0",
+        "writable": true,
+        "aggregation": "cumulative"
+      }
+    },
+    {
+      "id": "distancePaddleSports",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "m",
+      "units": ["m", "km", "mi", "ft"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierDistancePaddleSports",
+        "minOS": "18.0",
+        "writable": true,
+        "aggregation": "cumulative"
+      }
+    },
+    {
+      "id": "distanceRowing",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "m",
+      "units": ["m", "km", "mi", "ft"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierDistanceRowing",
+        "minOS": "18.0",
+        "writable": true,
+        "aggregation": "cumulative"
+      }
+    },
+    {
+      "id": "distanceSkatingSports",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "m",
+      "units": ["m", "km", "mi", "ft"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierDistanceSkatingSports",
+        "minOS": "18.0",
+        "writable": true,
+        "aggregation": "cumulative"
+      }
+    },
+    {
+      "id": "activeEnergy",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "kcal",
+      "units": ["kcal", "kJ"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierActiveEnergyBurned",
+        "minOS": "8.0",
+        "writable": true,
+        "aggregation": "cumulative"
+      },
+      "android": {
+        "record": "ActiveCaloriesBurnedRecord",
+        "time": "interval",
+        "readPermission": "android.permission.health.READ_ACTIVE_CALORIES_BURNED",
+        "writePermission": "android.permission.health.WRITE_ACTIVE_CALORIES_BURNED",
+        "writable": true,
+        "valueProperty": "energy",
+        "aggregates": {"sum": "ACTIVE_CALORIES_TOTAL"}
+      }
+    },
+    {
+      "id": "basalEnergy",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "kcal",
+      "units": ["kcal", "kJ"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierBasalEnergyBurned",
+        "minOS": "8.0",
+        "writable": true,
+        "aggregation": "cumulative"
+      },
+      "android": {
+        "record": "BasalMetabolicRateRecord",
+        "time": "instant",
+        "readPermission": "android.permission.health.READ_BASAL_METABOLIC_RATE",
+        "writePermission": "android.permission.health.WRITE_BASAL_METABOLIC_RATE",
+        "writable": false,
+        "aggregates": {"sum": "BASAL_CALORIES_TOTAL"},
+        "aggregateOnly": true
+      },
+      "notes": "Energy over an interval. Android has no such record: aggregate() serves it from basal metabolic rate (decision #21)"
+    },
+    {
+      "id": "basalMetabolicRate",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "kcal/d",
+      "units": ["kcal/d", "W"],
+      "android": {
+        "record": "BasalMetabolicRateRecord",
+        "time": "instant",
+        "readPermission": "android.permission.health.READ_BASAL_METABOLIC_RATE",
+        "writePermission": "android.permission.health.WRITE_BASAL_METABOLIC_RATE",
+        "writable": true,
+        "valueProperty": "basalMetabolicRate"
+      },
+      "notes": "A rate (kcal/day); HealthKit has none (decision #21)"
+    },
+    {
+      "id": "totalEnergy",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "kcal",
+      "units": ["kcal", "kJ"],
+      "ios": {"members": ["activeEnergy", "basalEnergy"], "minOS": "8.0", "writable": false, "aggregateOnly": true},
+      "android": {
+        "record": "TotalCaloriesBurnedRecord",
+        "time": "interval",
+        "readPermission": "android.permission.health.READ_TOTAL_CALORIES_BURNED",
+        "writePermission": "android.permission.health.WRITE_TOTAL_CALORIES_BURNED",
+        "writable": true,
+        "valueProperty": "energy",
+        "aggregates": {"sum": "ENERGY_TOTAL"}
+      },
+      "notes": "iOS: active + basal, aggregate only"
+    },
+    {
+      "id": "floorsClimbed",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "count",
+      "units": ["count"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierFlightsClimbed",
+        "minOS": "8.0",
+        "writable": true,
+        "aggregation": "cumulative"
+      },
+      "android": {
+        "record": "FloorsClimbedRecord",
+        "time": "interval",
+        "readPermission": "android.permission.health.READ_FLOORS_CLIMBED",
+        "writePermission": "android.permission.health.WRITE_FLOORS_CLIMBED",
+        "writable": true,
+        "valueProperty": "floors",
+        "aggregates": {"sum": "FLOORS_CLIMBED_TOTAL"}
+      }
+    },
+    {
+      "id": "elevationGained",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "m",
+      "units": ["m", "ft"],
+      "android": {
+        "record": "ElevationGainedRecord",
+        "time": "interval",
+        "readPermission": "android.permission.health.READ_ELEVATION_GAINED",
+        "writePermission": "android.permission.health.WRITE_ELEVATION_GAINED",
+        "writable": true,
+        "valueProperty": "elevation",
+        "aggregates": {"sum": "ELEVATION_GAINED_TOTAL"}
+      }
+    },
+    {
+      "id": "wheelchairPushes",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "count",
+      "units": ["count"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierPushCount",
+        "minOS": "10.0",
+        "writable": true,
+        "aggregation": "cumulative"
+      },
+      "android": {
+        "record": "WheelchairPushesRecord",
+        "time": "interval",
+        "readPermission": "android.permission.health.READ_WHEELCHAIR_PUSHES",
+        "writePermission": "android.permission.health.WRITE_WHEELCHAIR_PUSHES",
+        "writable": true,
+        "valueProperty": "count",
+        "aggregates": {"sum": "COUNT_TOTAL"}
+      }
+    },
+    {
+      "id": "stepsCadence",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "count/min",
+      "units": ["count/min"],
+      "android": {
+        "record": "StepsCadenceRecord",
+        "time": "series",
+        "readPermission": "android.permission.health.READ_STEPS",
+        "writePermission": "android.permission.health.WRITE_STEPS",
+        "writable": true,
+        "valueProperty": "rate",
+        "aggregates": {"avg": "RATE_AVG", "min": "RATE_MIN", "max": "RATE_MAX"}
+      }
+    },
+    {
+      "id": "speed",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "m/s",
+      "units": ["m/s", "km/h", "mph"],
+      "ios": {
+        "members": [
+          "walkingSpeed",
+          "runningSpeed",
+          "cyclingSpeed",
+          "crossCountrySkiingSpeed",
+          "paddleSportsSpeed",
+          "rowingSpeed"
+        ],
+        "writeTo": "walkingSpeed",
+        "minOS": "14.0",
+        "writable": true
+      },
+      "android": {
+        "record": "SpeedRecord",
+        "time": "series",
+        "readPermission": "android.permission.health.READ_SPEED",
+        "writePermission": "android.permission.health.WRITE_SPEED",
+        "writable": true,
+        "valueProperty": "speed",
+        "aggregates": {"avg": "SPEED_AVG", "min": "SPEED_MIN", "max": "SPEED_MAX"}
+      },
+      "notes": "Combined id (decision #14)"
+    },
+    {
+      "id": "walkingSpeed",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "m/s",
+      "units": ["m/s", "km/h", "mph"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierWalkingSpeed",
+        "minOS": "14.0",
+        "writable": true,
+        "aggregation": "discreteArithmetic"
+      }
+    },
+    {
+      "id": "runningSpeed",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "m/s",
+      "units": ["m/s", "km/h", "mph"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierRunningSpeed",
+        "minOS": "16.0",
+        "writable": true,
+        "aggregation": "discreteArithmetic"
+      }
+    },
+    {
+      "id": "cyclingSpeed",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "m/s",
+      "units": ["m/s", "km/h", "mph"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierCyclingSpeed",
+        "minOS": "17.0",
+        "writable": true,
+        "aggregation": "discreteTemporallyWeighted"
+      }
+    },
+    {
+      "id": "crossCountrySkiingSpeed",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "m/s",
+      "units": ["m/s", "km/h", "mph"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierCrossCountrySkiingSpeed",
+        "minOS": "18.0",
+        "writable": true,
+        "aggregation": "discreteArithmetic"
+      }
+    },
+    {
+      "id": "paddleSportsSpeed",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "m/s",
+      "units": ["m/s", "km/h", "mph"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierPaddleSportsSpeed",
+        "minOS": "18.0",
+        "writable": true,
+        "aggregation": "discreteArithmetic"
+      }
+    },
+    {
+      "id": "rowingSpeed",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "m/s",
+      "units": ["m/s", "km/h", "mph"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierRowingSpeed",
+        "minOS": "18.0",
+        "writable": true,
+        "aggregation": "discreteArithmetic"
+      }
+    },
+    {
+      "id": "power",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "W",
+      "units": ["W"],
+      "ios": {
+        "members": ["runningPower", "cyclingPower"],
+        "writeTo": "runningPower",
+        "minOS": "16.0",
+        "writable": true
+      },
+      "android": {
+        "record": "PowerRecord",
+        "time": "series",
+        "readPermission": "android.permission.health.READ_POWER",
+        "writePermission": "android.permission.health.WRITE_POWER",
+        "writable": true,
+        "valueProperty": "power",
+        "aggregates": {"avg": "POWER_AVG", "min": "POWER_MIN", "max": "POWER_MAX"}
+      },
+      "notes": "Combined id (decision #14)"
+    },
+    {
+      "id": "runningPower",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "W",
+      "units": ["W"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierRunningPower",
+        "minOS": "16.0",
+        "writable": true,
+        "aggregation": "discreteArithmetic"
+      }
+    },
+    {
+      "id": "cyclingPower",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "W",
+      "units": ["W"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierCyclingPower",
+        "minOS": "17.0",
+        "writable": true,
+        "aggregation": "discreteTemporallyWeighted"
+      }
+    },
+    {
+      "id": "cyclingFunctionalThresholdPower",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "W",
+      "units": ["W"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierCyclingFunctionalThresholdPower",
+        "minOS": "17.0",
+        "writable": true,
+        "aggregation": "discreteArithmetic"
+      }
+    },
+    {
+      "id": "cyclingCadence",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "count/min",
+      "units": ["count/min"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierCyclingCadence",
+        "minOS": "17.0",
+        "writable": true,
+        "aggregation": "discreteTemporallyWeighted"
+      },
+      "android": {
+        "record": "CyclingPedalingCadenceRecord",
+        "time": "series",
+        "readPermission": "android.permission.health.READ_EXERCISE",
+        "writePermission": "android.permission.health.WRITE_EXERCISE",
+        "writable": true,
+        "valueProperty": "revolutionsPerMinute",
+        "aggregates": {"avg": "RPM_AVG", "min": "RPM_MIN", "max": "RPM_MAX"}
+      }
+    },
+    {
+      "id": "vo2Max",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "mL/(kg·min)",
+      "units": ["mL/(kg·min)"],
+      "fields": {
+        "testType": {
+          "type": "enum",
+          "values": "vo2MaxTestType",
+          "ios": {"metadata": "HKMetadataKeyVO2MaxTestType", "key": "HKVO2MaxTestType"}
+        },
+        "measurementMethod": {"type": "enum", "values": "vo2MaxMeasurementMethod", "android": {"property": "measurementMethod"}}
+      },
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierVO2Max",
+        "minOS": "11.0",
+        "writable": true,
+        "aggregation": "discreteArithmetic"
+      },
+      "android": {
+        "record": "Vo2MaxRecord",
+        "time": "instant",
+        "readPermission": "android.permission.health.READ_VO2_MAX",
+        "writePermission": "android.permission.health.WRITE_VO2_MAX",
+        "writable": true,
+        "valueProperty": "vo2MillilitersPerMinuteKilogram"
+      }
+    },
+    {
+      "id": "exerciseTime",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "min",
+      "units": ["min", "s", "h"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierAppleExerciseTime",
+        "minOS": "9.3",
+        "writable": false,
+        "aggregation": "cumulative"
+      }
+    },
+    {
+      "id": "standTime",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "min",
+      "units": ["min", "s", "h"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierAppleStandTime",
+        "minOS": "13.0",
+        "writable": false,
+        "aggregation": "cumulative"
+      }
+    },
+    {
+      "id": "moveTime",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "min",
+      "units": ["min", "s", "h"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierAppleMoveTime",
+        "minOS": "14.5",
+        "writable": false,
+        "aggregation": "cumulative"
+      }
+    },
+    {
+      "id": "physicalEffort",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "kcal/(kg·h)",
+      "units": ["kcal/(kg·h)"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierPhysicalEffort",
+        "minOS": "17.0",
+        "writable": true,
+        "aggregation": "discreteArithmetic"
+      }
+    },
+    {
+      "id": "workoutEffortScore",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "appleEffortScore",
+      "units": ["appleEffortScore"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierWorkoutEffortScore",
+        "minOS": "18.0",
+        "writable": true,
+        "aggregation": "discreteArithmetic"
+      }
+    },
+    {
+      "id": "estimatedWorkoutEffortScore",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "appleEffortScore",
+      "units": ["appleEffortScore"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierEstimatedWorkoutEffortScore",
+        "minOS": "18.0",
+        "writable": true,
+        "aggregation": "discreteArithmetic"
+      }
+    },
+    {
+      "id": "walkingStepLength",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "m",
+      "units": ["m", "cm", "ft", "in"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierWalkingStepLength",
+        "minOS": "14.0",
+        "writable": true,
+        "aggregation": "discreteArithmetic"
+      }
+    },
+    {
+      "id": "walkingAsymmetry",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "%",
+      "units": ["%"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierWalkingAsymmetryPercentage",
+        "minOS": "14.0",
+        "writable": false,
+        "aggregation": "discreteArithmetic"
+      }
+    },
+    {
+      "id": "walkingDoubleSupport",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "%",
+      "units": ["%"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierWalkingDoubleSupportPercentage",
+        "minOS": "14.0",
+        "writable": true,
+        "aggregation": "discreteArithmetic"
+      }
+    },
+    {
+      "id": "stairAscentSpeed",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "m/s",
+      "units": ["m/s", "km/h", "mph"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierStairAscentSpeed",
+        "minOS": "14.0",
+        "writable": true,
+        "aggregation": "discreteArithmetic"
+      }
+    },
+    {
+      "id": "stairDescentSpeed",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "m/s",
+      "units": ["m/s", "km/h", "mph"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierStairDescentSpeed",
+        "minOS": "14.0",
+        "writable": true,
+        "aggregation": "discreteArithmetic"
+      }
+    },
+    {
+      "id": "sixMinuteWalkTestDistance",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "m",
+      "units": ["m", "km", "mi", "ft"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierSixMinuteWalkTestDistance",
+        "minOS": "14.0",
+        "writable": true,
+        "aggregation": "discreteArithmetic"
+      }
+    },
+    {
+      "id": "runningStrideLength",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "m",
+      "units": ["m", "cm", "ft", "in"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierRunningStrideLength",
+        "minOS": "16.0",
+        "writable": true,
+        "aggregation": "discreteArithmetic"
+      }
+    },
+    {
+      "id": "runningVerticalOscillation",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "cm",
+      "units": ["cm", "m", "in"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierRunningVerticalOscillation",
+        "minOS": "16.0",
+        "writable": true,
+        "aggregation": "discreteArithmetic"
+      }
+    },
+    {
+      "id": "runningGroundContactTime",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "ms",
+      "units": ["ms"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierRunningGroundContactTime",
+        "minOS": "16.0",
+        "writable": true,
+        "aggregation": "discreteArithmetic"
+      }
+    },
+    {
+      "id": "walkingSteadiness",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "%",
+      "units": ["%"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierAppleWalkingSteadiness",
+        "minOS": "15.0",
+        "writable": false,
+        "aggregation": "discreteArithmetic"
+      }
+    },
+    {
+      "id": "swimmingStrokeCount",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "count",
+      "units": ["count"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierSwimmingStrokeCount",
+        "minOS": "10.0",
+        "writable": true,
+        "aggregation": "cumulative"
+      }
+    },
+    {
+      "id": "standHour",
+      "kind": "category",
+      "group": "activity",
+      "values": "appleStandHour",
+      "ios": {"identifier": "HKCategoryTypeIdentifierAppleStandHour", "minOS": "9.0", "writable": false}
+    },
+    {
+      "id": "walkingSteadinessEvent",
+      "kind": "category",
+      "group": "activity",
+      "values": "walkingSteadinessEvent",
+      "ios": {"identifier": "HKCategoryTypeIdentifierAppleWalkingSteadinessEvent", "minOS": "15.0", "writable": false}
+    },
+    {
+      "id": "heartRate",
+      "kind": "quantity",
+      "group": "vitals",
+      "unit": "count/min",
+      "units": ["count/min"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierHeartRate",
+        "minOS": "8.0",
+        "writable": true,
+        "aggregation": "discreteTemporallyWeighted"
+      },
+      "android": {
+        "record": "HeartRateRecord",
+        "time": "series",
+        "readPermission": "android.permission.health.READ_HEART_RATE",
+        "writePermission": "android.permission.health.WRITE_HEART_RATE",
+        "writable": true,
+        "valueProperty": "beatsPerMinute",
+        "aggregates": {"avg": "BPM_AVG", "min": "BPM_MIN", "max": "BPM_MAX", "count": "MEASUREMENTS_COUNT"}
+      },
+      "notes": "Health Connect stores series records; reads give one sample per point"
+    },
+    {
+      "id": "restingHeartRate",
+      "kind": "quantity",
+      "group": "vitals",
+      "unit": "count/min",
+      "units": ["count/min"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierRestingHeartRate",
+        "minOS": "11.0",
+        "writable": true,
+        "aggregation": "discreteTemporallyWeighted"
+      },
+      "android": {
+        "record": "RestingHeartRateRecord",
+        "time": "instant",
+        "readPermission": "android.permission.health.READ_RESTING_HEART_RATE",
+        "writePermission": "android.permission.health.WRITE_RESTING_HEART_RATE",
+        "writable": true,
+        "valueProperty": "beatsPerMinute",
+        "aggregates": {"avg": "BPM_AVG", "min": "BPM_MIN", "max": "BPM_MAX"}
+      }
+    },
+    {
+      "id": "walkingHeartRateAverage",
+      "kind": "quantity",
+      "group": "vitals",
+      "unit": "count/min",
+      "units": ["count/min"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierWalkingHeartRateAverage",
+        "minOS": "11.0",
+        "writable": false,
+        "aggregation": "discreteTemporallyWeighted"
+      }
+    },
+    {
+      "id": "heartRateVariabilitySdnn",
+      "kind": "quantity",
+      "group": "vitals",
+      "unit": "ms",
+      "units": ["ms"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierHeartRateVariabilitySDNN",
+        "minOS": "11.0",
+        "writable": true,
+        "aggregation": "discreteArithmetic"
+      }
+    },
+    {
+      "id": "heartRateVariabilityRmssd",
+      "kind": "quantity",
+      "group": "vitals",
+      "unit": "ms",
+      "units": ["ms"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierHeartRateVariabilityRMSSD",
+        "minOS": "27.0",
+        "writable": true,
+        "aggregation": "discreteArithmetic"
+      },
+      "android": {
+        "record": "HeartRateVariabilityRmssdRecord",
+        "time": "instant",
+        "readPermission": "android.permission.health.READ_HEART_RATE_VARIABILITY",
+        "writePermission": "android.permission.health.WRITE_HEART_RATE_VARIABILITY",
+        "writable": true,
+        "valueProperty": "heartRateVariabilityMillis"
+      }
+    },
+    {
+      "id": "heartRateRecovery",
+      "kind": "quantity",
+      "group": "vitals",
+      "unit": "count/min",
+      "units": ["count/min"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierHeartRateRecoveryOneMinute",
+        "minOS": "16.0",
+        "writable": true,
+        "aggregation": "discreteArithmetic"
+      }
+    },
+    {
+      "id": "oxygenSaturation",
+      "kind": "quantity",
+      "group": "vitals",
+      "unit": "%",
+      "units": ["%"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierOxygenSaturation",
+        "minOS": "8.0",
+        "writable": true,
+        "aggregation": "discreteArithmetic"
+      },
+      "android": {
+        "record": "OxygenSaturationRecord",
+        "time": "instant",
+        "readPermission": "android.permission.health.READ_OXYGEN_SATURATION",
+        "writePermission": "android.permission.health.WRITE_OXYGEN_SATURATION",
+        "writable": true,
+        "valueProperty": "percentage"
+      }
+    },
+    {
+      "id": "respiratoryRate",
+      "kind": "quantity",
+      "group": "vitals",
+      "unit": "count/min",
+      "units": ["count/min"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierRespiratoryRate",
+        "minOS": "8.0",
+        "writable": true,
+        "aggregation": "discreteArithmetic"
+      },
+      "android": {
+        "record": "RespiratoryRateRecord",
+        "time": "instant",
+        "readPermission": "android.permission.health.READ_RESPIRATORY_RATE",
+        "writePermission": "android.permission.health.WRITE_RESPIRATORY_RATE",
+        "writable": true,
+        "valueProperty": "rate"
+      }
+    },
+    {
+      "id": "bodyTemperature",
+      "kind": "quantity",
+      "group": "vitals",
+      "unit": "degC",
+      "units": ["degC", "degF"],
+      "fields": {
+        "measurementLocation": {
+          "type": "enum",
+          "values": "bodyTemperatureLocation",
+          "ios": {"metadata": "HKMetadataKeyBodyTemperatureSensorLocation", "key": "HKBodyTemperatureSensorLocation"},
+          "android": {"property": "measurementLocation"}
+        }
+      },
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierBodyTemperature",
+        "minOS": "8.0",
+        "writable": true,
+        "aggregation": "discreteArithmetic"
+      },
+      "android": {
+        "record": "BodyTemperatureRecord",
+        "time": "instant",
+        "readPermission": "android.permission.health.READ_BODY_TEMPERATURE",
+        "writePermission": "android.permission.health.WRITE_BODY_TEMPERATURE",
+        "writable": true,
+        "valueProperty": "temperature"
+      }
+    },
+    {
+      "id": "bloodPressure",
+      "kind": "special",
+      "group": "vitals",
+      "unit": "mmHg",
+      "units": ["mmHg"],
+      "ios": {"identifier": "HKCorrelationTypeIdentifierBloodPressure", "minOS": "8.0", "writable": true},
+      "android": {
+        "record": "BloodPressureRecord",
+        "time": "instant",
+        "readPermission": "android.permission.health.READ_BLOOD_PRESSURE",
+        "writePermission": "android.permission.health.WRITE_BLOOD_PRESSURE",
+        "writable": true
+      },
+      "notes": "One sample with systolic and diastolic (T29)"
+    },
+    {
+      "id": "bloodGlucose",
+      "kind": "quantity",
+      "group": "vitals",
+      "unit": "mg/dL",
+      "units": ["mg/dL", "mmol/L"],
+      "fields": {
+        "relationToMeal": {
+          "type": "enum",
+          "values": "relationToMeal",
+          "ios": {"metadata": "HKMetadataKeyBloodGlucoseMealTime", "key": "HKBloodGlucoseMealTime"},
+          "android": {"property": "relationToMeal"}
+        },
+        "mealType": {"type": "enum", "values": "mealType", "android": {"property": "mealType"}},
+        "specimenSource": {"type": "enum", "values": "specimenSource", "android": {"property": "specimenSource"}}
+      },
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierBloodGlucose",
+        "minOS": "8.0",
+        "writable": true,
+        "aggregation": "discreteArithmetic"
+      },
+      "android": {
+        "record": "BloodGlucoseRecord",
+        "time": "instant",
+        "readPermission": "android.permission.health.READ_BLOOD_GLUCOSE",
+        "writePermission": "android.permission.health.WRITE_BLOOD_GLUCOSE",
+        "writable": true,
+        "valueProperty": "level"
+      }
+    },
+    {
+      "id": "atrialFibrillationBurden",
+      "kind": "quantity",
+      "group": "vitals",
+      "unit": "%",
+      "units": ["%"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierAtrialFibrillationBurden",
+        "minOS": "16.0",
+        "writable": false,
+        "aggregation": "discreteTemporallyWeighted"
+      }
+    },
+    {
+      "id": "peripheralPerfusionIndex",
+      "kind": "quantity",
+      "group": "vitals",
+      "unit": "%",
+      "units": ["%"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierPeripheralPerfusionIndex",
+        "minOS": "8.0",
+        "writable": true,
+        "aggregation": "discreteArithmetic"
+      }
+    },
+    {
+      "id": "highHeartRateEvent",
+      "kind": "event",
+      "group": "vitals",
+      "ios": {"identifier": "HKCategoryTypeIdentifierHighHeartRateEvent", "minOS": "12.2", "writable": false}
+    },
+    {
+      "id": "lowHeartRateEvent",
+      "kind": "event",
+      "group": "vitals",
+      "ios": {"identifier": "HKCategoryTypeIdentifierLowHeartRateEvent", "minOS": "12.2", "writable": false}
+    },
+    {
+      "id": "irregularHeartRhythmEvent",
+      "kind": "event",
+      "group": "vitals",
+      "ios": {"identifier": "HKCategoryTypeIdentifierIrregularHeartRhythmEvent", "minOS": "12.2", "writable": false}
+    },
+    {
+      "id": "hypertensionEvent",
+      "kind": "event",
+      "group": "vitals",
+      "ios": {"identifier": "HKCategoryTypeIdentifierHypertensionEvent", "minOS": "26.2", "writable": false}
+    },
+    {
+      "id": "sleepApneaEvent",
+      "kind": "event",
+      "group": "vitals",
+      "ios": {"identifier": "HKCategoryTypeIdentifierSleepApneaEvent", "minOS": "18.0", "writable": false}
+    },
+    {
+      "id": "lowCardioFitnessEvent",
+      "kind": "category",
+      "group": "vitals",
+      "values": "lowCardioFitnessEvent",
+      "ios": {"identifier": "HKCategoryTypeIdentifierLowCardioFitnessEvent", "minOS": "14.3", "writable": false}
+    },
+    {
+      "id": "breathingDisturbances",
+      "kind": "quantity",
+      "group": "vitals",
+      "unit": "count",
+      "units": ["count"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierAppleSleepingBreathingDisturbances",
+        "minOS": "18.0",
+        "writable": false,
+        "aggregation": "discreteArithmetic"
+      }
+    },
+    {
+      "id": "weight",
+      "kind": "quantity",
+      "group": "body",
+      "unit": "kg",
+      "units": ["kg", "g", "lb"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierBodyMass",
+        "minOS": "8.0",
+        "writable": true,
+        "aggregation": "discreteArithmetic"
+      },
+      "android": {
+        "record": "WeightRecord",
+        "time": "instant",
+        "readPermission": "android.permission.health.READ_WEIGHT",
+        "writePermission": "android.permission.health.WRITE_WEIGHT",
+        "writable": true,
+        "valueProperty": "weight",
+        "aggregates": {"avg": "WEIGHT_AVG", "min": "WEIGHT_MIN", "max": "WEIGHT_MAX"}
+      }
+    },
+    {
+      "id": "height",
+      "kind": "quantity",
+      "group": "body",
+      "unit": "m",
+      "units": ["m", "cm", "ft", "in"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierHeight",
+        "minOS": "8.0",
+        "writable": true,
+        "aggregation": "discreteArithmetic"
+      },
+      "android": {
+        "record": "HeightRecord",
+        "time": "instant",
+        "readPermission": "android.permission.health.READ_HEIGHT",
+        "writePermission": "android.permission.health.WRITE_HEIGHT",
+        "writable": true,
+        "valueProperty": "height",
+        "aggregates": {"avg": "HEIGHT_AVG", "min": "HEIGHT_MIN", "max": "HEIGHT_MAX"}
+      }
+    },
+    {
+      "id": "bodyFat",
+      "kind": "quantity",
+      "group": "body",
+      "unit": "%",
+      "units": ["%"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierBodyFatPercentage",
+        "minOS": "8.0",
+        "writable": true,
+        "aggregation": "discreteArithmetic"
+      },
+      "android": {
+        "record": "BodyFatRecord",
+        "time": "instant",
+        "readPermission": "android.permission.health.READ_BODY_FAT",
+        "writePermission": "android.permission.health.WRITE_BODY_FAT",
+        "writable": true,
+        "valueProperty": "percentage"
+      }
+    },
+    {
+      "id": "leanBodyMass",
+      "kind": "quantity",
+      "group": "body",
+      "unit": "kg",
+      "units": ["kg", "g", "lb"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierLeanBodyMass",
+        "minOS": "8.0",
+        "writable": true,
+        "aggregation": "discreteArithmetic"
+      },
+      "android": {
+        "record": "LeanBodyMassRecord",
+        "time": "instant",
+        "readPermission": "android.permission.health.READ_LEAN_BODY_MASS",
+        "writePermission": "android.permission.health.WRITE_LEAN_BODY_MASS",
+        "writable": true,
+        "valueProperty": "mass"
+      }
+    },
+    {
+      "id": "boneMass",
+      "kind": "quantity",
+      "group": "body",
+      "unit": "kg",
+      "units": ["kg", "g", "lb"],
+      "android": {
+        "record": "BoneMassRecord",
+        "time": "instant",
+        "readPermission": "android.permission.health.READ_BONE_MASS",
+        "writePermission": "android.permission.health.WRITE_BONE_MASS",
+        "writable": true,
+        "valueProperty": "mass"
+      }
+    },
+    {
+      "id": "bodyWaterMass",
+      "kind": "quantity",
+      "group": "body",
+      "unit": "kg",
+      "units": ["kg", "g", "lb"],
+      "android": {
+        "record": "BodyWaterMassRecord",
+        "time": "instant",
+        "readPermission": "android.permission.health.READ_BODY_WATER_MASS",
+        "writePermission": "android.permission.health.WRITE_BODY_WATER_MASS",
+        "writable": true,
+        "valueProperty": "mass"
+      }
+    },
+    {
+      "id": "bmi",
+      "kind": "quantity",
+      "group": "body",
+      "unit": "count",
+      "units": ["count"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierBodyMassIndex",
+        "minOS": "8.0",
+        "writable": true,
+        "aggregation": "discreteArithmetic"
+      }
+    },
+    {
+      "id": "waistCircumference",
+      "kind": "quantity",
+      "group": "body",
+      "unit": "m",
+      "units": ["m", "cm", "in"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierWaistCircumference",
+        "minOS": "11.0",
+        "writable": true,
+        "aggregation": "discreteArithmetic"
+      }
+    },
+    {
+      "id": "electrodermalActivity",
+      "kind": "quantity",
+      "group": "body",
+      "unit": "mcS",
+      "units": ["mcS"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierElectrodermalActivity",
+        "minOS": "8.0",
+        "writable": true,
+        "aggregation": "discreteArithmetic"
+      }
+    },
+    {
+      "id": "forcedVitalCapacity",
+      "kind": "quantity",
+      "group": "other",
+      "unit": "L",
+      "units": ["L", "mL"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierForcedVitalCapacity",
+        "minOS": "8.0",
+        "writable": true,
+        "aggregation": "discreteArithmetic"
+      }
+    },
+    {
+      "id": "forcedExpiratoryVolume1",
+      "kind": "quantity",
+      "group": "other",
+      "unit": "L",
+      "units": ["L", "mL"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierForcedExpiratoryVolume1",
+        "minOS": "8.0",
+        "writable": true,
+        "aggregation": "discreteArithmetic"
+      }
+    },
+    {
+      "id": "peakExpiratoryFlowRate",
+      "kind": "quantity",
+      "group": "other",
+      "unit": "L/min",
+      "units": ["L/min"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierPeakExpiratoryFlowRate",
+        "minOS": "8.0",
+        "writable": true,
+        "aggregation": "discreteArithmetic"
+      }
+    },
+    {
+      "id": "inhalerUsage",
+      "kind": "quantity",
+      "group": "other",
+      "unit": "count",
+      "units": ["count"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierInhalerUsage",
+        "minOS": "8.0",
+        "writable": true,
+        "aggregation": "cumulative"
+      }
+    },
+    {
+      "id": "bloodAlcoholContent",
+      "kind": "quantity",
+      "group": "other",
+      "unit": "%",
+      "units": ["%"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierBloodAlcoholContent",
+        "minOS": "8.0",
+        "writable": true,
+        "aggregation": "discreteArithmetic"
+      }
+    },
+    {
+      "id": "numberOfAlcoholicBeverages",
+      "kind": "quantity",
+      "group": "other",
+      "unit": "count",
+      "units": ["count"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierNumberOfAlcoholicBeverages",
+        "minOS": "15.0",
+        "writable": true,
+        "aggregation": "cumulative"
+      }
+    },
+    {
+      "id": "numberOfTimesFallen",
+      "kind": "quantity",
+      "group": "other",
+      "unit": "count",
+      "units": ["count"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierNumberOfTimesFallen",
+        "minOS": "8.0",
+        "writable": true,
+        "aggregation": "cumulative"
+      }
+    },
+    {
+      "id": "uvExposure",
+      "kind": "quantity",
+      "group": "other",
+      "unit": "count",
+      "units": ["count"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierUVExposure",
+        "minOS": "9.0",
+        "writable": true,
+        "aggregation": "discreteArithmetic"
+      }
+    },
+    {
+      "id": "timeInDaylight",
+      "kind": "quantity",
+      "group": "other",
+      "unit": "min",
+      "units": ["min", "s", "h"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierTimeInDaylight",
+        "minOS": "17.0",
+        "writable": true,
+        "aggregation": "cumulative"
+      }
+    },
+    {
+      "id": "environmentalAudioExposure",
+      "kind": "quantity",
+      "group": "other",
+      "unit": "dBASPL",
+      "units": ["dBASPL"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierEnvironmentalAudioExposure",
+        "minOS": "13.0",
+        "writable": true,
+        "aggregation": "discreteEquivalentContinuousLevel"
+      }
+    },
+    {
+      "id": "headphoneAudioExposure",
+      "kind": "quantity",
+      "group": "other",
+      "unit": "dBASPL",
+      "units": ["dBASPL"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierHeadphoneAudioExposure",
+        "minOS": "13.0",
+        "writable": true,
+        "aggregation": "discreteEquivalentContinuousLevel"
+      }
+    },
+    {
+      "id": "environmentalSoundReduction",
+      "kind": "quantity",
+      "group": "other",
+      "unit": "dBASPL",
+      "units": ["dBASPL"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierEnvironmentalSoundReduction",
+        "minOS": "16.0",
+        "writable": true,
+        "aggregation": "discreteEquivalentContinuousLevel"
+      }
+    },
+    {
+      "id": "underwaterDepth",
+      "kind": "quantity",
+      "group": "other",
+      "unit": "m",
+      "units": ["m", "ft"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierUnderwaterDepth",
+        "minOS": "16.0",
+        "writable": true,
+        "aggregation": "discreteArithmetic"
+      }
+    },
+    {
+      "id": "waterTemperature",
+      "kind": "quantity",
+      "group": "other",
+      "unit": "degC",
+      "units": ["degC", "degF"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierWaterTemperature",
+        "minOS": "16.0",
+        "writable": true,
+        "aggregation": "discreteArithmetic"
+      }
+    },
+    {
+      "id": "insulinDelivery",
+      "kind": "quantity",
+      "group": "other",
+      "unit": "IU",
+      "units": ["IU"],
+      "fields": {
+        "reason": {
+          "type": "enum",
+          "values": "insulinDeliveryReason",
+          "ios": {
+            "metadata": "HKMetadataKeyInsulinDeliveryReason",
+            "key": "HKInsulinDeliveryReason",
+            "requiredOnWrite": true
+          }
+        }
+      },
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierInsulinDelivery",
+        "minOS": "11.0",
+        "writable": true,
+        "aggregation": "cumulative"
+      }
+    },
+    {
+      "id": "environmentalAudioExposureEvent",
+      "kind": "category",
+      "group": "other",
+      "values": "environmentalAudioExposureEvent",
+      "ios": {
+        "identifier": "HKCategoryTypeIdentifierEnvironmentalAudioExposureEvent", "rawValue": "HKCategoryTypeIdentifierAudioExposureEvent",
+        "minOS": "14.0",
+        "writable": true
+      }
+    },
+    {
+      "id": "headphoneAudioExposureEvent",
+      "kind": "category",
+      "group": "other",
+      "values": "headphoneAudioExposureEvent",
+      "ios": {"identifier": "HKCategoryTypeIdentifierHeadphoneAudioExposureEvent", "minOS": "14.2", "writable": false}
+    },
+    {
+      "id": "nikeFuel",
+      "kind": "quantity",
+      "group": "activity",
+      "unit": "count",
+      "units": ["count"],
+      "ios": {
+        "identifier": "HKQuantityTypeIdentifierNikeFuel",
+        "minOS": "8.0",
+        "writable": false,
+        "aggregation": "cumulative"
+      }
     }
   ]
 }

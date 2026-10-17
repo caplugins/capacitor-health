@@ -109,7 +109,7 @@ describe('readSamples', () => {
 
   it('rejects an unknown type', () => {
     rejection(
-      () => validateReadSamples({ ...base, type: 'steps' as never }, 'ios'),
+      () => validateReadSamples({ ...base, type: 'flightOfFancy' as never }, 'ios'),
       'UNSUPPORTED_TYPE',
       'type',
       'unknownType',
@@ -215,7 +215,11 @@ describe('authorization', () => {
   });
 
   it('rejects unknown types', () => {
-    rejection(() => validateCheckAuthorization({ read: ['steps' as never] }, 'ios'), 'UNSUPPORTED_TYPE', 'read[0]');
+    rejection(
+      () => validateCheckAuthorization({ read: ['flightOfFancy' as never] }, 'ios'),
+      'UNSUPPORTED_TYPE',
+      'read[0]',
+    );
   });
 
   it('rejects write access to read-only types', () => {

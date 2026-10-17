@@ -66,6 +66,149 @@ final class RegistryRawValuesTests: XCTestCase {
         XCTAssertEqual(HKCategoryTypeIdentifier.vaginalDryness.rawValue, "HKCategoryTypeIdentifierVaginalDryness")
     }
 
+    func testActivityIdentifiers() {
+        XCTAssertEqual(HKQuantityTypeIdentifier.stepCount.rawValue, "HKQuantityTypeIdentifierStepCount")
+        XCTAssertEqual(HKQuantityTypeIdentifier.distanceWalkingRunning.rawValue, "HKQuantityTypeIdentifierDistanceWalkingRunning")
+        XCTAssertEqual(HKQuantityTypeIdentifier.distanceCycling.rawValue, "HKQuantityTypeIdentifierDistanceCycling")
+        XCTAssertEqual(HKQuantityTypeIdentifier.distanceSwimming.rawValue, "HKQuantityTypeIdentifierDistanceSwimming")
+        XCTAssertEqual(HKQuantityTypeIdentifier.distanceWheelchair.rawValue, "HKQuantityTypeIdentifierDistanceWheelchair")
+        XCTAssertEqual(HKQuantityTypeIdentifier.distanceDownhillSnowSports.rawValue, "HKQuantityTypeIdentifierDistanceDownhillSnowSports")
+        XCTAssertEqual(HKQuantityTypeIdentifier.activeEnergyBurned.rawValue, "HKQuantityTypeIdentifierActiveEnergyBurned")
+        XCTAssertEqual(HKQuantityTypeIdentifier.basalEnergyBurned.rawValue, "HKQuantityTypeIdentifierBasalEnergyBurned")
+        XCTAssertEqual(HKQuantityTypeIdentifier.flightsClimbed.rawValue, "HKQuantityTypeIdentifierFlightsClimbed")
+        XCTAssertEqual(HKQuantityTypeIdentifier.pushCount.rawValue, "HKQuantityTypeIdentifierPushCount")
+        XCTAssertEqual(HKQuantityTypeIdentifier.walkingSpeed.rawValue, "HKQuantityTypeIdentifierWalkingSpeed")
+        XCTAssertEqual(HKQuantityTypeIdentifier.vo2Max.rawValue, "HKQuantityTypeIdentifierVO2Max")
+        XCTAssertEqual(HKQuantityTypeIdentifier.appleExerciseTime.rawValue, "HKQuantityTypeIdentifierAppleExerciseTime")
+        XCTAssertEqual(HKQuantityTypeIdentifier.appleStandTime.rawValue, "HKQuantityTypeIdentifierAppleStandTime")
+        XCTAssertEqual(HKQuantityTypeIdentifier.appleMoveTime.rawValue, "HKQuantityTypeIdentifierAppleMoveTime")
+        XCTAssertEqual(HKQuantityTypeIdentifier.walkingStepLength.rawValue, "HKQuantityTypeIdentifierWalkingStepLength")
+        XCTAssertEqual(HKQuantityTypeIdentifier.walkingAsymmetryPercentage.rawValue, "HKQuantityTypeIdentifierWalkingAsymmetryPercentage")
+        XCTAssertEqual(
+            HKQuantityTypeIdentifier.walkingDoubleSupportPercentage.rawValue,
+            "HKQuantityTypeIdentifierWalkingDoubleSupportPercentage"
+        )
+        XCTAssertEqual(HKQuantityTypeIdentifier.stairAscentSpeed.rawValue, "HKQuantityTypeIdentifierStairAscentSpeed")
+        XCTAssertEqual(HKQuantityTypeIdentifier.stairDescentSpeed.rawValue, "HKQuantityTypeIdentifierStairDescentSpeed")
+        XCTAssertEqual(HKQuantityTypeIdentifier.sixMinuteWalkTestDistance.rawValue, "HKQuantityTypeIdentifierSixMinuteWalkTestDistance")
+        XCTAssertEqual(HKQuantityTypeIdentifier.appleWalkingSteadiness.rawValue, "HKQuantityTypeIdentifierAppleWalkingSteadiness")
+        XCTAssertEqual(HKQuantityTypeIdentifier.swimmingStrokeCount.rawValue, "HKQuantityTypeIdentifierSwimmingStrokeCount")
+        XCTAssertEqual(HKCategoryTypeIdentifier.appleStandHour.rawValue, "HKCategoryTypeIdentifierAppleStandHour")
+        XCTAssertEqual(HKCategoryTypeIdentifier.appleWalkingSteadinessEvent.rawValue, "HKCategoryTypeIdentifierAppleWalkingSteadinessEvent")
+        XCTAssertEqual(HKQuantityTypeIdentifier.nikeFuel.rawValue, "HKQuantityTypeIdentifierNikeFuel")
+        if #available(iOS 16.0, *) {
+            XCTAssertEqual(HKQuantityTypeIdentifier.runningSpeed.rawValue, "HKQuantityTypeIdentifierRunningSpeed")
+            XCTAssertEqual(HKQuantityTypeIdentifier.runningPower.rawValue, "HKQuantityTypeIdentifierRunningPower")
+            XCTAssertEqual(HKQuantityTypeIdentifier.runningStrideLength.rawValue, "HKQuantityTypeIdentifierRunningStrideLength")
+            XCTAssertEqual(
+                HKQuantityTypeIdentifier.runningVerticalOscillation.rawValue,
+                "HKQuantityTypeIdentifierRunningVerticalOscillation"
+            )
+            XCTAssertEqual(HKQuantityTypeIdentifier.runningGroundContactTime.rawValue, "HKQuantityTypeIdentifierRunningGroundContactTime")
+        }
+        if #available(iOS 17.0, *) {
+            XCTAssertEqual(HKQuantityTypeIdentifier.cyclingSpeed.rawValue, "HKQuantityTypeIdentifierCyclingSpeed")
+            XCTAssertEqual(HKQuantityTypeIdentifier.cyclingPower.rawValue, "HKQuantityTypeIdentifierCyclingPower")
+            XCTAssertEqual(
+                HKQuantityTypeIdentifier.cyclingFunctionalThresholdPower.rawValue,
+                "HKQuantityTypeIdentifierCyclingFunctionalThresholdPower"
+            )
+            XCTAssertEqual(HKQuantityTypeIdentifier.cyclingCadence.rawValue, "HKQuantityTypeIdentifierCyclingCadence")
+            XCTAssertEqual(HKQuantityTypeIdentifier.physicalEffort.rawValue, "HKQuantityTypeIdentifierPhysicalEffort")
+        }
+        if #available(iOS 18.0, *) {
+            XCTAssertEqual(
+                HKQuantityTypeIdentifier.distanceCrossCountrySkiing.rawValue,
+                "HKQuantityTypeIdentifierDistanceCrossCountrySkiing"
+            )
+            XCTAssertEqual(HKQuantityTypeIdentifier.distancePaddleSports.rawValue, "HKQuantityTypeIdentifierDistancePaddleSports")
+            XCTAssertEqual(HKQuantityTypeIdentifier.distanceRowing.rawValue, "HKQuantityTypeIdentifierDistanceRowing")
+            XCTAssertEqual(HKQuantityTypeIdentifier.distanceSkatingSports.rawValue, "HKQuantityTypeIdentifierDistanceSkatingSports")
+            XCTAssertEqual(HKQuantityTypeIdentifier.crossCountrySkiingSpeed.rawValue, "HKQuantityTypeIdentifierCrossCountrySkiingSpeed")
+            XCTAssertEqual(HKQuantityTypeIdentifier.paddleSportsSpeed.rawValue, "HKQuantityTypeIdentifierPaddleSportsSpeed")
+            XCTAssertEqual(HKQuantityTypeIdentifier.rowingSpeed.rawValue, "HKQuantityTypeIdentifierRowingSpeed")
+            XCTAssertEqual(HKQuantityTypeIdentifier.workoutEffortScore.rawValue, "HKQuantityTypeIdentifierWorkoutEffortScore")
+            XCTAssertEqual(
+                HKQuantityTypeIdentifier.estimatedWorkoutEffortScore.rawValue,
+                "HKQuantityTypeIdentifierEstimatedWorkoutEffortScore"
+            )
+        }
+    }
+
+    func testVitalsIdentifiers() {
+        XCTAssertEqual(HKQuantityTypeIdentifier.heartRate.rawValue, "HKQuantityTypeIdentifierHeartRate")
+        XCTAssertEqual(HKQuantityTypeIdentifier.restingHeartRate.rawValue, "HKQuantityTypeIdentifierRestingHeartRate")
+        XCTAssertEqual(HKQuantityTypeIdentifier.walkingHeartRateAverage.rawValue, "HKQuantityTypeIdentifierWalkingHeartRateAverage")
+        XCTAssertEqual(HKQuantityTypeIdentifier.heartRateVariabilitySDNN.rawValue, "HKQuantityTypeIdentifierHeartRateVariabilitySDNN")
+        XCTAssertEqual(HKQuantityTypeIdentifier.oxygenSaturation.rawValue, "HKQuantityTypeIdentifierOxygenSaturation")
+        XCTAssertEqual(HKQuantityTypeIdentifier.respiratoryRate.rawValue, "HKQuantityTypeIdentifierRespiratoryRate")
+        XCTAssertEqual(HKQuantityTypeIdentifier.bodyTemperature.rawValue, "HKQuantityTypeIdentifierBodyTemperature")
+        XCTAssertEqual(HKCorrelationTypeIdentifier.bloodPressure.rawValue, "HKCorrelationTypeIdentifierBloodPressure")
+        XCTAssertEqual(HKQuantityTypeIdentifier.bloodGlucose.rawValue, "HKQuantityTypeIdentifierBloodGlucose")
+        XCTAssertEqual(HKQuantityTypeIdentifier.peripheralPerfusionIndex.rawValue, "HKQuantityTypeIdentifierPeripheralPerfusionIndex")
+        XCTAssertEqual(HKCategoryTypeIdentifier.highHeartRateEvent.rawValue, "HKCategoryTypeIdentifierHighHeartRateEvent")
+        XCTAssertEqual(HKCategoryTypeIdentifier.lowHeartRateEvent.rawValue, "HKCategoryTypeIdentifierLowHeartRateEvent")
+        XCTAssertEqual(HKCategoryTypeIdentifier.irregularHeartRhythmEvent.rawValue, "HKCategoryTypeIdentifierIrregularHeartRhythmEvent")
+        XCTAssertEqual(HKCategoryTypeIdentifier.lowCardioFitnessEvent.rawValue, "HKCategoryTypeIdentifierLowCardioFitnessEvent")
+        if #available(iOS 16.0, *) {
+            XCTAssertEqual(
+                HKQuantityTypeIdentifier.heartRateRecoveryOneMinute.rawValue,
+                "HKQuantityTypeIdentifierHeartRateRecoveryOneMinute"
+            )
+            XCTAssertEqual(HKQuantityTypeIdentifier.atrialFibrillationBurden.rawValue, "HKQuantityTypeIdentifierAtrialFibrillationBurden")
+        }
+        if #available(iOS 18.0, *) {
+            XCTAssertEqual(HKCategoryTypeIdentifier.sleepApneaEvent.rawValue, "HKCategoryTypeIdentifierSleepApneaEvent")
+            XCTAssertEqual(
+                HKQuantityTypeIdentifier.appleSleepingBreathingDisturbances.rawValue,
+                "HKQuantityTypeIdentifierAppleSleepingBreathingDisturbances"
+            )
+        }
+        if #available(iOS 26.2, *) {
+            XCTAssertEqual(HKCategoryTypeIdentifier.hypertensionEvent.rawValue, "HKCategoryTypeIdentifierHypertensionEvent")
+        }
+        if #available(iOS 27.0, *) {
+            XCTAssertEqual(HKQuantityTypeIdentifier.heartRateVariabilityRMSSD.rawValue, "HKQuantityTypeIdentifierHeartRateVariabilityRMSSD")
+        }
+    }
+
+    func testBodyIdentifiers() {
+        XCTAssertEqual(HKQuantityTypeIdentifier.bodyMass.rawValue, "HKQuantityTypeIdentifierBodyMass")
+        XCTAssertEqual(HKQuantityTypeIdentifier.height.rawValue, "HKQuantityTypeIdentifierHeight")
+        XCTAssertEqual(HKQuantityTypeIdentifier.bodyFatPercentage.rawValue, "HKQuantityTypeIdentifierBodyFatPercentage")
+        XCTAssertEqual(HKQuantityTypeIdentifier.leanBodyMass.rawValue, "HKQuantityTypeIdentifierLeanBodyMass")
+        XCTAssertEqual(HKQuantityTypeIdentifier.bodyMassIndex.rawValue, "HKQuantityTypeIdentifierBodyMassIndex")
+        XCTAssertEqual(HKQuantityTypeIdentifier.waistCircumference.rawValue, "HKQuantityTypeIdentifierWaistCircumference")
+        XCTAssertEqual(HKQuantityTypeIdentifier.electrodermalActivity.rawValue, "HKQuantityTypeIdentifierElectrodermalActivity")
+    }
+
+    func testOtherIdentifiers() {
+        XCTAssertEqual(HKQuantityTypeIdentifier.forcedVitalCapacity.rawValue, "HKQuantityTypeIdentifierForcedVitalCapacity")
+        XCTAssertEqual(HKQuantityTypeIdentifier.forcedExpiratoryVolume1.rawValue, "HKQuantityTypeIdentifierForcedExpiratoryVolume1")
+        XCTAssertEqual(HKQuantityTypeIdentifier.peakExpiratoryFlowRate.rawValue, "HKQuantityTypeIdentifierPeakExpiratoryFlowRate")
+        XCTAssertEqual(HKQuantityTypeIdentifier.inhalerUsage.rawValue, "HKQuantityTypeIdentifierInhalerUsage")
+        XCTAssertEqual(HKQuantityTypeIdentifier.bloodAlcoholContent.rawValue, "HKQuantityTypeIdentifierBloodAlcoholContent")
+        XCTAssertEqual(HKQuantityTypeIdentifier.numberOfAlcoholicBeverages.rawValue, "HKQuantityTypeIdentifierNumberOfAlcoholicBeverages")
+        XCTAssertEqual(HKQuantityTypeIdentifier.numberOfTimesFallen.rawValue, "HKQuantityTypeIdentifierNumberOfTimesFallen")
+        XCTAssertEqual(HKQuantityTypeIdentifier.uvExposure.rawValue, "HKQuantityTypeIdentifierUVExposure")
+        XCTAssertEqual(HKQuantityTypeIdentifier.environmentalAudioExposure.rawValue, "HKQuantityTypeIdentifierEnvironmentalAudioExposure")
+        XCTAssertEqual(HKQuantityTypeIdentifier.headphoneAudioExposure.rawValue, "HKQuantityTypeIdentifierHeadphoneAudioExposure")
+        XCTAssertEqual(HKQuantityTypeIdentifier.insulinDelivery.rawValue, "HKQuantityTypeIdentifierInsulinDelivery")
+        XCTAssertEqual(HKCategoryTypeIdentifier.environmentalAudioExposureEvent.rawValue, "HKCategoryTypeIdentifierAudioExposureEvent")
+        XCTAssertEqual(HKCategoryTypeIdentifier.headphoneAudioExposureEvent.rawValue, "HKCategoryTypeIdentifierHeadphoneAudioExposureEvent")
+        if #available(iOS 16.0, *) {
+            XCTAssertEqual(
+                HKQuantityTypeIdentifier.environmentalSoundReduction.rawValue,
+                "HKQuantityTypeIdentifierEnvironmentalSoundReduction"
+            )
+            XCTAssertEqual(HKQuantityTypeIdentifier.underwaterDepth.rawValue, "HKQuantityTypeIdentifierUnderwaterDepth")
+            XCTAssertEqual(HKQuantityTypeIdentifier.waterTemperature.rawValue, "HKQuantityTypeIdentifierWaterTemperature")
+        }
+        if #available(iOS 17.0, *) {
+            XCTAssertEqual(HKQuantityTypeIdentifier.timeInDaylight.rawValue, "HKQuantityTypeIdentifierTimeInDaylight")
+        }
+    }
+
     func testBleedingRawValues() {
         if #available(iOS 18.0, *) {
             XCTAssertEqual(HKCategoryValueVaginalBleeding.unspecified.rawValue, 1)
@@ -156,9 +299,55 @@ final class RegistryRawValuesTests: XCTestCase {
         XCTAssertEqual(HKCategoryValueAppetiteChanges.increased.rawValue, 3)
     }
 
+    func testAppleStandHourRawValues() {
+        XCTAssertEqual(HKCategoryValueAppleStandHour.stood.rawValue, 0)
+        XCTAssertEqual(HKCategoryValueAppleStandHour.idle.rawValue, 1)
+    }
+
+    func testWalkingSteadinessEventRawValues() {
+        XCTAssertEqual(HKCategoryValueAppleWalkingSteadinessEvent.initialLow.rawValue, 1)
+        XCTAssertEqual(HKCategoryValueAppleWalkingSteadinessEvent.initialVeryLow.rawValue, 2)
+        XCTAssertEqual(HKCategoryValueAppleWalkingSteadinessEvent.repeatLow.rawValue, 3)
+        XCTAssertEqual(HKCategoryValueAppleWalkingSteadinessEvent.repeatVeryLow.rawValue, 4)
+    }
+
+    func testLowCardioFitnessEventRawValues() {
+        XCTAssertEqual(HKCategoryValueLowCardioFitnessEvent.lowFitness.rawValue, 1)
+    }
+
+    func testEnvironmentalAudioExposureEventRawValues() {
+        XCTAssertEqual(HKCategoryValueEnvironmentalAudioExposureEvent.momentaryLimit.rawValue, 1)
+    }
+
+    func testHeadphoneAudioExposureEventRawValues() {
+        XCTAssertEqual(HKCategoryValueHeadphoneAudioExposureEvent.sevenDayLimit.rawValue, 1)
+    }
+
+    func testVo2MaxTestTypeRawValues() {
+        XCTAssertEqual(HKVO2MaxTestType.maxExercise.rawValue, 1)
+        XCTAssertEqual(HKVO2MaxTestType.predictionSubMaxExercise.rawValue, 2)
+        XCTAssertEqual(HKVO2MaxTestType.predictionNonExercise.rawValue, 3)
+        if #available(iOS 26.0, *) {
+            XCTAssertEqual(HKVO2MaxTestType.predictionStepTest.rawValue, 4)
+        }
+    }
+
+    func testRelationToMealRawValues() {
+        XCTAssertEqual(HKBloodGlucoseMealTime.preprandial.rawValue, 1)
+        XCTAssertEqual(HKBloodGlucoseMealTime.postprandial.rawValue, 2)
+    }
+
+    func testInsulinDeliveryReasonRawValues() {
+        XCTAssertEqual(HKInsulinDeliveryReason.basal.rawValue, 1)
+        XCTAssertEqual(HKInsulinDeliveryReason.bolus.rawValue, 2)
+    }
+
     func testMetadataKeys() {
         XCTAssertEqual(HKMetadataKeyMenstrualCycleStart, "HKMenstrualCycleStart")
         XCTAssertEqual(HKMetadataKeySexualActivityProtectionUsed, "HKSexualActivityProtectionUsed")
         XCTAssertEqual(HKMetadataKeyBodyTemperatureSensorLocation, "HKBodyTemperatureSensorLocation")
+        XCTAssertEqual(HKMetadataKeyVO2MaxTestType, "HKVO2MaxTestType")
+        XCTAssertEqual(HKMetadataKeyBloodGlucoseMealTime, "HKBloodGlucoseMealTime")
+        XCTAssertEqual(HKMetadataKeyInsulinDeliveryReason, "HKInsulinDeliveryReason")
     }
 }

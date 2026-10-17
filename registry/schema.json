@@ -69,7 +69,7 @@
     "notes": { "type": "string", "minLength": 1 },
     "unit": { "description": "A key of the top-level units table.", "type": "string", "minLength": 1 },
     "hcConstant": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
-    "hcPermission": { "type": "string", "pattern": "^android\\.permission\\.health\\.(READ|WRITE)_[A-Z_]+$" },
+    "hcPermission": { "type": "string", "pattern": "^android\\.permission\\.health\\.(READ|WRITE)_[A-Z0-9_]+$" },
 
     "valueSet": {
       "type": "object",
@@ -91,13 +91,18 @@
             "enum": {
               "description": "The HealthKit enum holding the raw values (pinned by the generated XCTest).",
               "type": "string",
-              "pattern": "^HK[A-Za-z]+$"
+              "pattern": "^HK[A-Za-z0-9]+$"
             },
             "minOS": { "$ref": "#/$defs/osVersion" },
             "map": {
               "description": "Unified value → raw value. null = no HealthKit equivalent (writes reject, reads never produce it).",
               "type": "object",
               "additionalProperties": { "type": ["integer", "null"] }
+            },
+            "valueMinOS": {
+              "description": "Values whose enum case is newer than the set's minOS.",
+              "type": "object",
+              "additionalProperties": { "$ref": "#/$defs/osVersion" }
             },
             "cases": {
               "description": "Swift case name where it differs from the unified value.",
@@ -115,7 +120,7 @@
             "constants": {
               "description": "Class in androidx.health.connect.client.records holding the constants.",
               "type": "string",
-              "pattern": "^[A-Z][A-Za-z]+$"
+              "pattern": "^[A-Z][A-Za-z0-9]+$"
             },
             "map": {
               "description": "Unified value → constant name. null = no Health Connect equivalent.",
@@ -146,8 +151,8 @@
           "required": ["metadata", "key"],
           "additionalProperties": false,
           "properties": {
-            "metadata": { "description": "Swift symbol of the metadata key.", "type": "string", "pattern": "^HKMetadataKey[A-Za-z]+$" },
-            "key": { "description": "Runtime string of the key (differs from the symbol for iOS 8/9 keys, T06 S7).", "type": "string", "pattern": "^HK[A-Za-z]+$" },
+            "metadata": { "description": "Swift symbol of the metadata key.", "type": "string", "pattern": "^HKMetadataKey[A-Za-z0-9]+$" },
+            "key": { "description": "Runtime string of the key (differs from the symbol for iOS 8/9 keys, T06 S7).", "type": "string", "pattern": "^HK[A-Za-z0-9]+$" },
             "requiredOnWrite": { "type": "boolean" }
           }
         },
@@ -157,7 +162,7 @@
           "properties": {
             "property": { "description": "Record property holding the value.", "$ref": "#/$defs/camelId" },
             "computed": { "description": "Derived by the plugin, not stored on the record.", "type": "string", "minLength": 1 },
-            "constants": { "type": "string", "pattern": "^[A-Z][A-Za-z]+$" },
+            "constants": { "type": "string", "pattern": "^[A-Z][A-Za-z0-9]+$" },
             "true": { "$ref": "#/$defs/hcConstant" },
             "false": { "$ref": "#/$defs/hcConstant" },
             "absent": { "$ref": "#/$defs/hcConstant" }
@@ -213,7 +218,12 @@
       "additionalProperties": false,
       "properties": {
         "identifier": {
-          "description": "Runtime identifier string. For a derived type, the identifier it's derived from (authorization uses it).",
+          "description": "The HealthKit identifier constant, named as in the SDK headers. Its string is the runtime identifier unless rawValue says otherwise. For a derived type, the identifier it's derived from (authorization uses it).",
+          "type": "string",
+          "pattern": "^HK(Category|Quantity|Correlation)TypeIdentifier[A-Z][A-Za-z0-9]*$"
+        },
+        "rawValue": {
+          "description": "The identifier's runtime string when it isn't the constant's name (Apple renamed the constant and kept the old string). Runtime lookups use it.",
           "type": "string",
           "pattern": "^HK(Category|Quantity|Correlation)TypeIdentifier[A-Z][A-Za-z0-9]*$"
         },

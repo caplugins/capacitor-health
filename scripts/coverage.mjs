@@ -7,8 +7,20 @@
 import { healthConnectRecords, healthKitIdentifiers } from './lib/catalogs.mjs';
 import { loadCheckedRegistry } from './lib/registry.mjs';
 
+// A correlation's member quantity types are covered by the type that registers the correlation.
+const CORRELATION_MEMBERS = {
+  HKCorrelationTypeIdentifierBloodPressure: [
+    'HKQuantityTypeIdentifierBloodPressureSystolic',
+    'HKQuantityTypeIdentifierBloodPressureDiastolic',
+  ],
+};
+
 export function coverage(registry = loadCheckedRegistry()) {
-  const iosCovered = new Set(registry.types.filter((t) => t.ios).map((t) => t.ios.identifier));
+  const iosCovered = new Set(
+    registry.types
+      .filter((t) => t.ios?.identifier)
+      .flatMap((t) => [t.ios.identifier, ...(CORRELATION_MEMBERS[t.ios.identifier] ?? [])]),
+  );
   const androidCovered = new Set(registry.types.filter((t) => t.android).map((t) => t.android.record));
   const hk = healthKitIdentifiers();
   const hc = healthConnectRecords();

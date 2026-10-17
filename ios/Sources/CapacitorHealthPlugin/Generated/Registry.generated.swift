@@ -168,7 +168,105 @@ enum Registry {
         "nightSweats",
         "pelvicPain",
         "sleepChanges",
-        "vaginalDryness"
+        "vaginalDryness",
+        "steps",
+        "distance",
+        "distanceWalkingRunning",
+        "distanceCycling",
+        "distanceSwimming",
+        "distanceWheelchair",
+        "distanceDownhillSnowSports",
+        "distanceCrossCountrySkiing",
+        "distancePaddleSports",
+        "distanceRowing",
+        "distanceSkatingSports",
+        "activeEnergy",
+        "basalEnergy",
+        "basalMetabolicRate",
+        "totalEnergy",
+        "floorsClimbed",
+        "elevationGained",
+        "wheelchairPushes",
+        "stepsCadence",
+        "speed",
+        "walkingSpeed",
+        "runningSpeed",
+        "cyclingSpeed",
+        "crossCountrySkiingSpeed",
+        "paddleSportsSpeed",
+        "rowingSpeed",
+        "power",
+        "runningPower",
+        "cyclingPower",
+        "cyclingFunctionalThresholdPower",
+        "cyclingCadence",
+        "vo2Max",
+        "exerciseTime",
+        "standTime",
+        "moveTime",
+        "physicalEffort",
+        "workoutEffortScore",
+        "estimatedWorkoutEffortScore",
+        "walkingStepLength",
+        "walkingAsymmetry",
+        "walkingDoubleSupport",
+        "stairAscentSpeed",
+        "stairDescentSpeed",
+        "sixMinuteWalkTestDistance",
+        "runningStrideLength",
+        "runningVerticalOscillation",
+        "runningGroundContactTime",
+        "walkingSteadiness",
+        "swimmingStrokeCount",
+        "standHour",
+        "walkingSteadinessEvent",
+        "heartRate",
+        "restingHeartRate",
+        "walkingHeartRateAverage",
+        "heartRateVariabilitySdnn",
+        "heartRateVariabilityRmssd",
+        "heartRateRecovery",
+        "oxygenSaturation",
+        "respiratoryRate",
+        "bodyTemperature",
+        "bloodPressure",
+        "bloodGlucose",
+        "atrialFibrillationBurden",
+        "peripheralPerfusionIndex",
+        "highHeartRateEvent",
+        "lowHeartRateEvent",
+        "irregularHeartRhythmEvent",
+        "hypertensionEvent",
+        "sleepApneaEvent",
+        "lowCardioFitnessEvent",
+        "breathingDisturbances",
+        "weight",
+        "height",
+        "bodyFat",
+        "leanBodyMass",
+        "boneMass",
+        "bodyWaterMass",
+        "bmi",
+        "waistCircumference",
+        "electrodermalActivity",
+        "forcedVitalCapacity",
+        "forcedExpiratoryVolume1",
+        "peakExpiratoryFlowRate",
+        "inhalerUsage",
+        "bloodAlcoholContent",
+        "numberOfAlcoholicBeverages",
+        "numberOfTimesFallen",
+        "uvExposure",
+        "timeInDaylight",
+        "environmentalAudioExposure",
+        "headphoneAudioExposure",
+        "environmentalSoundReduction",
+        "underwaterDepth",
+        "waterTemperature",
+        "insulinDelivery",
+        "environmentalAudioExposureEvent",
+        "headphoneAudioExposureEvent",
+        "nikeFuel"
     ]
 
     static let units: [String: RegistryUnit] = [
@@ -201,7 +299,13 @@ enum Registry {
         "W": RegistryUnit("W"),
         "mL/(kg·min)": RegistryUnit("mL/min·kg"),
         "L": RegistryUnit("L"),
-        "mL": RegistryUnit("mL")
+        "mL": RegistryUnit("mL"),
+        "kcal/(kg·h)": RegistryUnit("kcal/hr·kg"),
+        "appleEffortScore": RegistryUnit("appleEffortScore"),
+        "mcS": RegistryUnit("mcS"),
+        "L/min": RegistryUnit("L/min"),
+        "IU": RegistryUnit("IU"),
+        "dBASPL": RegistryUnit("dBASPL")
     ]
 
     static let valueSets: [String: RegistryValueSet] = [
@@ -236,7 +340,20 @@ enum Registry {
         ]),
         "severity": RegistryValueSet([("unspecified", 0), ("notPresent", 1), ("mild", 2), ("moderate", 3), ("severe", 4)]),
         "presence": RegistryValueSet([("present", 0), ("notPresent", 1)]),
-        "appetiteChanges": RegistryValueSet([("unspecified", 0), ("noChange", 1), ("decreased", 2), ("increased", 3)])
+        "appetiteChanges": RegistryValueSet([("unspecified", 0), ("noChange", 1), ("decreased", 2), ("increased", 3)]),
+        "appleStandHour": RegistryValueSet([("stood", 0), ("idle", 1)]),
+        "walkingSteadinessEvent": RegistryValueSet([("initialLow", 1), ("initialVeryLow", 2), ("repeatLow", 3), ("repeatVeryLow", 4)]),
+        "lowCardioFitnessEvent": RegistryValueSet([("lowFitness", 1)]),
+        "environmentalAudioExposureEvent": RegistryValueSet([("momentaryLimit", 1)]),
+        "headphoneAudioExposureEvent": RegistryValueSet([("sevenDayLimit", 1)]),
+        "vo2MaxTestType": RegistryValueSet([
+            ("maxExercise", 1),
+            ("predictionSubMaxExercise", 2),
+            ("predictionNonExercise", 3),
+            ("predictionStepTest", 4)
+        ]),
+        "relationToMeal": RegistryValueSet([("beforeMeal", 1), ("afterMeal", 2)]),
+        "insulinDeliveryReason": RegistryValueSet([("basal", 1), ("bolus", 2)])
     ]
 
     static let entries: [RegistryEntry] = [
@@ -400,7 +517,871 @@ enum Registry {
         RegistryEntry("nightSweats", .category, "HKCategoryTypeIdentifierNightSweats", minOS: "14.0", valueSet: "severity"),
         RegistryEntry("pelvicPain", .category, "HKCategoryTypeIdentifierPelvicPain", minOS: "13.6", valueSet: "severity"),
         RegistryEntry("sleepChanges", .category, "HKCategoryTypeIdentifierSleepChanges", minOS: "13.6", valueSet: "presence"),
-        RegistryEntry("vaginalDryness", .category, "HKCategoryTypeIdentifierVaginalDryness", minOS: "14.0", valueSet: "severity")
+        RegistryEntry("vaginalDryness", .category, "HKCategoryTypeIdentifierVaginalDryness", minOS: "14.0", valueSet: "severity"),
+        RegistryEntry(
+            "steps",
+            .quantity,
+            "HKQuantityTypeIdentifierStepCount",
+            minOS: "8.0",
+            unit: "count",
+            units: ["count"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "distance",
+            .quantity,
+            "HKQuantityTypeIdentifierDistanceWalkingRunning",
+            minOS: "8.0",
+            unit: "m",
+            units: ["m", "km", "mi", "ft"],
+            aggregation: .cumulative,
+            members: ["distanceWalkingRunning", "distanceCycling", "distanceSwimming", "distanceWheelchair", "distanceDownhillSnowSports", "distanceCrossCountrySkiing", "distancePaddleSports", "distanceRowing", "distanceSkatingSports"],
+            writeTo: "distanceWalkingRunning"
+        ),
+        RegistryEntry(
+            "distanceWalkingRunning",
+            .quantity,
+            "HKQuantityTypeIdentifierDistanceWalkingRunning",
+            minOS: "8.0",
+            unit: "m",
+            units: ["m", "km", "mi", "ft"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "distanceCycling",
+            .quantity,
+            "HKQuantityTypeIdentifierDistanceCycling",
+            minOS: "8.0",
+            unit: "m",
+            units: ["m", "km", "mi", "ft"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "distanceSwimming",
+            .quantity,
+            "HKQuantityTypeIdentifierDistanceSwimming",
+            minOS: "10.0",
+            unit: "m",
+            units: ["m", "km", "mi", "ft"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "distanceWheelchair",
+            .quantity,
+            "HKQuantityTypeIdentifierDistanceWheelchair",
+            minOS: "10.0",
+            unit: "m",
+            units: ["m", "km", "mi", "ft"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "distanceDownhillSnowSports",
+            .quantity,
+            "HKQuantityTypeIdentifierDistanceDownhillSnowSports",
+            minOS: "11.2",
+            unit: "m",
+            units: ["m", "km", "mi", "ft"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "distanceCrossCountrySkiing",
+            .quantity,
+            "HKQuantityTypeIdentifierDistanceCrossCountrySkiing",
+            minOS: "18.0",
+            isAvailable: { if #available(iOS 18.0, *) { return true }; return false },
+            unit: "m",
+            units: ["m", "km", "mi", "ft"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "distancePaddleSports",
+            .quantity,
+            "HKQuantityTypeIdentifierDistancePaddleSports",
+            minOS: "18.0",
+            isAvailable: { if #available(iOS 18.0, *) { return true }; return false },
+            unit: "m",
+            units: ["m", "km", "mi", "ft"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "distanceRowing",
+            .quantity,
+            "HKQuantityTypeIdentifierDistanceRowing",
+            minOS: "18.0",
+            isAvailable: { if #available(iOS 18.0, *) { return true }; return false },
+            unit: "m",
+            units: ["m", "km", "mi", "ft"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "distanceSkatingSports",
+            .quantity,
+            "HKQuantityTypeIdentifierDistanceSkatingSports",
+            minOS: "18.0",
+            isAvailable: { if #available(iOS 18.0, *) { return true }; return false },
+            unit: "m",
+            units: ["m", "km", "mi", "ft"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "activeEnergy",
+            .quantity,
+            "HKQuantityTypeIdentifierActiveEnergyBurned",
+            minOS: "8.0",
+            unit: "kcal",
+            units: ["kcal", "kJ"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "basalEnergy",
+            .quantity,
+            "HKQuantityTypeIdentifierBasalEnergyBurned",
+            minOS: "8.0",
+            unit: "kcal",
+            units: ["kcal", "kJ"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "totalEnergy",
+            .quantity,
+            "HKQuantityTypeIdentifierActiveEnergyBurned",
+            minOS: "8.0",
+            writable: false,
+            unit: "kcal",
+            units: ["kcal", "kJ"],
+            aggregation: .cumulative,
+            members: ["activeEnergy", "basalEnergy"],
+            aggregateOnly: true
+        ),
+        RegistryEntry(
+            "floorsClimbed",
+            .quantity,
+            "HKQuantityTypeIdentifierFlightsClimbed",
+            minOS: "8.0",
+            unit: "count",
+            units: ["count"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "wheelchairPushes",
+            .quantity,
+            "HKQuantityTypeIdentifierPushCount",
+            minOS: "10.0",
+            unit: "count",
+            units: ["count"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "speed",
+            .quantity,
+            "HKQuantityTypeIdentifierWalkingSpeed",
+            minOS: "14.0",
+            unit: "m/s",
+            units: ["m/s", "km/h", "mph"],
+            aggregation: .discrete,
+            members: ["walkingSpeed", "runningSpeed", "cyclingSpeed", "crossCountrySkiingSpeed", "paddleSportsSpeed", "rowingSpeed"],
+            writeTo: "walkingSpeed"
+        ),
+        RegistryEntry(
+            "walkingSpeed",
+            .quantity,
+            "HKQuantityTypeIdentifierWalkingSpeed",
+            minOS: "14.0",
+            unit: "m/s",
+            units: ["m/s", "km/h", "mph"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "runningSpeed",
+            .quantity,
+            "HKQuantityTypeIdentifierRunningSpeed",
+            minOS: "16.0",
+            isAvailable: { if #available(iOS 16.0, *) { return true }; return false },
+            unit: "m/s",
+            units: ["m/s", "km/h", "mph"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "cyclingSpeed",
+            .quantity,
+            "HKQuantityTypeIdentifierCyclingSpeed",
+            minOS: "17.0",
+            isAvailable: { if #available(iOS 17.0, *) { return true }; return false },
+            unit: "m/s",
+            units: ["m/s", "km/h", "mph"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "crossCountrySkiingSpeed",
+            .quantity,
+            "HKQuantityTypeIdentifierCrossCountrySkiingSpeed",
+            minOS: "18.0",
+            isAvailable: { if #available(iOS 18.0, *) { return true }; return false },
+            unit: "m/s",
+            units: ["m/s", "km/h", "mph"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "paddleSportsSpeed",
+            .quantity,
+            "HKQuantityTypeIdentifierPaddleSportsSpeed",
+            minOS: "18.0",
+            isAvailable: { if #available(iOS 18.0, *) { return true }; return false },
+            unit: "m/s",
+            units: ["m/s", "km/h", "mph"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "rowingSpeed",
+            .quantity,
+            "HKQuantityTypeIdentifierRowingSpeed",
+            minOS: "18.0",
+            isAvailable: { if #available(iOS 18.0, *) { return true }; return false },
+            unit: "m/s",
+            units: ["m/s", "km/h", "mph"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "power",
+            .quantity,
+            "HKQuantityTypeIdentifierRunningPower",
+            minOS: "16.0",
+            isAvailable: { if #available(iOS 16.0, *) { return true }; return false },
+            unit: "W",
+            units: ["W"],
+            aggregation: .discrete,
+            members: ["runningPower", "cyclingPower"],
+            writeTo: "runningPower"
+        ),
+        RegistryEntry(
+            "runningPower",
+            .quantity,
+            "HKQuantityTypeIdentifierRunningPower",
+            minOS: "16.0",
+            isAvailable: { if #available(iOS 16.0, *) { return true }; return false },
+            unit: "W",
+            units: ["W"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "cyclingPower",
+            .quantity,
+            "HKQuantityTypeIdentifierCyclingPower",
+            minOS: "17.0",
+            isAvailable: { if #available(iOS 17.0, *) { return true }; return false },
+            unit: "W",
+            units: ["W"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "cyclingFunctionalThresholdPower",
+            .quantity,
+            "HKQuantityTypeIdentifierCyclingFunctionalThresholdPower",
+            minOS: "17.0",
+            isAvailable: { if #available(iOS 17.0, *) { return true }; return false },
+            unit: "W",
+            units: ["W"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "cyclingCadence",
+            .quantity,
+            "HKQuantityTypeIdentifierCyclingCadence",
+            minOS: "17.0",
+            isAvailable: { if #available(iOS 17.0, *) { return true }; return false },
+            unit: "count/min",
+            units: ["count/min"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "vo2Max",
+            .quantity,
+            "HKQuantityTypeIdentifierVO2Max",
+            minOS: "11.0",
+            unit: "mL/(kg·min)",
+            units: ["mL/(kg·min)"],
+            aggregation: .discrete,
+            fields: [RegistryMetadataField("testType", key: "HKVO2MaxTestType", type: .enumeration, valueSet: "vo2MaxTestType")]
+        ),
+        RegistryEntry(
+            "exerciseTime",
+            .quantity,
+            "HKQuantityTypeIdentifierAppleExerciseTime",
+            minOS: "9.3",
+            writable: false,
+            unit: "min",
+            units: ["min", "s", "h"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "standTime",
+            .quantity,
+            "HKQuantityTypeIdentifierAppleStandTime",
+            minOS: "13.0",
+            writable: false,
+            unit: "min",
+            units: ["min", "s", "h"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "moveTime",
+            .quantity,
+            "HKQuantityTypeIdentifierAppleMoveTime",
+            minOS: "14.5",
+            writable: false,
+            unit: "min",
+            units: ["min", "s", "h"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "physicalEffort",
+            .quantity,
+            "HKQuantityTypeIdentifierPhysicalEffort",
+            minOS: "17.0",
+            isAvailable: { if #available(iOS 17.0, *) { return true }; return false },
+            unit: "kcal/(kg·h)",
+            units: ["kcal/(kg·h)"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "workoutEffortScore",
+            .quantity,
+            "HKQuantityTypeIdentifierWorkoutEffortScore",
+            minOS: "18.0",
+            isAvailable: { if #available(iOS 18.0, *) { return true }; return false },
+            unit: "appleEffortScore",
+            units: ["appleEffortScore"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "estimatedWorkoutEffortScore",
+            .quantity,
+            "HKQuantityTypeIdentifierEstimatedWorkoutEffortScore",
+            minOS: "18.0",
+            isAvailable: { if #available(iOS 18.0, *) { return true }; return false },
+            unit: "appleEffortScore",
+            units: ["appleEffortScore"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "walkingStepLength",
+            .quantity,
+            "HKQuantityTypeIdentifierWalkingStepLength",
+            minOS: "14.0",
+            unit: "m",
+            units: ["m", "cm", "ft", "in"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "walkingAsymmetry",
+            .quantity,
+            "HKQuantityTypeIdentifierWalkingAsymmetryPercentage",
+            minOS: "14.0",
+            writable: false,
+            unit: "%",
+            units: ["%"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "walkingDoubleSupport",
+            .quantity,
+            "HKQuantityTypeIdentifierWalkingDoubleSupportPercentage",
+            minOS: "14.0",
+            unit: "%",
+            units: ["%"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "stairAscentSpeed",
+            .quantity,
+            "HKQuantityTypeIdentifierStairAscentSpeed",
+            minOS: "14.0",
+            unit: "m/s",
+            units: ["m/s", "km/h", "mph"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "stairDescentSpeed",
+            .quantity,
+            "HKQuantityTypeIdentifierStairDescentSpeed",
+            minOS: "14.0",
+            unit: "m/s",
+            units: ["m/s", "km/h", "mph"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "sixMinuteWalkTestDistance",
+            .quantity,
+            "HKQuantityTypeIdentifierSixMinuteWalkTestDistance",
+            minOS: "14.0",
+            unit: "m",
+            units: ["m", "km", "mi", "ft"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "runningStrideLength",
+            .quantity,
+            "HKQuantityTypeIdentifierRunningStrideLength",
+            minOS: "16.0",
+            isAvailable: { if #available(iOS 16.0, *) { return true }; return false },
+            unit: "m",
+            units: ["m", "cm", "ft", "in"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "runningVerticalOscillation",
+            .quantity,
+            "HKQuantityTypeIdentifierRunningVerticalOscillation",
+            minOS: "16.0",
+            isAvailable: { if #available(iOS 16.0, *) { return true }; return false },
+            unit: "cm",
+            units: ["cm", "m", "in"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "runningGroundContactTime",
+            .quantity,
+            "HKQuantityTypeIdentifierRunningGroundContactTime",
+            minOS: "16.0",
+            isAvailable: { if #available(iOS 16.0, *) { return true }; return false },
+            unit: "ms",
+            units: ["ms"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "walkingSteadiness",
+            .quantity,
+            "HKQuantityTypeIdentifierAppleWalkingSteadiness",
+            minOS: "15.0",
+            writable: false,
+            unit: "%",
+            units: ["%"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "swimmingStrokeCount",
+            .quantity,
+            "HKQuantityTypeIdentifierSwimmingStrokeCount",
+            minOS: "10.0",
+            unit: "count",
+            units: ["count"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "standHour",
+            .category,
+            "HKCategoryTypeIdentifierAppleStandHour",
+            minOS: "9.0",
+            writable: false,
+            valueSet: "appleStandHour"
+        ),
+        RegistryEntry(
+            "walkingSteadinessEvent",
+            .category,
+            "HKCategoryTypeIdentifierAppleWalkingSteadinessEvent",
+            minOS: "15.0",
+            writable: false,
+            valueSet: "walkingSteadinessEvent"
+        ),
+        RegistryEntry(
+            "heartRate",
+            .quantity,
+            "HKQuantityTypeIdentifierHeartRate",
+            minOS: "8.0",
+            unit: "count/min",
+            units: ["count/min"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "restingHeartRate",
+            .quantity,
+            "HKQuantityTypeIdentifierRestingHeartRate",
+            minOS: "11.0",
+            unit: "count/min",
+            units: ["count/min"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "walkingHeartRateAverage",
+            .quantity,
+            "HKQuantityTypeIdentifierWalkingHeartRateAverage",
+            minOS: "11.0",
+            writable: false,
+            unit: "count/min",
+            units: ["count/min"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "heartRateVariabilitySdnn",
+            .quantity,
+            "HKQuantityTypeIdentifierHeartRateVariabilitySDNN",
+            minOS: "11.0",
+            unit: "ms",
+            units: ["ms"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "heartRateVariabilityRmssd",
+            .quantity,
+            "HKQuantityTypeIdentifierHeartRateVariabilityRMSSD",
+            minOS: "27.0",
+            isAvailable: { if #available(iOS 27.0, *) { return true }; return false },
+            unit: "ms",
+            units: ["ms"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "heartRateRecovery",
+            .quantity,
+            "HKQuantityTypeIdentifierHeartRateRecoveryOneMinute",
+            minOS: "16.0",
+            isAvailable: { if #available(iOS 16.0, *) { return true }; return false },
+            unit: "count/min",
+            units: ["count/min"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "oxygenSaturation",
+            .quantity,
+            "HKQuantityTypeIdentifierOxygenSaturation",
+            minOS: "8.0",
+            unit: "%",
+            units: ["%"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "respiratoryRate",
+            .quantity,
+            "HKQuantityTypeIdentifierRespiratoryRate",
+            minOS: "8.0",
+            unit: "count/min",
+            units: ["count/min"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "bodyTemperature",
+            .quantity,
+            "HKQuantityTypeIdentifierBodyTemperature",
+            minOS: "8.0",
+            unit: "degC",
+            units: ["degC", "degF"],
+            aggregation: .discrete,
+            fields: [RegistryMetadataField(
+                    "measurementLocation",
+                    key: "HKBodyTemperatureSensorLocation",
+                    type: .enumeration,
+                    valueSet: "bodyTemperatureLocation"
+                )]
+        ),
+        RegistryEntry("bloodPressure", .special, "HKCorrelationTypeIdentifierBloodPressure", minOS: "8.0", unit: "mmHg", units: ["mmHg"]),
+        RegistryEntry(
+            "bloodGlucose",
+            .quantity,
+            "HKQuantityTypeIdentifierBloodGlucose",
+            minOS: "8.0",
+            unit: "mg/dL",
+            units: ["mg/dL", "mmol/L"],
+            aggregation: .discrete,
+            fields: [RegistryMetadataField("relationToMeal", key: "HKBloodGlucoseMealTime", type: .enumeration, valueSet: "relationToMeal")]
+        ),
+        RegistryEntry(
+            "atrialFibrillationBurden",
+            .quantity,
+            "HKQuantityTypeIdentifierAtrialFibrillationBurden",
+            minOS: "16.0",
+            isAvailable: { if #available(iOS 16.0, *) { return true }; return false },
+            writable: false,
+            unit: "%",
+            units: ["%"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "peripheralPerfusionIndex",
+            .quantity,
+            "HKQuantityTypeIdentifierPeripheralPerfusionIndex",
+            minOS: "8.0",
+            unit: "%",
+            units: ["%"],
+            aggregation: .discrete
+        ),
+        RegistryEntry("highHeartRateEvent", .event, "HKCategoryTypeIdentifierHighHeartRateEvent", minOS: "12.2", writable: false),
+        RegistryEntry("lowHeartRateEvent", .event, "HKCategoryTypeIdentifierLowHeartRateEvent", minOS: "12.2", writable: false),
+        RegistryEntry(
+            "irregularHeartRhythmEvent",
+            .event,
+            "HKCategoryTypeIdentifierIrregularHeartRhythmEvent",
+            minOS: "12.2",
+            writable: false
+        ),
+        RegistryEntry(
+            "hypertensionEvent",
+            .event,
+            "HKCategoryTypeIdentifierHypertensionEvent",
+            minOS: "26.2",
+            isAvailable: { if #available(iOS 26.2, *) { return true }; return false },
+            writable: false
+        ),
+        RegistryEntry(
+            "sleepApneaEvent",
+            .event,
+            "HKCategoryTypeIdentifierSleepApneaEvent",
+            minOS: "18.0",
+            isAvailable: { if #available(iOS 18.0, *) { return true }; return false },
+            writable: false
+        ),
+        RegistryEntry(
+            "lowCardioFitnessEvent",
+            .category,
+            "HKCategoryTypeIdentifierLowCardioFitnessEvent",
+            minOS: "14.3",
+            writable: false,
+            valueSet: "lowCardioFitnessEvent"
+        ),
+        RegistryEntry(
+            "breathingDisturbances",
+            .quantity,
+            "HKQuantityTypeIdentifierAppleSleepingBreathingDisturbances",
+            minOS: "18.0",
+            isAvailable: { if #available(iOS 18.0, *) { return true }; return false },
+            writable: false,
+            unit: "count",
+            units: ["count"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "weight",
+            .quantity,
+            "HKQuantityTypeIdentifierBodyMass",
+            minOS: "8.0",
+            unit: "kg",
+            units: ["kg", "g", "lb"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "height",
+            .quantity,
+            "HKQuantityTypeIdentifierHeight",
+            minOS: "8.0",
+            unit: "m",
+            units: ["m", "cm", "ft", "in"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "bodyFat",
+            .quantity,
+            "HKQuantityTypeIdentifierBodyFatPercentage",
+            minOS: "8.0",
+            unit: "%",
+            units: ["%"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "leanBodyMass",
+            .quantity,
+            "HKQuantityTypeIdentifierLeanBodyMass",
+            minOS: "8.0",
+            unit: "kg",
+            units: ["kg", "g", "lb"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "bmi",
+            .quantity,
+            "HKQuantityTypeIdentifierBodyMassIndex",
+            minOS: "8.0",
+            unit: "count",
+            units: ["count"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "waistCircumference",
+            .quantity,
+            "HKQuantityTypeIdentifierWaistCircumference",
+            minOS: "11.0",
+            unit: "m",
+            units: ["m", "cm", "in"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "electrodermalActivity",
+            .quantity,
+            "HKQuantityTypeIdentifierElectrodermalActivity",
+            minOS: "8.0",
+            unit: "mcS",
+            units: ["mcS"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "forcedVitalCapacity",
+            .quantity,
+            "HKQuantityTypeIdentifierForcedVitalCapacity",
+            minOS: "8.0",
+            unit: "L",
+            units: ["L", "mL"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "forcedExpiratoryVolume1",
+            .quantity,
+            "HKQuantityTypeIdentifierForcedExpiratoryVolume1",
+            minOS: "8.0",
+            unit: "L",
+            units: ["L", "mL"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "peakExpiratoryFlowRate",
+            .quantity,
+            "HKQuantityTypeIdentifierPeakExpiratoryFlowRate",
+            minOS: "8.0",
+            unit: "L/min",
+            units: ["L/min"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "inhalerUsage",
+            .quantity,
+            "HKQuantityTypeIdentifierInhalerUsage",
+            minOS: "8.0",
+            unit: "count",
+            units: ["count"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "bloodAlcoholContent",
+            .quantity,
+            "HKQuantityTypeIdentifierBloodAlcoholContent",
+            minOS: "8.0",
+            unit: "%",
+            units: ["%"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "numberOfAlcoholicBeverages",
+            .quantity,
+            "HKQuantityTypeIdentifierNumberOfAlcoholicBeverages",
+            minOS: "15.0",
+            unit: "count",
+            units: ["count"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "numberOfTimesFallen",
+            .quantity,
+            "HKQuantityTypeIdentifierNumberOfTimesFallen",
+            minOS: "8.0",
+            unit: "count",
+            units: ["count"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "uvExposure",
+            .quantity,
+            "HKQuantityTypeIdentifierUVExposure",
+            minOS: "9.0",
+            unit: "count",
+            units: ["count"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "timeInDaylight",
+            .quantity,
+            "HKQuantityTypeIdentifierTimeInDaylight",
+            minOS: "17.0",
+            isAvailable: { if #available(iOS 17.0, *) { return true }; return false },
+            unit: "min",
+            units: ["min", "s", "h"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "environmentalAudioExposure",
+            .quantity,
+            "HKQuantityTypeIdentifierEnvironmentalAudioExposure",
+            minOS: "13.0",
+            unit: "dBASPL",
+            units: ["dBASPL"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "headphoneAudioExposure",
+            .quantity,
+            "HKQuantityTypeIdentifierHeadphoneAudioExposure",
+            minOS: "13.0",
+            unit: "dBASPL",
+            units: ["dBASPL"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "environmentalSoundReduction",
+            .quantity,
+            "HKQuantityTypeIdentifierEnvironmentalSoundReduction",
+            minOS: "16.0",
+            isAvailable: { if #available(iOS 16.0, *) { return true }; return false },
+            unit: "dBASPL",
+            units: ["dBASPL"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "underwaterDepth",
+            .quantity,
+            "HKQuantityTypeIdentifierUnderwaterDepth",
+            minOS: "16.0",
+            isAvailable: { if #available(iOS 16.0, *) { return true }; return false },
+            unit: "m",
+            units: ["m", "ft"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "waterTemperature",
+            .quantity,
+            "HKQuantityTypeIdentifierWaterTemperature",
+            minOS: "16.0",
+            isAvailable: { if #available(iOS 16.0, *) { return true }; return false },
+            unit: "degC",
+            units: ["degC", "degF"],
+            aggregation: .discrete
+        ),
+        RegistryEntry(
+            "insulinDelivery",
+            .quantity,
+            "HKQuantityTypeIdentifierInsulinDelivery",
+            minOS: "11.0",
+            unit: "IU",
+            units: ["IU"],
+            aggregation: .cumulative,
+            fields: [RegistryMetadataField(
+                    "reason",
+                    key: "HKInsulinDeliveryReason",
+                    type: .enumeration,
+                    valueSet: "insulinDeliveryReason",
+                    requiredOnWrite: true
+                )]
+        ),
+        RegistryEntry(
+            "environmentalAudioExposureEvent",
+            .category,
+            "HKCategoryTypeIdentifierAudioExposureEvent",
+            minOS: "14.0",
+            valueSet: "environmentalAudioExposureEvent"
+        ),
+        RegistryEntry(
+            "headphoneAudioExposureEvent",
+            .category,
+            "HKCategoryTypeIdentifierHeadphoneAudioExposureEvent",
+            minOS: "14.2",
+            writable: false,
+            valueSet: "headphoneAudioExposureEvent"
+        ),
+        RegistryEntry(
+            "nikeFuel",
+            .quantity,
+            "HKQuantityTypeIdentifierNikeFuel",
+            minOS: "8.0",
+            writable: false,
+            unit: "count",
+            units: ["count"],
+            aggregation: .cumulative
+        )
     ]
 
     static let byId: [String: RegistryEntry] = Dictionary(uniqueKeysWithValues: entries.map { ($0.typeId, $0) })

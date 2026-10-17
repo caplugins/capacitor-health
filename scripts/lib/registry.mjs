@@ -51,6 +51,9 @@ export function semanticErrors(registry) {
         errors.push(`valueSets.${name}.${platform}.map maps nothing; drop the block instead`);
       }
     }
+    for (const value of Object.keys(set.ios?.valueMinOS ?? {})) {
+      if (!set.values.includes(value)) errors.push(`valueSets.${name}.ios.valueMinOS has unknown value ${value}`);
+    }
     for (const value of Object.keys(set.ios?.cases ?? {})) {
       if (!set.values.includes(value)) errors.push(`valueSets.${name}.ios.cases has unknown value ${value}`);
     }
@@ -117,7 +120,7 @@ export function semanticErrors(registry) {
       }
       if (!readPermission.includes('.READ_')) errors.push(`${at}.android.readPermission is not a READ_ permission`);
       if (!writePermission.includes('.WRITE_')) errors.push(`${at}.android.writePermission is not a WRITE_ permission`);
-      if ((type.kind === 'category' || type.kind === 'quantity') && !valueProperty) {
+      if ((type.kind === 'category' || type.kind === 'quantity') && !valueProperty && !type.android.aggregateOnly) {
         errors.push(`${at}.android.valueProperty is required for ${type.kind} types`);
       }
       if (type.kind === 'event' && valueProperty) errors.push(`${at}.android.valueProperty makes no sense for event types`);
