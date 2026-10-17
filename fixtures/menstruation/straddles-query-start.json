@@ -1,0 +1,81 @@
+{
+  "description": "A period that starts before the queried range is found whole through the 15-day look-back.",
+  "defaultTimeZone": "Asia/Kolkata",
+  "query": {
+    "startDate": "2026-10-03T00:00:00.000+05:30",
+    "endDate": "2026-10-20T00:00:00.000+05:30"
+  },
+  "samples": [
+    {
+      "id": "d0",
+      "type": "menstrualFlow",
+      "startDate": "2026-09-29T12:00:00.000+05:30",
+      "endDate": "2026-09-29T12:00:00.000+05:30",
+      "value": "unspecified",
+      "source": "com.example.tracker"
+    },
+    {
+      "id": "d1",
+      "type": "menstrualFlow",
+      "startDate": "2026-09-30T12:00:00.000+05:30",
+      "endDate": "2026-09-30T12:00:00.000+05:30",
+      "value": "unspecified",
+      "source": "com.example.tracker"
+    },
+    {
+      "id": "d2",
+      "type": "menstrualFlow",
+      "startDate": "2026-10-01T12:00:00.000+05:30",
+      "endDate": "2026-10-01T12:00:00.000+05:30",
+      "value": "unspecified",
+      "source": "com.example.tracker"
+    },
+    {
+      "id": "d3",
+      "type": "menstrualFlow",
+      "startDate": "2026-10-02T12:00:00.000+05:30",
+      "endDate": "2026-10-02T12:00:00.000+05:30",
+      "value": "unspecified",
+      "source": "com.example.tracker"
+    },
+    {
+      "id": "d4",
+      "type": "menstrualFlow",
+      "startDate": "2026-10-03T12:00:00.000+05:30",
+      "endDate": "2026-10-03T12:00:00.000+05:30",
+      "value": "unspecified",
+      "source": "com.example.tracker"
+    },
+    {
+      "id": "d5",
+      "type": "menstrualFlow",
+      "startDate": "2026-10-04T12:00:00.000+05:30",
+      "endDate": "2026-10-04T12:00:00.000+05:30",
+      "value": "unspecified",
+      "source": "com.example.tracker"
+    },
+    {
+      "id": "x",
+      "type": "menstrualFlow",
+      "startDate": "2026-09-10T12:00:00.000+05:30",
+      "endDate": "2026-09-10T12:00:00.000+05:30",
+      "value": "unspecified",
+      "source": "com.example.tracker"
+    }
+  ],
+  "expected": [
+    {
+      "firstDay": "2026-09-29",
+      "lastDay": "2026-10-04",
+      "flowSampleIds": [
+        "d0",
+        "d1",
+        "d2",
+        "d3",
+        "d4",
+        "d5"
+      ],
+      "source": "com.example.tracker"
+    }
+  ]
+}

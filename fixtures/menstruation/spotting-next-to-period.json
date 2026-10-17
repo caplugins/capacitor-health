@@ -1,0 +1,79 @@
+{
+  "description": "Spotting (intermenstrualBleeding) the day after a period isn't flow and doesn't extend or merge periods.",
+  "defaultTimeZone": "Asia/Kolkata",
+  "query": {
+    "startDate": "2026-09-01T00:00:00.000+05:30",
+    "endDate": "2026-11-30T00:00:00.000+05:30"
+  },
+  "samples": [
+    {
+      "id": "d1",
+      "type": "menstrualFlow",
+      "startDate": "2026-10-01T12:00:00.000+05:30",
+      "endDate": "2026-10-01T12:00:00.000+05:30",
+      "value": "medium",
+      "source": "com.example.tracker",
+      "isCycleStart": true
+    },
+    {
+      "id": "d2",
+      "type": "menstrualFlow",
+      "startDate": "2026-10-02T12:00:00.000+05:30",
+      "endDate": "2026-10-02T12:00:00.000+05:30",
+      "value": "medium",
+      "source": "com.example.tracker",
+      "isCycleStart": false
+    },
+    {
+      "id": "d3",
+      "type": "menstrualFlow",
+      "startDate": "2026-10-03T12:00:00.000+05:30",
+      "endDate": "2026-10-03T12:00:00.000+05:30",
+      "value": "medium",
+      "source": "com.example.tracker",
+      "isCycleStart": false
+    },
+    {
+      "id": "s4",
+      "type": "intermenstrualBleeding",
+      "startDate": "2026-10-04T12:00:00.000+05:30",
+      "endDate": "2026-10-04T12:00:00.000+05:30",
+      "source": "com.example.tracker"
+    },
+    {
+      "id": "s6",
+      "type": "intermenstrualBleeding",
+      "startDate": "2026-10-06T12:00:00.000+05:30",
+      "endDate": "2026-10-06T12:00:00.000+05:30",
+      "source": "com.example.tracker"
+    },
+    {
+      "id": "d7",
+      "type": "menstrualFlow",
+      "startDate": "2026-10-07T12:00:00.000+05:30",
+      "endDate": "2026-10-07T12:00:00.000+05:30",
+      "value": "light",
+      "source": "com.example.tracker"
+    }
+  ],
+  "expected": [
+    {
+      "firstDay": "2026-10-01",
+      "lastDay": "2026-10-03",
+      "flowSampleIds": [
+        "d1",
+        "d2",
+        "d3"
+      ],
+      "source": "com.example.tracker"
+    },
+    {
+      "firstDay": "2026-10-07",
+      "lastDay": "2026-10-07",
+      "flowSampleIds": [
+        "d7"
+      ],
+      "source": "com.example.tracker"
+    }
+  ]
+}

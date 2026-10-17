@@ -26,6 +26,7 @@ import org.json.JSONObject
 class Samples(
     private val client: HealthConnectClient,
     private val types: HealthTypes,
+    private val ownPackage: String,
     private val encodeBase64: (ByteArray) -> String = ::base64,
     private val decodeBase64: (String) -> ByteArray = ::unbase64,
 ) {
@@ -107,11 +108,11 @@ class Samples(
         }.toMap()
     }
 
-    private suspend fun <T : Record> readAll(type: KClass<T>, from: Instant, to: Instant): List<T> {
+    private suspend fun <T : Record> readAll(type: KClass<T>, from: Instant, to: Instant, origins: Set<DataOrigin> = emptySet()): List<T> {
         val all = mutableListOf<T>()
         var token: String? = null
         do {
-            val response = client.readRecords(ReadRecordsRequest(type, TimeRangeFilter.between(from, to), pageSize = MAX_PAGE_SIZE, pageToken = token))
+            val response = client.readRecords(ReadRecordsRequest(type, TimeRangeFilter.between(from, to), origins, pageSize = MAX_PAGE_SIZE, pageToken = token))
             all += response.records
             token = response.pageToken?.takeIf { it.isNotEmpty() }
         } while (token != null)
@@ -140,15 +141,51 @@ class Samples(
         if (samples.length() == 0) throw HealthException.invalidArgument("samples", "must be a non-empty array")
         val records = mutableListOf<Record>()
         val primaryIndex = IntArray(samples.length())
+        val periods = mutableListOf<RecordCodec.Decoded>()
         for (i in 0 until samples.length()) {
             val fields = Fields(samples.getJSONObject(i), "samples[$i]")
             val decoded = RecordCodec.decode(fields, types.resolveWritable(fields.string("type")))
             primaryIndex[i] = records.size
             records += decoded.primary
             records += decoded.extras
+            if (decoded.primary is MenstruationPeriodRecord && decoded.primary.metadata.clientRecordId != null) periods += decoded
         }
+        if (periods.isNotEmpty()) deleteReplacedDayFlows(periods)
         val ids = records.chunked(WRITE_CHUNK).flatMap { client.insertRecords(it).recordIdsList }
         return JSObject().put("ids", JSArray(primaryIndex.map { ids[it] }))
+    }
+
+    // endregion
+
+    // region Period day flows
+
+    /**
+     * A period written with `flow` also writes flow records with clientIds `<clientId>:<yyyy-mm-dd>`; they
+     * belong to the period, as the per-day samples do on iOS. Health Connect has no prefix query, so the
+     * plugin finds this app's periods (few per year) and works out their day clientIds.
+     */
+    private suspend fun ownPeriods(): List<MenstruationPeriodRecord> =
+        readAll(MenstruationPeriodRecord::class, Instant.EPOCH, Instant.now().plus(Duration.ofDays(366)), setOf(DataOrigin(ownPackage)))
+
+    private fun dayFlowClientIds(period: MenstruationPeriodRecord): List<String> {
+        val clientId = period.metadata.clientRecordId ?: return emptyList()
+        val first = PeriodDays.firstDay(period)
+        val last = PeriodDays.lastDay(period)
+        return generateSequence(first) { it.plusDays(1) }.takeWhile { !it.isAfter(last) }.map { "$clientId:$it" }.toList()
+    }
+
+    /** Before re-writing a period, deletes its old day flows the new write doesn't replace. */
+    private suspend fun deleteReplacedDayFlows(periods: List<RecordCodec.Decoded>) {
+        val existing = ownPeriods().associateBy { it.metadata.clientRecordId }
+        val stale = periods.flatMap { decoded ->
+            val period = decoded.primary as MenstruationPeriodRecord
+            val old = existing[period.metadata.clientRecordId] ?: return@flatMap emptyList()
+            // A lower version is ignored by Health Connect, so its flows must stay too.
+            if (period.metadata.clientRecordVersion < old.metadata.clientRecordVersion) return@flatMap emptyList()
+            val kept = decoded.extras.mapNotNull { it.metadata.clientRecordId }.toSet()
+            dayFlowClientIds(old).filterNot { it in kept }
+        }
+        if (stale.isNotEmpty()) client.deleteRecords(MenstruationFlowRecord::class, emptyList(), stale)
     }
 
     // endregion
@@ -165,6 +202,19 @@ class Samples(
         val ids = options.optStrings("ids")
         val clientIds = options.optStrings("clientIds")
         val token = runCatching { client.getChangesToken(ChangesTokenRequest(setOf(entry.record))) }.getOrNull()
+        if (entry.record == MenstruationPeriodRecord::class) {
+            val range = if (ids == null && clientIds == null) options.date("startDate").toInstant() to options.date("endDate").toInstant() else null
+            val targets = ownPeriods().filter { period ->
+                when {
+                    ids != null -> period.metadata.id in ids
+                    clientIds != null -> period.metadata.clientRecordId in clientIds
+                    range != null -> period.startTime.isBefore(range.second) && period.endTime.isAfter(range.first)
+                    else -> false
+                }
+            }
+            val flows = targets.flatMap(::dayFlowClientIds)
+            if (flows.isNotEmpty()) client.deleteRecords(MenstruationFlowRecord::class, emptyList(), flows)
+        }
         when {
             ids != null -> client.deleteRecords(entry.record, ids, emptyList())
             clientIds != null -> client.deleteRecords(entry.record, emptyList(), clientIds)

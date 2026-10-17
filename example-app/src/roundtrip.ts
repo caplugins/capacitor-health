@@ -164,3 +164,66 @@ export async function runChangesCheck(): Promise<string[]> {
   }
   return lines;
 }
+
+/** A 5-day period written as one sample reads back as one period; re-writing it shorter drops days. */
+export async function runPeriodCheck(keep = true): Promise<string[]> {
+  const lines: string[] = [];
+  const log = (ok: boolean, step: string) => lines.push(`${ok ? 'PASS' : 'FAIL'} menstruationPeriod: ${step}`);
+  const day = (offset: number) => {
+    const d = new Date();
+    d.setDate(d.getDate() - 25 + offset);
+    d.setHours(9, 0, 0, 0);
+    return d;
+  };
+  const ymd = (d: Date) => localIso(d).slice(0, 10);
+  const clientId = 'example-period';
+  const range = { startDate: localIso(day(-3)), endDate: localIso(day(8)) };
+  try {
+    // Start clean: a kept period from an earlier run has a higher clientVersion and would win.
+    await CapacitorHealth.deleteSamples({ type: 'menstruationPeriod', clientIds: [clientId] });
+    const { ids } = await CapacitorHealth.saveSamples({
+      samples: [
+        {
+          type: 'menstruationPeriod',
+          startDate: localIso(day(0)),
+          endDate: localIso(day(4)),
+          clientId,
+          recordingMethod: 'manual',
+          flow: { [ymd(day(0))]: 'heavy', [ymd(day(1))]: 'heavy', [ymd(day(2))]: 'medium' },
+        },
+      ],
+    });
+    let periods = (await CapacitorHealth.readSamples({ type: 'menstruationPeriod', ...range })).samples;
+    let own = periods.filter((p) => p.clientId === clientId);
+    const first = own[0] as { firstDay?: string; lastDay?: string } | undefined;
+    log(own.length === 1 && own[0].id === ids[0], `write → one period (${own.length}), id ${own[0]?.id === ids[0] ? 'matches' : 'differs'}`);
+    log(first?.firstDay === ymd(day(0)) && first?.lastDay === ymd(day(4)), `days ${first?.firstDay}..${first?.lastDay}`);
+
+    const flows = (await CapacitorHealth.readSamples({ type: 'menstrualFlow', ...range })).samples.filter((s) =>
+      s.clientId?.startsWith(`${clientId}:`),
+    );
+    const heavy = flows.filter((s) => (s as { value?: string }).value === 'heavy').length;
+    log(
+      Capacitor.getPlatform() === 'ios' ? flows.length === 5 && heavy === 2 : flows.length === 3 && heavy === 2,
+      `flow samples ${flows.length}, heavy ${heavy}, day 1 isCycleStart ${String((flows[0] as { isCycleStart?: boolean } | undefined)?.isCycleStart)}`,
+    );
+
+    await CapacitorHealth.saveSamples({
+      samples: [{ type: 'menstruationPeriod', startDate: localIso(day(0)), endDate: localIso(day(2)), clientId, clientVersion: 2 }],
+    });
+    periods = (await CapacitorHealth.readSamples({ type: 'menstruationPeriod', ...range })).samples;
+    own = periods.filter((p) => p.clientId === clientId);
+    const shorter = own[0] as { lastDay?: string } | undefined;
+    log(own.length === 1 && shorter?.lastDay === ymd(day(2)), `re-written shorter → ${shorter?.lastDay}`);
+
+    if (!keep) {
+      const { deleted } = await CapacitorHealth.deleteSamples({ type: 'menstruationPeriod', clientIds: [clientId] });
+      own = (await CapacitorHealth.readSamples({ type: 'menstruationPeriod', ...range })).samples.filter((p) => p.clientId === clientId);
+      log(deleted === 1 && own.length === 0, `delete by clientId (deleted ${deleted})`);
+    }
+  } catch (error) {
+    const { code, message } = error as { code?: string; message?: string };
+    log(false, `threw ${code}: ${message}`);
+  }
+  return lines;
+}

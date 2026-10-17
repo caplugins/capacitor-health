@@ -1,0 +1,55 @@
+{
+  "description": "One blank day inside a period keeps it one period.",
+  "defaultTimeZone": "Asia/Kolkata",
+  "query": {
+    "startDate": "2026-09-01T00:00:00.000+05:30",
+    "endDate": "2026-11-30T00:00:00.000+05:30"
+  },
+  "samples": [
+    {
+      "id": "d1",
+      "type": "menstrualFlow",
+      "startDate": "2026-10-01T12:00:00.000+05:30",
+      "endDate": "2026-10-01T12:00:00.000+05:30",
+      "value": "unspecified",
+      "source": "com.example.tracker"
+    },
+    {
+      "id": "d2",
+      "type": "menstrualFlow",
+      "startDate": "2026-10-02T12:00:00.000+05:30",
+      "endDate": "2026-10-02T12:00:00.000+05:30",
+      "value": "unspecified",
+      "source": "com.example.tracker"
+    },
+    {
+      "id": "d4",
+      "type": "menstrualFlow",
+      "startDate": "2026-10-04T12:00:00.000+05:30",
+      "endDate": "2026-10-04T12:00:00.000+05:30",
+      "value": "unspecified",
+      "source": "com.example.tracker"
+    },
+    {
+      "id": "d5",
+      "type": "menstrualFlow",
+      "startDate": "2026-10-05T12:00:00.000+05:30",
+      "endDate": "2026-10-05T12:00:00.000+05:30",
+      "value": "unspecified",
+      "source": "com.example.tracker"
+    }
+  ],
+  "expected": [
+    {
+      "firstDay": "2026-10-01",
+      "lastDay": "2026-10-05",
+      "flowSampleIds": [
+        "d1",
+        "d2",
+        "d4",
+        "d5"
+      ],
+      "source": "com.example.tracker"
+    }
+  ]
+}

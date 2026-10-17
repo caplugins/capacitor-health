@@ -16,7 +16,7 @@ class ChangesTest {
     private val encode = { b: ByteArray -> Base64.getEncoder().encodeToString(b) }
     private val decode = { s: String -> Base64.getDecoder().decode(s) }
     private val types = HealthTypes { true }
-    private val samples = Samples(client, types, encode, decode)
+    private val samples = Samples(client, types, FakeHealthConnectClient.DEFAULT_PACKAGE_NAME, encode, decode)
     private val changes = Changes(client, types, samples, FakeHealthConnectClient.DEFAULT_PACKAGE_NAME, encode, decode)
 
     private suspend fun call(json: String) = changes.changes(Fields(JSONObject(json)))

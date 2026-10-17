@@ -21,6 +21,7 @@ class SamplesTest {
     private val samples = Samples(
         client,
         HealthTypes { true },
+        FakeHealthConnectClient.DEFAULT_PACKAGE_NAME,
         encodeBase64 = { Base64.getEncoder().encodeToString(it) },
         decodeBase64 = { Base64.getDecoder().decode(it) },
     )
@@ -156,5 +157,28 @@ class SamplesTest {
     fun readsRecordsOtherAppsWrote() = runTest {
         client.insertRecords(listOf(MenstruationFlowRecord(Instant.parse("2026-10-05T10:00:00Z"), ZoneOffset.UTC, Metadata.manualEntry(), MenstruationFlowRecord.FLOW_LIGHT)))
         assertEquals(1, read().getJSONArray("samples").length())
+    }
+
+    private fun period(end: String, version: Int, flow: String) =
+        JSONObject("""{"type":"menstruationPeriod","startDate":"2026-10-02T00:00:00.000+00:00","endDate":"$end","clientId":"p","clientVersion":$version,"flow":$flow}""")
+
+    @Test
+    fun rewritingAPeriodReplacesItsDayFlows() = runTest {
+        save(period("2026-10-04T00:00:00.000+00:00", 1, """{"2026-10-02":"heavy","2026-10-03":"medium","2026-10-04":"light"}"""))
+        assertEquals(3, read().getJSONArray("samples").length())
+        save(period("2026-10-03T00:00:00.000+00:00", 2, """{"2026-10-02":"heavy"}"""))
+        val flows = read().getJSONArray("samples")
+        assertEquals(1, flows.length())
+        assertEquals("p:2026-10-02", flows.getJSONObject(0).getString("clientId"))
+    }
+
+    @Test
+    fun deletingAPeriodDeletesItsDayFlows() = runTest {
+        save(period("2026-10-04T00:00:00.000+00:00", 1, """{"2026-10-02":"heavy","2026-10-03":"medium"}"""), flow(10, "light"))
+        val result = samples.delete(Fields(JSONObject("""{"type":"menstruationPeriod","clientIds":["p"]}""")))
+        assertEquals(1, result.getInt("deleted"))
+        val flows = read().getJSONArray("samples")
+        assertEquals(1, flows.length())
+        assertEquals("2026-10-10T12:00:00.000+00:00", flows.getJSONObject(0).getString("startDate"))
     }
 }

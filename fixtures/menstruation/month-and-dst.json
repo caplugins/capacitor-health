@@ -1,0 +1,74 @@
+{
+  "description": "A period crossing a month end and the end of daylight saving time (America/New_York, 1 Nov 2026), samples carrying HKTimeZone.",
+  "defaultTimeZone": "Asia/Kolkata",
+  "query": {
+    "startDate": "2026-09-01T00:00:00.000+05:30",
+    "endDate": "2026-11-30T00:00:00.000+05:30"
+  },
+  "samples": [
+    {
+      "id": "d0",
+      "type": "menstrualFlow",
+      "startDate": "2026-10-30T12:00:00.000-04:00",
+      "endDate": "2026-10-30T12:00:00.000-04:00",
+      "value": "medium",
+      "source": "com.example.tracker",
+      "isCycleStart": true,
+      "timeZone": "America/New_York"
+    },
+    {
+      "id": "d1",
+      "type": "menstrualFlow",
+      "startDate": "2026-10-31T12:00:00.000-04:00",
+      "endDate": "2026-10-31T12:00:00.000-04:00",
+      "value": "medium",
+      "source": "com.example.tracker",
+      "isCycleStart": false,
+      "timeZone": "America/New_York"
+    },
+    {
+      "id": "d2",
+      "type": "menstrualFlow",
+      "startDate": "2026-11-01T12:00:00.000-05:00",
+      "endDate": "2026-11-01T12:00:00.000-05:00",
+      "value": "medium",
+      "source": "com.example.tracker",
+      "isCycleStart": false,
+      "timeZone": "America/New_York"
+    },
+    {
+      "id": "d3",
+      "type": "menstrualFlow",
+      "startDate": "2026-11-02T12:00:00.000-05:00",
+      "endDate": "2026-11-02T12:00:00.000-05:00",
+      "value": "medium",
+      "source": "com.example.tracker",
+      "isCycleStart": false,
+      "timeZone": "America/New_York"
+    },
+    {
+      "id": "d4",
+      "type": "menstrualFlow",
+      "startDate": "2026-11-03T12:00:00.000-05:00",
+      "endDate": "2026-11-03T12:00:00.000-05:00",
+      "value": "medium",
+      "source": "com.example.tracker",
+      "isCycleStart": false,
+      "timeZone": "America/New_York"
+    }
+  ],
+  "expected": [
+    {
+      "firstDay": "2026-10-30",
+      "lastDay": "2026-11-03",
+      "flowSampleIds": [
+        "d0",
+        "d1",
+        "d2",
+        "d3",
+        "d4"
+      ],
+      "source": "com.example.tracker"
+    }
+  ]
+}

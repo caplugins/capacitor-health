@@ -1,0 +1,99 @@
+{
+  "description": "Two apps log the same days (Apple Health at noon without the flag, a tracker midnight to midnight with day 1 flagged): one period listing both apps' samples; its source is the earliest sample's.",
+  "defaultTimeZone": "Asia/Kolkata",
+  "query": {
+    "startDate": "2026-09-01T00:00:00.000+05:30",
+    "endDate": "2026-11-30T00:00:00.000+05:30"
+  },
+  "samples": [
+    {
+      "id": "h1",
+      "type": "menstrualFlow",
+      "startDate": "2026-10-01T12:00:00.000+05:30",
+      "endDate": "2026-10-01T12:00:00.000+05:30",
+      "value": "unspecified",
+      "source": "com.apple.Health",
+      "isCycleStart": false
+    },
+    {
+      "id": "h2",
+      "type": "menstrualFlow",
+      "startDate": "2026-10-02T12:00:00.000+05:30",
+      "endDate": "2026-10-02T12:00:00.000+05:30",
+      "value": "unspecified",
+      "source": "com.apple.Health",
+      "isCycleStart": false
+    },
+    {
+      "id": "h3",
+      "type": "menstrualFlow",
+      "startDate": "2026-10-03T12:00:00.000+05:30",
+      "endDate": "2026-10-03T12:00:00.000+05:30",
+      "value": "unspecified",
+      "source": "com.apple.Health",
+      "isCycleStart": false
+    },
+    {
+      "id": "h4",
+      "type": "menstrualFlow",
+      "startDate": "2026-10-04T12:00:00.000+05:30",
+      "endDate": "2026-10-04T12:00:00.000+05:30",
+      "value": "unspecified",
+      "source": "com.apple.Health",
+      "isCycleStart": false
+    },
+    {
+      "id": "t1",
+      "type": "menstrualFlow",
+      "startDate": "2026-10-01T00:00:00.000+05:30",
+      "endDate": "2026-10-02T00:00:00.000+05:30",
+      "value": "medium",
+      "source": "com.example.tracker",
+      "isCycleStart": true
+    },
+    {
+      "id": "t2",
+      "type": "menstrualFlow",
+      "startDate": "2026-10-02T00:00:00.000+05:30",
+      "endDate": "2026-10-03T00:00:00.000+05:30",
+      "value": "medium",
+      "source": "com.example.tracker",
+      "isCycleStart": false
+    },
+    {
+      "id": "t3",
+      "type": "menstrualFlow",
+      "startDate": "2026-10-03T00:00:00.000+05:30",
+      "endDate": "2026-10-04T00:00:00.000+05:30",
+      "value": "medium",
+      "source": "com.example.tracker",
+      "isCycleStart": false
+    },
+    {
+      "id": "t4",
+      "type": "menstrualFlow",
+      "startDate": "2026-10-04T00:00:00.000+05:30",
+      "endDate": "2026-10-05T00:00:00.000+05:30",
+      "value": "medium",
+      "source": "com.example.tracker",
+      "isCycleStart": false
+    }
+  ],
+  "expected": [
+    {
+      "firstDay": "2026-10-01",
+      "lastDay": "2026-10-04",
+      "flowSampleIds": [
+        "t1",
+        "h1",
+        "t2",
+        "h2",
+        "t3",
+        "h3",
+        "t4",
+        "h4"
+      ],
+      "source": "com.example.tracker"
+    }
+  ]
+}

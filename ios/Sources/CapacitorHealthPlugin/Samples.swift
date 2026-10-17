@@ -7,9 +7,15 @@ final class Samples {
     static let maxLimit = 10000
 
     private let store: HKHealthStore
+    private lazy var periods = try? MenstruationPeriods(store: store)
 
     init(store: HKHealthStore) {
         self.store = store
+    }
+
+    private func periodService() throws -> MenstruationPeriods {
+        guard let periods else { throw HealthError.unsupportedType("menstruationPeriod", reason: "osVersion") }
+        return periods
     }
 
     // MARK: - Read
@@ -26,7 +32,7 @@ final class Samples {
             throw HealthError.invalidArgument("unit", "isn't a unit of \(typeId)")
         }
         if entry.derivedFrom != nil {
-            throw HealthError(.nativeError, "\(typeId) reads aren't implemented yet.")
+            return try await periodService().read(options, start: start, end: end, limit: limit, ascending: ascending)
         }
 
         var predicates = [HKQuery.predicateForSamples(withStart: start, end: end, options: [])]
@@ -58,24 +64,32 @@ final class Samples {
 
     func save(_ samples: [[String: Any]]) async throws -> [String: Any] {
         guard !samples.isEmpty else { throw HealthError.invalidArgument("samples", "must be a non-empty array") }
-        var objects: [HKSample] = []
-        var clientIds: [String?] = []
+        // Each input sample becomes one object, or one per day for a period (decision #29).
+        var groups: [(objects: [HKSample], periodClientId: String?)] = []
         for (index, json) in samples.enumerated() {
             let fields = JSONFields(json, path: "samples[\(index)]")
             let (entry, type) = try HealthTypes.resolveWritable(try fields.string("type"))
             if entry.derivedFrom != nil {
-                throw HealthError(.nativeError, "\(entry.typeId) writes aren't implemented yet.")
+                groups.append((try periodService().expand(fields), fields.optionalString("clientId")))
+            } else {
+                groups.append(([try SampleCodec.decode(fields, entry: entry, type: type)], nil))
             }
-            objects.append(try SampleCodec.decode(fields, entry: entry, type: type))
-            clientIds.append(fields.optionalString("clientId"))
         }
+        let objects = groups.flatMap(\.objects)
         try await store.save(objects)
-        return ["ids": try await storedIds(objects, clientIds: clientIds)]
+        for group in groups {
+            guard let clientId = group.periodClientId else { continue }
+            let kept = Set(group.objects.compactMap { $0.metadata?[HKMetadataKeySyncIdentifier] as? String })
+            try await periodService().deleteDroppedDays(clientId: clientId, kept: kept, around: group.objects)
+        }
+        let firsts = groups.compactMap(\.objects.first)
+        return ["ids": try await storedIds(firsts)]
     }
 
     /// HealthKit ignores a lower sync version and replaces an equal one with a new UUID, yet `save` hands
     /// back the in-memory UUIDs either way (T06 S1–S2), so upserted samples are looked up again (#28).
-    private func storedIds(_ objects: [HKSample], clientIds: [String?]) async throws -> [String] {
+    private func storedIds(_ objects: [HKSample]) async throws -> [String] {
+        let clientIds = objects.map { $0.metadata?[HKMetadataKeySyncIdentifier] as? String }
         var byType: [HKSampleType: [String]] = [:]
         for (object, clientId) in zip(objects, clientIds) {
             if let clientId { byType[object.sampleType, default: []].append(clientId) }
@@ -95,7 +109,7 @@ final class Samples {
         let typeId = try options.string("type")
         let (entry, type) = try HealthTypes.resolveWritable(typeId)
         if entry.derivedFrom != nil {
-            throw HealthError(.nativeError, "\(typeId) deletes aren't implemented yet.")
+            return ["deleted": try await periodService().delete(options)]
         }
         return ["deleted": try await store.deleteOwnObjects(of: type, matching: try Self.deletePredicate(options))]
     }

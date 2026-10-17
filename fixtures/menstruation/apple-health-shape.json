@@ -1,0 +1,96 @@
+{
+  "description": "What Apple Health writes (T07): instantaneous samples at local noon, flag false on every day including day 1, two periods three blank days apart.",
+  "defaultTimeZone": "Asia/Kolkata",
+  "query": {
+    "startDate": "2026-09-01T00:00:00.000+05:30",
+    "endDate": "2026-11-30T00:00:00.000+05:30"
+  },
+  "samples": [
+    {
+      "id": "a1",
+      "type": "menstrualFlow",
+      "startDate": "2026-10-01T12:00:00.000+05:30",
+      "endDate": "2026-10-01T12:00:00.000+05:30",
+      "value": "unspecified",
+      "source": "com.apple.Health",
+      "isCycleStart": false
+    },
+    {
+      "id": "a2",
+      "type": "menstrualFlow",
+      "startDate": "2026-10-02T12:00:00.000+05:30",
+      "endDate": "2026-10-02T12:00:00.000+05:30",
+      "value": "unspecified",
+      "source": "com.apple.Health",
+      "isCycleStart": false
+    },
+    {
+      "id": "a3",
+      "type": "menstrualFlow",
+      "startDate": "2026-10-03T12:00:00.000+05:30",
+      "endDate": "2026-10-03T12:00:00.000+05:30",
+      "value": "unspecified",
+      "source": "com.apple.Health",
+      "isCycleStart": false
+    },
+    {
+      "id": "a4",
+      "type": "menstrualFlow",
+      "startDate": "2026-10-04T12:00:00.000+05:30",
+      "endDate": "2026-10-04T12:00:00.000+05:30",
+      "value": "unspecified",
+      "source": "com.apple.Health",
+      "isCycleStart": false
+    },
+    {
+      "id": "b8",
+      "type": "menstrualFlow",
+      "startDate": "2026-10-08T12:00:00.000+05:30",
+      "endDate": "2026-10-08T12:00:00.000+05:30",
+      "value": "unspecified",
+      "source": "com.apple.Health",
+      "isCycleStart": false
+    },
+    {
+      "id": "b9",
+      "type": "menstrualFlow",
+      "startDate": "2026-10-09T12:00:00.000+05:30",
+      "endDate": "2026-10-09T12:00:00.000+05:30",
+      "value": "unspecified",
+      "source": "com.apple.Health",
+      "isCycleStart": false
+    },
+    {
+      "id": "b10",
+      "type": "menstrualFlow",
+      "startDate": "2026-10-10T12:00:00.000+05:30",
+      "endDate": "2026-10-10T12:00:00.000+05:30",
+      "value": "unspecified",
+      "source": "com.apple.Health",
+      "isCycleStart": false
+    }
+  ],
+  "expected": [
+    {
+      "firstDay": "2026-10-01",
+      "lastDay": "2026-10-04",
+      "flowSampleIds": [
+        "a1",
+        "a2",
+        "a3",
+        "a4"
+      ],
+      "source": "com.apple.Health"
+    },
+    {
+      "firstDay": "2026-10-08",
+      "lastDay": "2026-10-10",
+      "flowSampleIds": [
+        "b8",
+        "b9",
+        "b10"
+      ],
+      "source": "com.apple.Health"
+    }
+  ]
+}

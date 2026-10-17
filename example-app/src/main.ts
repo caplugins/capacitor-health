@@ -1,7 +1,7 @@
 import { CapacitorHealth } from '@caplugins/capacitor-health';
 import type { HealthType } from '@caplugins/capacitor-health';
 
-import { runChangesCheck, runRoundTrips } from './roundtrip';
+import { runChangesCheck, runPeriodCheck, runRoundTrips } from './roundtrip';
 
 /** The reproductive types the example asks access for. */
 const TYPES: HealthType[] = [
@@ -72,7 +72,17 @@ bind('changes-check', 'changes', async () => {
   return lines;
 });
 
+bind('period-check', 'periods', async () => {
+  const lines = await runPeriodCheck(true);
+  lines.forEach((line) => console.log(`[example] ${line}`));
+  return lines;
+});
+
+bind('period-delete', 'periods', () =>
+  CapacitorHealth.deleteSamples({ type: 'menstruationPeriod', clientIds: ['example-period'] }),
+);
+
 // For scripted runs (DevTools / Web Inspector): `await window.example.runChangesCheck()`.
-(window as unknown as { example: unknown }).example = { CapacitorHealth, runRoundTrips, runChangesCheck };
+(window as unknown as { example: unknown }).example = { CapacitorHealth, runRoundTrips, runChangesCheck, runPeriodCheck };
 
 document.getElementById('check-availability')?.click();
