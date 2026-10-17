@@ -215,7 +215,8 @@ Android), `measurementLocation` (`basalBodyTemperature`, `skinTemperature`), `pr
   stays. Health Connect keeps the id. Don't re-save unchanged samples: on iOS it creates churn in
   `getChanges`.
 - `deleteSamples` takes `ids`, `clientIds` or a `startDate`–`endDate` range. Both platforms only let
-  an app delete what it wrote; other apps' samples are left alone.
+  an app delete what it wrote; other apps' samples are left alone. Ids and `clientIds` that match
+  nothing are skipped.
 - Read-only types (Apple-computed ones like `wristTemperature`) reject writes with `READ_ONLY_TYPE`.
 
 ### Changes (`getChanges`)
@@ -616,7 +617,7 @@ deleteSamples(options: DeleteSamplesOptions) => Promise<DeleteSamplesResult>
 ```
 
 Deletes samples of one type. Both platforms only let an app delete samples it wrote itself;
-others are left alone and not counted.
+others are left alone and not counted. `ids` and `clientIds` that match nothing are skipped.
 
 | Param         | Type                                                                  |
 | ------------- | --------------------------------------------------------------------- |

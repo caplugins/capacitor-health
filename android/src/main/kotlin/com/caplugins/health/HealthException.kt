@@ -72,6 +72,14 @@ class HealthException(
             }
         }
 
+        /**
+         * The Health Connect app's `INVALID_UID` (10005): a delete named an id or clientId that doesn't exist, or an
+         * id that isn't a UUID. `connect-client` 1.1.0 turns it into a `RemoteException` that carries only the
+         * app's message ("Request contains invalid UID.", "Invalid UID <id>"), so it's recognized by that.
+         */
+        fun isMissingRecord(error: Throwable): Boolean =
+            generateSequence(error) { it.cause }.any { it.message?.contains("invalid uid", ignoreCase = true) == true }
+
         private fun isRateLimit(error: Throwable): Boolean {
             var current: Throwable? = error
             while (current != null) {

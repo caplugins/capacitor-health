@@ -185,7 +185,7 @@ class Samples(
             val kept = decoded.extras.mapNotNull { it.metadata.clientRecordId }.toSet()
             dayFlowClientIds(old).filterNot { it in kept }
         }
-        if (stale.isNotEmpty()) client.deleteRecords(MenstruationFlowRecord::class, emptyList(), stale)
+        deleteSkippingMissing(MenstruationFlowRecord::class, stale, byClientId = true)
     }
 
     // endregion
@@ -212,16 +212,33 @@ class Samples(
                     else -> false
                 }
             }
-            val flows = targets.flatMap(::dayFlowClientIds)
-            if (flows.isNotEmpty()) client.deleteRecords(MenstruationFlowRecord::class, emptyList(), flows)
+            deleteSkippingMissing(MenstruationFlowRecord::class, targets.flatMap(::dayFlowClientIds), byClientId = true)
         }
         when {
-            ids != null -> client.deleteRecords(entry.record, ids, emptyList())
-            clientIds != null -> client.deleteRecords(entry.record, emptyList(), clientIds)
+            ids != null -> deleteSkippingMissing(entry.record, ids, byClientId = false)
+            clientIds != null -> deleteSkippingMissing(entry.record, clientIds, byClientId = true)
             else -> client.deleteRecords(entry.record, TimeRangeFilter.between(options.date("startDate").toInstant(), options.date("endDate").toInstant()))
         }
         val deleted = token?.let { countDeletions(it) } ?: (ids?.size ?: clientIds?.size ?: 0)
         return JSObject().put("deleted", deleted)
+    }
+
+    /**
+     * Deletes by [keys] (ids or clientIds), skipping the ones that don't exist, as Android 14+ does. The Health
+     * Connect app (Android 13 and lower) instead rejects the whole call with `INVALID_UID` and deletes nothing
+     * (decision #45), so on that error the list is halved until each missing key is alone.
+     */
+    private suspend fun deleteSkippingMissing(record: KClass<out Record>, keys: List<String>, byClientId: Boolean) {
+        if (keys.isEmpty()) return
+        try {
+            if (byClientId) client.deleteRecords(record, emptyList(), keys) else client.deleteRecords(record, keys, emptyList())
+        } catch (e: Exception) {
+            if (!HealthException.isMissingRecord(e)) throw e
+            if (keys.size == 1) return
+            val half = keys.size / 2
+            deleteSkippingMissing(record, keys.subList(0, half), byClientId)
+            deleteSkippingMissing(record, keys.subList(half, keys.size), byClientId)
+        }
     }
 
     private suspend fun countDeletions(start: String): Int? =

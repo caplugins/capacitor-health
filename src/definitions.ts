@@ -1116,7 +1116,7 @@ export interface CapacitorHealthPlugin {
 
   /**
    * Deletes samples of one type. Both platforms only let an app delete samples it wrote itself;
-   * others are left alone and not counted.
+   * others are left alone and not counted. `ids` and `clientIds` that match nothing are skipped.
    *
    * @since 0.1.0
    */
