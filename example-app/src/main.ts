@@ -2,7 +2,9 @@ import { CapacitorHealth, HEALTH_TYPES } from '@caplugins/capacitor-health';
 import type { HealthType } from '@caplugins/capacitor-health';
 
 import { runAcceptance } from './acceptance';
+import { changes, deleteByClientId, deleteRange, loadTypes, read, updateValues, write } from './explore';
 import { runChangesCheck, runPeriodCheck, runRoundTrips } from './roundtrip';
+import { deleteTestData, seedTestData } from './seed';
 
 /** The example asks for every type the plugin knows; unsupported ones come back `unsupported`. */
 const TYPES: HealthType[] = [...HEALTH_TYPES];
@@ -49,6 +51,18 @@ bind('check-authorization', 'authorization', async () =>
 bind('open-settings', 'settings', () => CapacitorHealth.openHealthSettings().then(() => 'opened'));
 bind('open-install', 'settings', () => CapacitorHealth.openHealthConnectInstall().then(() => 'opened'));
 
+bind('load-types', 'explore-types', loadTypes);
+document.getElementById('explore-type')?.addEventListener('change', updateValues);
+bind('explore-read', 'explore-output', () => read(false));
+bind('explore-next', 'explore-output', () => read(true));
+bind('explore-write', 'explore-output', write);
+bind('explore-delete-range', 'explore-output', deleteRange);
+bind('explore-delete-client', 'explore-output', deleteByClientId);
+bind('explore-follow', 'explore-output', () => changes(true));
+bind('explore-changes', 'explore-output', () => changes(false));
+bind('seed', 'seed-output', seedTestData);
+bind('seed-delete', 'seed-output', deleteTestData);
+
 bind('round-trip', 'samples', async () => {
   const lines = await runRoundTrips();
   lines.forEach((line) => console.log(`[example] ${line}`));
@@ -89,6 +103,9 @@ bind('acceptance-denied', 'acceptance-output', async () => {
   runChangesCheck,
   runPeriodCheck,
   runAcceptance,
+  seedTestData,
+  deleteTestData,
+  loadTypes,
 };
 
 document.getElementById('check-availability')?.click();

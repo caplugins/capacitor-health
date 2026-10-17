@@ -30,6 +30,19 @@
         font-size: 1rem;
         margin: 0 0 8px;
       }
+      h3 {
+        font-size: 0.9rem;
+        margin: 12px 0 4px;
+      }
+      label {
+        display: block;
+        margin: 8px 0;
+      }
+      select,
+      input {
+        font: inherit;
+        max-width: 100%;
+      }
       pre {
         white-space: pre-wrap;
         margin: 8px 0 0;
@@ -64,6 +77,34 @@
       </section>
       <section>
         <h2>Samples</h2>
+        <button id="load-types" type="button">Load types</button>
+        <label>Type <select id="explore-type"></select></label>
+        <label>Last <input id="explore-days" type="number" value="60" min="1" max="3650" /> days</label>
+        <pre id="explore-types"></pre>
+        <h3>Read</h3>
+        <button id="explore-read" type="button">readSamples()</button>
+        <button id="explore-next" type="button">Next page</button>
+        <h3>Write</h3>
+        <select id="explore-value" hidden></select>
+        <input id="explore-number" type="number" step="0.01" hidden />
+        <button id="explore-write" type="button">saveSamples() now</button>
+        <h3>Delete</h3>
+        <button id="explore-delete-range" type="button">deleteSamples() in range</button>
+        <input id="explore-client-id" placeholder="clientId" />
+        <button id="explore-delete-client" type="button">deleteSamples() by clientId</button>
+        <h3>Changes</h3>
+        <button id="explore-follow" type="button">getChanges() without cursor</button>
+        <button id="explore-changes" type="button">getChanges() with cursor</button>
+        <pre id="explore-output"></pre>
+      </section>
+      <section>
+        <h2>Test data</h2>
+        <button id="seed" type="button">Seed test data</button>
+        <button id="seed-delete" type="button">Delete test data</button>
+        <pre id="seed-output"></pre>
+      </section>
+      <section>
+        <h2>Checks</h2>
         <button id="round-trip" type="button">Round-trip samples</button>
         <pre id="samples"></pre>
         <button id="changes-check" type="button">Check getChanges</button>
@@ -71,9 +112,6 @@
         <button id="period-check" type="button">Check periods</button>
         <button id="period-delete" type="button">Delete example period</button>
         <pre id="periods"></pre>
-      </section>
-      <section>
-        <h2>Acceptance</h2>
         <button id="acceptance" type="button">Run acceptance (access granted)</button>
         <button id="acceptance-denied" type="button">Run acceptance (access denied)</button>
         <pre id="acceptance-output"></pre>
