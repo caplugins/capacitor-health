@@ -1,0 +1,187 @@
+import { Capacitor } from '@capacitor/core';
+import { CapacitorHealth, HEALTH_TYPES } from '@caplugins/capacitor-health';
+import type { HealthType, NewSample, Sample, TypeSupport } from '@caplugins/capacitor-health';
+
+import { localIso } from './roundtrip';
+
+/** One row of the per-type acceptance checklist (docs/06-testing.md). */
+export interface AcceptanceRow {
+  type: HealthType;
+  platform: string;
+  status: 'pass' | 'fail' | 'readOnly' | 'unsupported';
+  steps: Record<string, string>;
+  notes: string[];
+}
+
+const platform = Capacitor.getPlatform();
+const errorCode = (e: unknown) => (e as { code?: string }).code ?? String(e);
+
+/** A new sample of `support.type` at `at`, with the type's first (or second) value. */
+function sampleFor(support: TypeSupport, at: Date, clientId: string, variant: 0 | 1): NewSample {
+  const startDate = localIso(at);
+  const base = { startDate, clientId, recordingMethod: 'manual' as const };
+  const values = support.values ?? [];
+  const value = values[Math.min(variant, values.length - 1)];
+  switch (support.type) {
+    case 'menstruationPeriod': {
+      const end = new Date(at);
+      end.setDate(end.getDate() + 2 + variant);
+      return { ...base, type: 'menstruationPeriod', endDate: localIso(end) };
+    }
+    case 'skinTemperature': {
+      const end = new Date(at.getTime() + 8 * 3600_000);
+      return {
+        ...base,
+        type: 'skinTemperature',
+        endDate: localIso(end),
+        baseline: 33.5 + variant,
+        deltas: [{ time: localIso(new Date(at.getTime() + 3600_000)), delta: -0.2 }],
+        measurementLocation: 'wrist',
+      };
+    }
+    case 'basalBodyTemperature':
+      return { ...base, type: 'basalBodyTemperature', value: 36.4 + variant / 10, unit: 'degC', measurementLocation: 'mouth' };
+    case 'sexualActivity':
+      return { ...base, type: 'sexualActivity', protectionUsed: variant === 0 };
+    case 'cervicalMucus':
+      return { ...base, type: 'cervicalMucus', value, ...(platform === 'android' ? { sensation: 'light' } : {}) };
+    case 'menstrualFlow':
+      return { ...base, type: 'menstrualFlow', value, ...(platform === 'ios' ? { isCycleStart: variant === 0 } : {}) };
+    default:
+      return (value !== undefined ? { ...base, type: support.type, value } : { ...base, type: support.type }) as NewSample;
+  }
+}
+
+function sameValue(sample: Sample | undefined, expected: NewSample): boolean {
+  if (!sample) return false;
+  const wanted = (expected as { value?: unknown }).value;
+  const actual = (sample as { value?: unknown }).value;
+  if (typeof wanted === 'number') return typeof actual === 'number' && Math.abs(actual - wanted) < 0.001;
+  if (expected.type === 'menstruationPeriod') {
+    return (sample as { lastDay?: string }).lastDay === expected.endDate?.slice(0, 10);
+  }
+  if (expected.type === 'skinTemperature') return (sample as { baseline?: number }).baseline === expected.baseline;
+  if (expected.type === 'sexualActivity') return (sample as { protectionUsed?: boolean }).protectionUsed === expected.protectionUsed;
+  return wanted === undefined || actual === wanted;
+}
+
+async function readOwn(type: HealthType, at: Date, clientId: string): Promise<Sample[]> {
+  const { samples } = await CapacitorHealth.readSamples({
+    type,
+    startDate: localIso(new Date(at.getTime() - 3600_000)),
+    endDate: localIso(new Date(at.getTime() + 4 * 86_400_000)),
+  });
+  return samples.filter((s) => s.clientId === clientId);
+}
+
+async function checkWritable(support: TypeSupport, at: Date, row: AcceptanceRow): Promise<void> {
+  const { type } = support;
+  const clientId = `example-acceptance-${type}-${at.getTime()}`;
+  const step = (name: string, ok: boolean, detail = '') => {
+    row.steps[name] = ok ? `✓${detail ? ` ${detail}` : ''}` : `✗ ${detail}`;
+    if (!ok) row.status = 'fail';
+  };
+  const followsChanges = !(platform === 'ios' && type === 'menstruationPeriod');
+  const cursor = followsChanges ? (await CapacitorHealth.getChanges({ types: [type] })).nextCursor : undefined;
+
+  const first = sampleFor(support, at, clientId, 0);
+  const { ids } = await CapacitorHealth.saveSamples({ samples: [first] });
+  let found = await readOwn(type, at, clientId);
+  const read = found[0];
+  step('write', found.length === 1 && read?.id === ids[0], `${found.length} read back`);
+  const shapeOk =
+    !!read &&
+    read.type === type &&
+    read.source?.id?.length > 0 &&
+    read.recordingMethod === 'manual' &&
+    read.platform === platform &&
+    !!read.native?.type &&
+    Date.parse(read.startDate) <= Date.parse(read.endDate);
+  step('shape', shapeOk && sameValue(read, first), read ? `${read.kind}, ${read.source.id}` : 'missing');
+
+  const second = { ...sampleFor(support, at, clientId, 1), clientVersion: 2 } as NewSample;
+  await CapacitorHealth.saveSamples({ samples: [second] });
+  found = await readOwn(type, at, clientId);
+  step('upsert', found.length === 1 && sameValue(found[0], second), `${found.length} after upsert`);
+
+  await CapacitorHealth.saveSamples({ samples: [{ ...first, clientVersion: 1 } as NewSample] });
+  found = await readOwn(type, at, clientId);
+  step('stale', found.length === 1 && sameValue(found[0], second), 'lower version ignored');
+
+  let upsertSeen = false;
+  let nextCursor = cursor;
+  if (cursor) {
+    const changes = await CapacitorHealth.getChanges({ types: [type], cursor });
+    upsertSeen = changes.upserted.some((s) => s.clientId === clientId);
+    nextCursor = changes.nextCursor;
+  }
+
+  const { deleted } = await CapacitorHealth.deleteSamples({ type, clientIds: [clientId] });
+  found = await readOwn(type, at, clientId);
+  step('delete', deleted >= 1 && found.length === 0, `deleted ${deleted}`);
+
+  if (nextCursor) {
+    const changes = await CapacitorHealth.getChanges({ types: [type], cursor: nextCursor });
+    step('changes', upsertSeen && changes.deleted.length >= 1, `upsert ${upsertSeen ? 'seen' : 'missing'}, ${changes.deleted.length} deleted`);
+  } else {
+    row.steps.changes = 'n/a (follow menstrualFlow, decision #41)';
+  }
+}
+
+/**
+ * Runs the acceptance checklist for every type. `granted`: full write/read cycle where writable.
+ * `denied`: the app has no access; reads must be empty on iOS and PERMISSION_DENIED on Android,
+ * writes PERMISSION_DENIED.
+ */
+export async function runAcceptance(mode: 'granted' | 'denied' = 'granted'): Promise<AcceptanceRow[]> {
+  const { types } = await CapacitorHealth.getSupportedTypes();
+  const rows: AcceptanceRow[] = [];
+  const base = new Date();
+  base.setDate(base.getDate() - 12);
+  base.setHours(10, 0, 0, 0);
+  for (const [index, type] of HEALTH_TYPES.entries()) {
+    const support = types.find((t) => t.type === type) as TypeSupport;
+    const row: AcceptanceRow = { type, platform, status: 'pass', steps: {}, notes: [] };
+    rows.push(row);
+    const at = new Date(base.getTime() + index * 7 * 60_000);
+    try {
+      if (!support.supported) {
+        row.status = 'unsupported';
+        const error = await CapacitorHealth.readSamples({ type, startDate: localIso(at), endDate: localIso(new Date()) }).catch(
+          errorCode,
+        );
+        row.steps.read = error === 'UNSUPPORTED_TYPE' ? `✓ UNSUPPORTED_TYPE (${support.reason})` : `✗ ${JSON.stringify(error)}`;
+        continue;
+      }
+      if (mode === 'denied') {
+        const read = await CapacitorHealth.readSamples({ type, startDate: localIso(at), endDate: localIso(new Date()) })
+          .then((r) => `${r.samples.length} samples`)
+          .catch(errorCode);
+        const readOk = platform === 'ios' ? read === '0 samples' : read === 'PERMISSION_DENIED';
+        row.steps.read = `${readOk ? '✓' : '✗'} ${read}`;
+        if (support.writable) {
+          const write = await CapacitorHealth.saveSamples({ samples: [sampleFor(support, at, `denied-${type}`, 0)] })
+            .then(() => 'written')
+            .catch(errorCode);
+          row.steps.write = `${write === 'PERMISSION_DENIED' ? '✓' : '✗'} ${write}`;
+          if (write !== 'PERMISSION_DENIED') row.status = 'fail';
+        }
+        if (!readOk) row.status = 'fail';
+        continue;
+      }
+      if (!support.writable) {
+        row.status = 'readOnly';
+        const { samples } = await CapacitorHealth.readSamples({ type, startDate: localIso(at), endDate: localIso(new Date()) });
+        row.steps.read = `✓ ${samples.length} samples`;
+        const write = await CapacitorHealth.saveSamples({ samples: [sampleFor(support, at, 'x', 0)] }).catch(errorCode);
+        row.steps.write = write === 'READ_ONLY_TYPE' ? '✓ READ_ONLY_TYPE' : `✗ ${JSON.stringify(write)}`;
+        continue;
+      }
+      await checkWritable(support, at, row);
+    } catch (error) {
+      row.status = 'fail';
+      row.notes.push(`${errorCode(error)}: ${(error as { message?: string }).message ?? ''}`);
+    }
+  }
+  return rows;
+}

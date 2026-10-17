@@ -1,22 +1,11 @@
-import { CapacitorHealth } from '@caplugins/capacitor-health';
+import { CapacitorHealth, HEALTH_TYPES } from '@caplugins/capacitor-health';
 import type { HealthType } from '@caplugins/capacitor-health';
 
+import { runAcceptance } from './acceptance';
 import { runChangesCheck, runPeriodCheck, runRoundTrips } from './roundtrip';
 
-/** The reproductive types the example asks access for. */
-const TYPES: HealthType[] = [
-  'menstrualFlow',
-  'menstruationPeriod',
-  'intermenstrualBleeding',
-  'cervicalMucus',
-  'ovulationTest',
-  'sexualActivity',
-  'basalBodyTemperature',
-  'wristTemperature',
-  'skinTemperature',
-  'pregnancyTest',
-  'menopausalState',
-];
+/** The example asks for every type the plugin knows; unsupported ones come back `unsupported`. */
+const TYPES: HealthType[] = [...HEALTH_TYPES];
 
 /** Runs `action` and prints its result (or error) into `<pre id={outputId}>`. */
 function bind(buttonId: string, outputId: string, action: () => Promise<unknown>): void {
@@ -82,7 +71,24 @@ bind('period-delete', 'periods', () =>
   CapacitorHealth.deleteSamples({ type: 'menstruationPeriod', clientIds: ['example-period'] }),
 );
 
+bind('acceptance', 'acceptance-output', async () => {
+  const rows = await runAcceptance('granted');
+  rows.forEach((row) => console.log(`[acceptance] ${JSON.stringify(row)}`));
+  return rows.map((row) => `${row.status.toUpperCase()} ${row.type} ${Object.values(row.steps).join(' | ')}`);
+});
+bind('acceptance-denied', 'acceptance-output', async () => {
+  const rows = await runAcceptance('denied');
+  rows.forEach((row) => console.log(`[acceptance-denied] ${JSON.stringify(row)}`));
+  return rows.map((row) => `${row.status.toUpperCase()} ${row.type} ${Object.values(row.steps).join(' | ')}`);
+});
+
 // For scripted runs (DevTools / Web Inspector): `await window.example.runChangesCheck()`.
-(window as unknown as { example: unknown }).example = { CapacitorHealth, runRoundTrips, runChangesCheck, runPeriodCheck };
+(window as unknown as { example: unknown }).example = {
+  CapacitorHealth,
+  runRoundTrips,
+  runChangesCheck,
+  runPeriodCheck,
+  runAcceptance,
+};
 
 document.getElementById('check-availability')?.click();

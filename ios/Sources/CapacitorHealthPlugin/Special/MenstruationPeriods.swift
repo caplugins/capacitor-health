@@ -135,15 +135,17 @@ final class MenstruationPeriods {
     }
 
     /// After re-writing a period with the same clientId, deletes this app's day samples that are no longer
-    /// part of it. Looks two months either side, which covers moving a period around a cycle.
-    func deleteDroppedDays(clientId: String, kept: Set<String>, around samples: [HKSample]) async throws {
+    /// part of it. Looks two months either side, which covers moving a period around a cycle. Days stored
+    /// with a higher version than this write stay: HealthKit ignored the write for them too.
+    func deleteDroppedDays(clientId: String, version: Int, kept: Set<String>, around samples: [HKSample]) async throws {
         guard let first = samples.first?.startDate, let last = samples.last?.startDate else { return }
         let margin = TimeInterval(62 * 86_400)
         let own = HKQuery.predicateForObjects(from: HKSource.default())
         let candidates = try await flowSamples(from: first.addingTimeInterval(-margin), to: last.addingTimeInterval(margin), extra: own)
         let dropped = candidates.filter { sample in
             guard let syncId = sample.metadata?[HKMetadataKeySyncIdentifier] as? String else { return false }
-            return Self.periodClientId(syncId) == clientId && !kept.contains(syncId)
+            let stored = (sample.metadata?[HKMetadataKeySyncVersion] as? NSNumber)?.intValue ?? 0
+            return Self.periodClientId(syncId) == clientId && !kept.contains(syncId) && stored <= version
         }
         guard !dropped.isEmpty else { return }
         _ = try await store.deleteOwnObjects(of: flowType, matching: HKQuery.predicateForObjects(with: Set(dropped.map(\.uuid))))

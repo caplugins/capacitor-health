@@ -80,7 +80,8 @@ final class Samples {
         for group in groups {
             guard let clientId = group.periodClientId else { continue }
             let kept = Set(group.objects.compactMap { $0.metadata?[HKMetadataKeySyncIdentifier] as? String })
-            try await periodService().deleteDroppedDays(clientId: clientId, kept: kept, around: group.objects)
+            let version = (group.objects.first?.metadata?[HKMetadataKeySyncVersion] as? NSNumber)?.intValue ?? 1
+            try await periodService().deleteDroppedDays(clientId: clientId, version: version, kept: kept, around: group.objects)
         }
         let firsts = groups.compactMap(\.objects.first)
         return ["ids": try await storedIds(firsts)]
