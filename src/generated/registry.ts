@@ -145,6 +145,7 @@ export const HEALTH_TYPES = [
   'headphoneAudioExposureEvent',
   'nikeFuel',
   'hydration',
+  'sleepSession',
   'mindfulSession',
   'dietaryEnergy',
   'dietaryEnergyFromFat',
@@ -2802,6 +2803,20 @@ export const REGISTRY: Readonly<Record<HealthType, RegistryEntry>> = {
       writePermission: 'android.permission.health.WRITE_HYDRATION',
       writable: true,
       metrics: ['sum'],
+    },
+  },
+  sleepSession: {
+    id: 'sleepSession',
+    kind: 'special',
+    group: 'sleep',
+    parts: { stages: { values: 'sleepStage' } },
+    ios: { identifier: 'HKCategoryTypeIdentifierSleepAnalysis', minOS: '8.0', writable: true, time: 'any' },
+    android: {
+      record: 'SleepSessionRecord',
+      time: 'interval',
+      readPermission: 'android.permission.health.READ_SLEEP',
+      writePermission: 'android.permission.health.WRITE_SLEEP',
+      writable: true,
     },
   },
   mindfulSession: {

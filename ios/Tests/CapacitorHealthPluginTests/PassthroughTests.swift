@@ -22,13 +22,13 @@ final class PassthroughTests: XCTestCase {
     }
 
     func testCategoryKeepsRawValuesHealthKitAccepts() throws {
-        let sleep = "hk:HKCategoryTypeIdentifierSleepAnalysis"
+        let coughing = "hk:HKCategoryTypeIdentifierCoughing"
         let end = "2026-10-01T13:00:00.000+05:30"
-        let sample = try XCTUnwrap(try decode(["type": sleep, "startDate": noon, "endDate": end, "value": 2]) as? HKCategorySample)
+        let sample = try XCTUnwrap(try decode(["type": coughing, "startDate": noon, "endDate": end, "value": 2]) as? HKCategorySample)
         XCTAssertEqual(sample.value, 2)
-        XCTAssertEqual(SampleCodec.encode(sample, entry: try XCTUnwrap(HealthTypes.entry(sleep)))["value"] as? Int, 2)
-        // AsleepCore (3) is iOS 16+: HealthKit raises on iOS 15, so passthrough writes leave it out.
-        XCTAssertThrowsError(try decode(["type": sleep, "startDate": noon, "endDate": end, "value": 3])) { error in
+        XCTAssertEqual(SampleCodec.encode(sample, entry: try XCTUnwrap(HealthTypes.entry(coughing)))["value"] as? Int, 2)
+        // HKCategoryValueSeverity ends at 4: HealthKit raises for anything beyond, so passthrough writes reject it.
+        XCTAssertThrowsError(try decode(["type": coughing, "startDate": noon, "endDate": end, "value": 5])) { error in
             XCTAssertEqual(HealthError.from(error).data["reason"] as? String, "valueUnsupportedOnPlatform")
         }
         XCTAssertThrowsError(try decode(["type": "hk:HKCategoryTypeIdentifierHandwashingEvent", "startDate": noon, "endDate": end, "value": 1]))
@@ -39,6 +39,7 @@ final class PassthroughTests: XCTestCase {
         XCTAssertNil(HealthTypes.passthroughEntry("hk:HKQuantityTypeIdentifierStepCount"))
         XCTAssertNil(HealthTypes.passthroughEntry("hk:HKQuantityTypeIdentifierBloodPressureSystolic"))
         XCTAssertNil(HealthTypes.passthroughEntry("hk:HKCategoryTypeIdentifierMindfulSession"))
+        XCTAssertNil(HealthTypes.passthroughEntry("hk:HKCategoryTypeIdentifierSleepAnalysis"), "registered as sleepSession")
         XCTAssertNil(HealthTypes.passthroughEntry("hk:HKWorkoutTypeIdentifier"))
         XCTAssertNil(HealthTypes.passthroughEntry("hc:HydrationRecord"))
         XCTAssertThrowsError(try HealthTypes.resolve("hc:HydrationRecord")) { error in

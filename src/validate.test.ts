@@ -950,7 +950,7 @@ describe('aggregate', () => {
 describe('passthrough ids', () => {
   // Every quantity of the iOS 27 SDK is registered since T41; a newer identifier still passes through.
   const water = 'hk:HKQuantityTypeIdentifierSomethingFromTheFuture' as const;
-  const sleep = 'hk:HKCategoryTypeIdentifierSleepAnalysis' as const;
+  const coughing = 'hk:HKCategoryTypeIdentifierCoughing' as const;
 
   it('accepts hk: ids on iOS only', () => {
     expect(validateReadSamples({ type: water, startDate: START, endDate: END }, 'ios').type).toBe(water);
@@ -962,9 +962,9 @@ describe('passthrough ids', () => {
       'notOnPlatform',
     );
     expect(validateGetChanges({ types: [water, 'steps'] }, 'ios').types).toEqual([water, 'steps']);
-    expect(validateCheckAuthorization({ read: [water], write: [sleep] }, 'ios')).toEqual({
+    expect(validateCheckAuthorization({ read: [water], write: [coughing] }, 'ios')).toEqual({
       read: [water],
-      write: [sleep],
+      write: [coughing],
     });
   });
 
@@ -1003,9 +1003,9 @@ describe('passthrough ids', () => {
       'samples[0].unit',
       'unknownUnit',
     );
-    expect(save({ type: sleep, startDate: START, endDate: END, value: 3 }).value).toBe(3);
+    expect(save({ type: coughing, startDate: START, endDate: END, value: 3 }).value).toBe(3);
     expect(save({ type: 'hk:HKCategoryTypeIdentifierHandwashingEvent', startDate: START, endDate: END }).value).toBe(0);
-    rejection(() => save({ type: sleep, startDate: START, value: 'asleep' }), 'INVALID_ARGUMENT', 'samples[0].value');
+    rejection(() => save({ type: coughing, startDate: START, value: 'mild' }), 'INVALID_ARGUMENT', 'samples[0].value');
   });
 
   it('points registered identifiers to their unified id', () => {
@@ -1027,6 +1027,7 @@ describe('passthrough ids', () => {
       ['hk:HKQuantityTypeIdentifierDietaryWater', 'hydration'],
       ['hk:HKQuantityTypeIdentifierDietaryProtein', 'dietaryProtein'],
       ['hk:HKCategoryTypeIdentifierMindfulSession', 'mindfulSession'],
+      ['hk:HKCategoryTypeIdentifierSleepAnalysis', 'sleepSession'],
     ] as const) {
       const registered = rejection(() => validateCheckAuthorization({ read: [id] }, 'ios'), 'INVALID_ARGUMENT');
       expect(registered.data?.type).toBe(type);
@@ -1202,5 +1203,119 @@ describe('hydration, single nutrients and mindful sessions (T41)', () => {
         'UNSUPPORTED_TYPE',
       );
     }
+  });
+});
+
+describe('sleepSession (T43)', () => {
+  const night = { type: 'sleepSession', startDate: '2026-10-01T22:00:00+05:30', endDate: '2026-10-02T07:00:00+05:30' };
+  const stage = (value: string, start: string, end: string) => ({
+    stage: value,
+    startDate: `2026-10-0${start}+05:30`,
+    endDate: `2026-10-0${end}+05:30`,
+  });
+
+  it('sorts the stages and normalizes their dates', () => {
+    const saved = save({
+      ...night,
+      stages: [stage('deep', '2T01:00:00', '2T02:00:00'), stage('light', '1T22:30:00', '2T01:00:00')],
+      clientId: 'night-1',
+    });
+    expect(saved).toMatchObject({
+      type: 'sleepSession',
+      startDate: '2026-10-01T22:00:00.000+05:30',
+      clientId: 'night-1',
+      clientVersion: 1,
+    });
+    expect(saved.stages).toEqual([
+      { stage: 'light', startDate: '2026-10-01T22:30:00.000+05:30', endDate: '2026-10-02T01:00:00.000+05:30' },
+      { stage: 'deep', startDate: '2026-10-02T01:00:00.000+05:30', endDate: '2026-10-02T02:00:00.000+05:30' },
+    ]);
+    expect(save(night, 'android').stages).toEqual([]);
+  });
+
+  it('applies Health Connect stage rules on both platforms', () => {
+    for (const platform of ['ios', 'android'] as const) {
+      rejection(
+        () => save({ ...night, stages: [stage('rem', '1T21:00:00', '1T23:00:00')] }, platform),
+        'INVALID_ARGUMENT',
+        'samples[0].stages[0]',
+        'outsideSession',
+      );
+      rejection(
+        () =>
+          save(
+            {
+              ...night,
+              stages: [stage('light', '1T23:00:00', '2T01:00:00'), stage('deep', '2T00:30:00', '2T02:00:00')],
+            },
+            platform,
+          ),
+        'INVALID_ARGUMENT',
+        'samples[0].stages[1]',
+        'stagesOverlap',
+      );
+      rejection(
+        () => save({ ...night, stages: [stage('awake', '2T03:00:00', '2T03:00:00')] }, platform),
+        'INVALID_ARGUMENT',
+        'samples[0].stages[0].endDate',
+        'endNotAfterStart',
+      );
+    }
+  });
+
+  it('needs an end after the start', () => {
+    rejection(() => save({ ...night, endDate: undefined }), 'INVALID_ARGUMENT', 'samples[0].endDate', 'required');
+    rejection(
+      () => save({ ...night, endDate: night.startDate }),
+      'INVALID_ARGUMENT',
+      'samples[0].endDate',
+      'endNotAfterStart',
+    );
+  });
+
+  it('keeps Android-only stages and fields off iOS', () => {
+    const outOfBed = { ...night, stages: [stage('outOfBed', '2T03:00:00', '2T03:10:00')] };
+    expect(save(outOfBed, 'android').stages).toHaveLength(1);
+    rejection(() => save(outOfBed), 'INVALID_ARGUMENT', 'samples[0].stages[0].stage', 'valueUnsupportedOnPlatform');
+    rejection(
+      () => save({ ...night, stages: [stage('napping', '2T03:00:00', '2T03:10:00')] }),
+      'INVALID_ARGUMENT',
+      'samples[0].stages[0].stage',
+      'unknownValue',
+    );
+    expect(save({ ...night, title: 'Night', notes: 'Noisy' }, 'android')).toMatchObject({
+      title: 'Night',
+      notes: 'Noisy',
+    });
+    rejection(
+      () => save({ ...night, title: 'Night' }),
+      'INVALID_ARGUMENT',
+      'samples[0].title',
+      'valueUnsupportedOnPlatform',
+    );
+    rejection(() => save({ ...night, notes: 3 }, 'android'), 'INVALID_ARGUMENT', 'samples[0].notes');
+    rejection(() => save({ ...night, value: 'asleep' }), 'INVALID_ARGUMENT', 'samples[0].value', 'notApplicable');
+    rejection(
+      () => save({ type: 'steps', startDate: START, endDate: END, value: 1, stages: [] }),
+      'INVALID_ARGUMENT',
+      'samples[0].stages',
+      'notApplicable',
+    );
+  });
+
+  it('points the HealthKit identifier to the session type', () => {
+    rejection(
+      () =>
+        validateReadSamples(
+          { type: 'hk:HKCategoryTypeIdentifierSleepAnalysis', startDate: START, endDate: END },
+          'ios',
+        ),
+      'INVALID_ARGUMENT',
+      'type',
+      'registeredType',
+    );
+    expect(validateReadSamples({ type: 'sleepSession', startDate: START, endDate: END }, 'android').type).toBe(
+      'sleepSession',
+    );
   });
 });

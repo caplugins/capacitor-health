@@ -807,6 +807,67 @@ export interface PassthroughSample extends SampleBase {
   unit?: string;
 }
 
+/**
+ * One stage of a sleep session.
+ *
+ * @since 0.3.0
+ */
+export interface SleepStage {
+  /**
+   * `inBed`, `asleep`, `awake`, `light`, `deep` or `rem`; Android also `outOfBed` and `unknown`
+   * (`getSupportedTypes()` lists what this platform stores). `light`, `deep` and `rem` need iOS 16.
+   *
+   * @since 0.3.0
+   */
+  stage: string;
+  /** @since 0.3.0 */
+  startDate: string;
+  /** @since 0.3.0 */
+  endDate: string;
+}
+
+/**
+ * A night's sleep, or a nap. Android stores sessions as `SleepSessionRecord`s. iOS has no session
+ * object: the plugin derives sessions from `sleepAnalysis` samples (rules in the README).
+ *
+ * Stages are in time order and never overlap; they may leave gaps. On iOS, time in bed that no other
+ * stage covers reads as `inBed` stages.
+ *
+ * @since 0.3.0
+ */
+export interface SleepSessionSample extends SampleBase {
+  /** @since 0.3.0 */
+  kind: 'special';
+  /** @since 0.3.0 */
+  type: 'sleepSession';
+  /** @since 0.3.0 */
+  stages: SleepStage[];
+  /**
+   * Android only.
+   *
+   * @since 0.3.0
+   */
+  title?: string;
+  /**
+   * Android only.
+   *
+   * @since 0.3.0
+   */
+  notes?: string;
+  /**
+   * `true` when the plugin worked the session out from stage samples (iOS).
+   *
+   * @since 0.3.0
+   */
+  derived: boolean;
+  /**
+   * iOS: the ids of the `sleepAnalysis` samples the session was derived from, `inBed` ones included.
+   *
+   * @since 0.3.0
+   */
+  stageSampleIds?: string[];
+}
+
 export type Sample =
   | PassthroughSample
   | QuantitySample
@@ -814,7 +875,8 @@ export type Sample =
   | EventSample
   | MenstruationPeriodSample
   | SkinTemperatureSample
-  | BloodPressureSample;
+  | BloodPressureSample
+  | SleepSessionSample;
 
 // ------------------------------------------------------------------ writing
 
@@ -1047,6 +1109,46 @@ export interface NewPassthroughSample extends NewSampleBase {
   unit?: string;
 }
 
+/**
+ * A sleep session to write. Stages must lie inside the session, may touch but not overlap, and may
+ * leave gaps; the plugin sorts them.
+ *
+ * iOS writes one `sleepAnalysis` sample per stage plus one `inBed` sample spanning the whole session
+ * (`inBed` stages you pass are folded into it), with `clientId`s `<clientId>:<n>` and
+ * `<clientId>:inBed`, so writing the same session again replaces its stages. Time the stages don't
+ * cover reads back as `inBed`. Android writes one `SleepSessionRecord`.
+ *
+ * @since 0.3.0
+ */
+export interface NewSleepSession extends NewSampleBase {
+  /** @since 0.3.0 */
+  type: 'sleepSession';
+  /**
+   * Required, after `startDate`.
+   *
+   * @since 0.3.0
+   */
+  endDate: string;
+  /**
+   * Defaults to none.
+   *
+   * @since 0.3.0
+   */
+  stages?: SleepStage[];
+  /**
+   * Android only: setting it on iOS rejects with `valueUnsupportedOnPlatform`.
+   *
+   * @since 0.3.0
+   */
+  title?: string;
+  /**
+   * Android only: setting it on iOS rejects with `valueUnsupportedOnPlatform`.
+   *
+   * @since 0.3.0
+   */
+  notes?: string;
+}
+
 export type NewSample =
   | NewPassthroughSample
   | NewQuantitySample
@@ -1054,7 +1156,8 @@ export type NewSample =
   | NewEventSample
   | NewMenstruationPeriod
   | NewSkinTemperatureSample
-  | NewBloodPressureSample;
+  | NewBloodPressureSample
+  | NewSleepSession;
 
 // ------------------------------------------------------------------ method options and results
 

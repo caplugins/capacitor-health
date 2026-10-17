@@ -2587,6 +2587,32 @@
       "notes": "Water drunk over an interval; an instant on iOS is allowed, Android needs an end after the start"
     },
     {
+      "id": "sleepSession",
+      "kind": "special",
+      "group": "sleep",
+      "parts": {
+        "stages": {
+          "values": "sleepStage",
+          "ios": "One sleepAnalysis category sample per stage; inBed spans the session and overlaps the others",
+          "android": "SleepSessionRecord.stages; stages sit inside the session and don't overlap"
+        }
+      },
+      "ios": {
+        "identifier": "HKCategoryTypeIdentifierSleepAnalysis",
+        "minOS": "8.0",
+        "writable": true,
+        "notes": "Derived from sleepAnalysis samples on read (per source, split by gaps longer than an hour), written as one sample per stage plus an inBed sample spanning the session (decision #64)"
+      },
+      "android": {
+        "record": "SleepSessionRecord",
+        "time": "interval",
+        "readPermission": "android.permission.health.READ_SLEEP",
+        "writePermission": "android.permission.health.WRITE_SLEEP",
+        "writable": true
+      },
+      "notes": "Native reads and writes land in T44 (iOS) and T45 (Android); until then both platforms report it unsupported. title and notes are Android only"
+    },
+    {
       "id": "mindfulSession",
       "kind": "event",
       "group": "mindfulness",

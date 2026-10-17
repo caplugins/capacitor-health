@@ -1,0 +1,70 @@
+{
+  "description": "Data from before iOS 16 has only in bed and asleep (raw value 1, read as asleep): in-bed time between asleep samples becomes an inBed stage.",
+  "query": {
+    "startDate": "2026-10-01T12:00:00.000+05:30",
+    "endDate": "2026-10-02T12:00:00.000+05:30"
+  },
+  "samples": [
+    {
+      "id": "i1",
+      "value": "inBed",
+      "startDate": "2026-10-01T22:30:00.000+05:30",
+      "endDate": "2026-10-02T06:45:00.000+05:30",
+      "source": "com.apple.health.9F3D7E21-PHONE"
+    },
+    {
+      "id": "i2",
+      "value": "asleep",
+      "startDate": "2026-10-01T22:50:00.000+05:30",
+      "endDate": "2026-10-02T02:10:00.000+05:30",
+      "source": "com.apple.health.9F3D7E21-PHONE"
+    },
+    {
+      "id": "i3",
+      "value": "asleep",
+      "startDate": "2026-10-02T02:30:00.000+05:30",
+      "endDate": "2026-10-02T06:20:00.000+05:30",
+      "source": "com.apple.health.9F3D7E21-PHONE"
+    }
+  ],
+  "expected": [
+    {
+      "id": "i1",
+      "startDate": "2026-10-01T22:30:00.000+05:30",
+      "endDate": "2026-10-02T06:45:00.000+05:30",
+      "source": "com.apple.health.9F3D7E21-PHONE",
+      "stageSampleIds": [
+        "i1",
+        "i2",
+        "i3"
+      ],
+      "stages": [
+        {
+          "stage": "inBed",
+          "startDate": "2026-10-01T22:30:00.000+05:30",
+          "endDate": "2026-10-01T22:50:00.000+05:30"
+        },
+        {
+          "stage": "asleep",
+          "startDate": "2026-10-01T22:50:00.000+05:30",
+          "endDate": "2026-10-02T02:10:00.000+05:30"
+        },
+        {
+          "stage": "inBed",
+          "startDate": "2026-10-02T02:10:00.000+05:30",
+          "endDate": "2026-10-02T02:30:00.000+05:30"
+        },
+        {
+          "stage": "asleep",
+          "startDate": "2026-10-02T02:30:00.000+05:30",
+          "endDate": "2026-10-02T06:20:00.000+05:30"
+        },
+        {
+          "stage": "inBed",
+          "startDate": "2026-10-02T06:20:00.000+05:30",
+          "endDate": "2026-10-02T06:45:00.000+05:30"
+        }
+      ]
+    }
+  ]
+}

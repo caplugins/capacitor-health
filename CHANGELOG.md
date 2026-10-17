@@ -10,11 +10,14 @@
 - `mindfulSession` (HealthKit mindful sessions ⇄ `MindfulnessSessionRecord`, Android only where
   Health Connect has the feature), with `sessionType` on Android.
 - Units `mg`, `mcg`, `oz` and `flOz`.
+- `sleepSession` types and validation (`SleepSessionSample`, `NewSleepSession`), with the iOS rules
+  for deriving sessions from `sleepAnalysis` samples (decision #64). Native support is still to come.
 
 ### Changed
 
 - iOS passthrough ids for identifiers that now have a unified id (`hk:HKQuantityTypeIdentifierDietaryWater`,
-  every `hk:HKQuantityTypeIdentifierDietary…`, `hk:HKCategoryTypeIdentifierMindfulSession`) reject with
+  every `hk:HKQuantityTypeIdentifierDietary…`, `hk:HKCategoryTypeIdentifierMindfulSession`,
+  `hk:HKCategoryTypeIdentifierSleepAnalysis`) reject with
   `INVALID_ARGUMENT`, `data.reason` `registeredType` and the unified id in `data.type` (decision #59).
 
 ## 0.2.0 (unreleased)

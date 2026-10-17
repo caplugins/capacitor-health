@@ -251,6 +251,10 @@ final class RegistryRawValuesTests: XCTestCase {
         XCTAssertEqual(HKQuantityTypeIdentifier.dietaryCaffeine.rawValue, "HKQuantityTypeIdentifierDietaryCaffeine")
     }
 
+    func testSleepIdentifiers() {
+        XCTAssertEqual(HKCategoryTypeIdentifier.sleepAnalysis.rawValue, "HKCategoryTypeIdentifierSleepAnalysis")
+    }
+
     func testMindfulnessIdentifiers() {
         XCTAssertEqual(HKCategoryTypeIdentifier.mindfulSession.rawValue, "HKCategoryTypeIdentifierMindfulSession")
     }

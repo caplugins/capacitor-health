@@ -77,6 +77,8 @@ enum HealthTypes {
     static func lookup(_ typeId: String, registry: [String: RegistryEntry] = Registry.byId)
         -> Result<(RegistryEntry, HKSampleType), Unavailability> {
         guard let entry = entry(typeId, registry: registry) else { return .failure(.notOnPlatform) }
+        // Sleep sessions are registered for the TypeScript model (T43); reads and writes arrive in T44.
+        if entry.typeId == "sleepSession" { return .failure(.notOnPlatform) }
         guard let type = sampleType(for: entry) else { return .failure(.osVersion) }
         return .success((entry, type))
     }

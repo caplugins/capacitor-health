@@ -1,0 +1,88 @@
+{
+  "description": "Two apps record the same night: one session per app, in start order; nothing is merged across sources.",
+  "query": {
+    "startDate": "2026-10-01T12:00:00.000+05:30",
+    "endDate": "2026-10-02T12:00:00.000+05:30"
+  },
+  "samples": [
+    {
+      "id": "a1",
+      "value": "light",
+      "startDate": "2026-10-01T23:00:00.000+05:30",
+      "endDate": "2026-10-02T03:00:00.000+05:30",
+      "source": "com.example.ring"
+    },
+    {
+      "id": "a2",
+      "value": "deep",
+      "startDate": "2026-10-02T03:00:00.000+05:30",
+      "endDate": "2026-10-02T06:00:00.000+05:30",
+      "source": "com.example.ring"
+    },
+    {
+      "id": "b1",
+      "value": "inBed",
+      "startDate": "2026-10-01T22:40:00.000+05:30",
+      "endDate": "2026-10-02T06:50:00.000+05:30",
+      "source": "com.example.mattress"
+    },
+    {
+      "id": "b2",
+      "value": "asleep",
+      "startDate": "2026-10-01T23:05:00.000+05:30",
+      "endDate": "2026-10-02T06:10:00.000+05:30",
+      "source": "com.example.mattress"
+    }
+  ],
+  "expected": [
+    {
+      "id": "b1",
+      "startDate": "2026-10-01T22:40:00.000+05:30",
+      "endDate": "2026-10-02T06:50:00.000+05:30",
+      "source": "com.example.mattress",
+      "stageSampleIds": [
+        "b1",
+        "b2"
+      ],
+      "stages": [
+        {
+          "stage": "inBed",
+          "startDate": "2026-10-01T22:40:00.000+05:30",
+          "endDate": "2026-10-01T23:05:00.000+05:30"
+        },
+        {
+          "stage": "asleep",
+          "startDate": "2026-10-01T23:05:00.000+05:30",
+          "endDate": "2026-10-02T06:10:00.000+05:30"
+        },
+        {
+          "stage": "inBed",
+          "startDate": "2026-10-02T06:10:00.000+05:30",
+          "endDate": "2026-10-02T06:50:00.000+05:30"
+        }
+      ]
+    },
+    {
+      "id": "a1",
+      "startDate": "2026-10-01T23:00:00.000+05:30",
+      "endDate": "2026-10-02T06:00:00.000+05:30",
+      "source": "com.example.ring",
+      "stageSampleIds": [
+        "a1",
+        "a2"
+      ],
+      "stages": [
+        {
+          "stage": "light",
+          "startDate": "2026-10-01T23:00:00.000+05:30",
+          "endDate": "2026-10-02T03:00:00.000+05:30"
+        },
+        {
+          "stage": "deep",
+          "startDate": "2026-10-02T03:00:00.000+05:30",
+          "endDate": "2026-10-02T06:00:00.000+05:30"
+        }
+      ]
+    }
+  ]
+}

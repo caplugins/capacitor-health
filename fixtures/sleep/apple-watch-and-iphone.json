@@ -1,0 +1,148 @@
+{
+  "description": "Apple Watch writes contiguous stages and the iPhone's sleep schedule writes in bed: they are different sources, so they are two sessions, the iPhone's with a single inBed stage.",
+  "query": {
+    "startDate": "2026-10-01T12:00:00.000+05:30",
+    "endDate": "2026-10-02T12:00:00.000+05:30"
+  },
+  "samples": [
+    {
+      "id": "p1",
+      "value": "inBed",
+      "startDate": "2026-10-01T22:45:00.000+05:30",
+      "endDate": "2026-10-02T07:00:00.000+05:30",
+      "source": "com.apple.health.9F3D7E21-PHONE"
+    },
+    {
+      "id": "w1",
+      "value": "light",
+      "startDate": "2026-10-01T23:10:00.000+05:30",
+      "endDate": "2026-10-01T23:55:00.000+05:30",
+      "source": "com.apple.health.5C1E2A8B-WATCH"
+    },
+    {
+      "id": "w2",
+      "value": "deep",
+      "startDate": "2026-10-01T23:55:00.000+05:30",
+      "endDate": "2026-10-02T00:40:00.000+05:30",
+      "source": "com.apple.health.5C1E2A8B-WATCH"
+    },
+    {
+      "id": "w3",
+      "value": "light",
+      "startDate": "2026-10-02T00:40:00.000+05:30",
+      "endDate": "2026-10-02T01:30:00.000+05:30",
+      "source": "com.apple.health.5C1E2A8B-WATCH"
+    },
+    {
+      "id": "w4",
+      "value": "rem",
+      "startDate": "2026-10-02T01:30:00.000+05:30",
+      "endDate": "2026-10-02T02:00:00.000+05:30",
+      "source": "com.apple.health.5C1E2A8B-WATCH"
+    },
+    {
+      "id": "w5",
+      "value": "awake",
+      "startDate": "2026-10-02T02:00:00.000+05:30",
+      "endDate": "2026-10-02T02:05:00.000+05:30",
+      "source": "com.apple.health.5C1E2A8B-WATCH"
+    },
+    {
+      "id": "w6",
+      "value": "light",
+      "startDate": "2026-10-02T02:05:00.000+05:30",
+      "endDate": "2026-10-02T04:00:00.000+05:30",
+      "source": "com.apple.health.5C1E2A8B-WATCH"
+    },
+    {
+      "id": "w7",
+      "value": "rem",
+      "startDate": "2026-10-02T04:00:00.000+05:30",
+      "endDate": "2026-10-02T04:45:00.000+05:30",
+      "source": "com.apple.health.5C1E2A8B-WATCH"
+    },
+    {
+      "id": "w8",
+      "value": "light",
+      "startDate": "2026-10-02T04:45:00.000+05:30",
+      "endDate": "2026-10-02T06:40:00.000+05:30",
+      "source": "com.apple.health.5C1E2A8B-WATCH"
+    }
+  ],
+  "expected": [
+    {
+      "id": "p1",
+      "startDate": "2026-10-01T22:45:00.000+05:30",
+      "endDate": "2026-10-02T07:00:00.000+05:30",
+      "source": "com.apple.health.9F3D7E21-PHONE",
+      "stageSampleIds": [
+        "p1"
+      ],
+      "stages": [
+        {
+          "stage": "inBed",
+          "startDate": "2026-10-01T22:45:00.000+05:30",
+          "endDate": "2026-10-02T07:00:00.000+05:30"
+        }
+      ]
+    },
+    {
+      "id": "w1",
+      "startDate": "2026-10-01T23:10:00.000+05:30",
+      "endDate": "2026-10-02T06:40:00.000+05:30",
+      "source": "com.apple.health.5C1E2A8B-WATCH",
+      "stageSampleIds": [
+        "w1",
+        "w2",
+        "w3",
+        "w4",
+        "w5",
+        "w6",
+        "w7",
+        "w8"
+      ],
+      "stages": [
+        {
+          "stage": "light",
+          "startDate": "2026-10-01T23:10:00.000+05:30",
+          "endDate": "2026-10-01T23:55:00.000+05:30"
+        },
+        {
+          "stage": "deep",
+          "startDate": "2026-10-01T23:55:00.000+05:30",
+          "endDate": "2026-10-02T00:40:00.000+05:30"
+        },
+        {
+          "stage": "light",
+          "startDate": "2026-10-02T00:40:00.000+05:30",
+          "endDate": "2026-10-02T01:30:00.000+05:30"
+        },
+        {
+          "stage": "rem",
+          "startDate": "2026-10-02T01:30:00.000+05:30",
+          "endDate": "2026-10-02T02:00:00.000+05:30"
+        },
+        {
+          "stage": "awake",
+          "startDate": "2026-10-02T02:00:00.000+05:30",
+          "endDate": "2026-10-02T02:05:00.000+05:30"
+        },
+        {
+          "stage": "light",
+          "startDate": "2026-10-02T02:05:00.000+05:30",
+          "endDate": "2026-10-02T04:00:00.000+05:30"
+        },
+        {
+          "stage": "rem",
+          "startDate": "2026-10-02T04:00:00.000+05:30",
+          "endDate": "2026-10-02T04:45:00.000+05:30"
+        },
+        {
+          "stage": "light",
+          "startDate": "2026-10-02T04:45:00.000+05:30",
+          "endDate": "2026-10-02T06:40:00.000+05:30"
+        }
+      ]
+    }
+  ]
+}

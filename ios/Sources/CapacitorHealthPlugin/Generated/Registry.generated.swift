@@ -304,6 +304,7 @@ enum Registry {
         "headphoneAudioExposureEvent",
         "nikeFuel",
         "hydration",
+        "sleepSession",
         "mindfulSession",
         "dietaryEnergy",
         "dietaryEnergyFromFat",
@@ -402,7 +403,6 @@ enum Registry {
     static let passthroughCategories: [String: [Int]] = [
         "HKCategoryTypeIdentifierHandwashingEvent": [0],
         "HKCategoryTypeIdentifierToothbrushingEvent": [0],
-        "HKCategoryTypeIdentifierSleepAnalysis": [0, 1, 2],
         "HKCategoryTypeIdentifierChestTightnessOrPain": [0, 1, 2, 3, 4],
         "HKCategoryTypeIdentifierCoughing": [0, 1, 2, 3, 4],
         "HKCategoryTypeIdentifierDizziness": [0, 1, 2, 3, 4],
@@ -1643,6 +1643,7 @@ enum Registry {
             units: ["mL", "L", "flOz"],
             aggregation: .cumulative
         ),
+        RegistryEntry("sleepSession", .special, "HKCategoryTypeIdentifierSleepAnalysis", minOS: "8.0"),
         RegistryEntry("mindfulSession", .event, "HKCategoryTypeIdentifierMindfulSession", minOS: "10.0"),
         RegistryEntry(
             "dietaryEnergy",

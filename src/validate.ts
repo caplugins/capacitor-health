@@ -586,6 +586,53 @@ function newBloodPressure(s: Fields, at: string, entry: RegistryEntry, platform:
   return Object.assign(result, typedFields(s, at, entry, platform));
 }
 
+function newSleepSession(s: Fields, at: string, entry: RegistryEntry, platform: NativePlatform): Fields {
+  if (s.endDate === undefined) throw invalid(`${at}.endDate`, 'is required for a sleep session', 'required');
+  const [start, end] = dateRange(s.startDate, s.endDate, `${at}.`);
+  if (end.ms === start.ms) throw invalid(`${at}.endDate`, 'must be after startDate', 'endNotAfterStart');
+  rejectIfSet(s, at, entry, ['value', 'unit', ...TYPED_FIELDS, 'flow', 'deltas', 'baseline']);
+  const result: Fields = { type: entry.id, startDate: start.iso, endDate: end.iso };
+  // Health Connect's own rules (SleepSessionRecord, connect-client 1.1.0): each stage starts before it
+  // ends, lies inside the session, and touches the next at most. Checked here for both platforms.
+  const raw = s.stages ?? [];
+  if (!Array.isArray(raw)) throw invalid(`${at}.stages`, 'must be an array');
+  const stages = raw.map((value, i) => {
+    const field = `${at}.stages[${i}]`;
+    const stage = object(value, field);
+    const [stageStart, stageEnd] = dateRange(stage.startDate, stage.endDate, `${field}.`);
+    if (stageEnd.ms === stageStart.ms) throw invalid(`${field}.endDate`, 'must be after startDate', 'endNotAfterStart');
+    if (stageStart.ms < start.ms || stageEnd.ms > end.ms) {
+      throw invalid(field, 'must lie inside the session', 'outsideSession');
+    }
+    return {
+      index: i,
+      startMs: stageStart.ms,
+      endMs: stageEnd.ms,
+      stage: {
+        stage: enumValue(stage.stage, `${field}.stage`, 'sleepStage', platform),
+        startDate: stageStart.iso,
+        endDate: stageEnd.iso,
+      },
+    };
+  });
+  stages.sort((a, b) => a.startMs - b.startMs || a.index - b.index);
+  for (let i = 1; i < stages.length; i++) {
+    if (stages[i].startMs < stages[i - 1].endMs) {
+      throw invalid(`${at}.stages[${stages[i].index}]`, `overlaps stages[${stages[i - 1].index}]`, 'stagesOverlap');
+    }
+  }
+  result.stages = stages.map((item) => item.stage);
+  for (const name of ['title', 'notes'] as const) {
+    if (s[name] === undefined) continue;
+    if (platform === 'ios') {
+      throw invalid(`${at}.${name}`, "can't be stored on iOS", 'valueUnsupportedOnPlatform');
+    }
+    if (typeof s[name] !== 'string') throw invalid(`${at}.${name}`, 'must be a string');
+    result[name] = s[name];
+  }
+  return result;
+}
+
 function newSample(raw: unknown, i: number, platform: NativePlatform): NewSample {
   const at = `samples[${i}]`;
   const s = object(raw, at);
@@ -598,6 +645,8 @@ function newSample(raw: unknown, i: number, platform: NativePlatform): NewSample
     result = newSkinTemperature(s, at, entry, platform);
   } else if (entry.id === 'bloodPressure') {
     result = newBloodPressure(s, at, entry, platform);
+  } else if (entry.id === 'sleepSession') {
+    result = newSleepSession(s, at, entry, platform);
   } else {
     const start = parseDate(s.startDate, `${at}.startDate`);
     let end = start;
@@ -629,7 +678,7 @@ function newSample(raw: unknown, i: number, platform: NativePlatform): NewSample
       );
     }
     result = { type: entry.id, startDate: start.iso, endDate: end.iso };
-    rejectIfSet(s, at, entry, ['flow', 'deltas', 'baseline']);
+    rejectIfSet(s, at, entry, ['flow', 'deltas', 'baseline', 'stages']);
 
     if ((entry as Entry).passthrough) {
       if (entry.kind === 'quantity') {

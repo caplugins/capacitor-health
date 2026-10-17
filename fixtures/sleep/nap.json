@@ -1,0 +1,57 @@
+{
+  "description": "A night and an afternoon nap from the same app are separate sessions.",
+  "query": {
+    "startDate": "2026-10-01T12:00:00.000+05:30",
+    "endDate": "2026-10-02T18:00:00.000+05:30"
+  },
+  "samples": [
+    {
+      "id": "n1",
+      "value": "asleep",
+      "startDate": "2026-10-01T23:00:00.000+05:30",
+      "endDate": "2026-10-02T06:30:00.000+05:30",
+      "source": "com.example.sleeptracker"
+    },
+    {
+      "id": "n2",
+      "value": "asleep",
+      "startDate": "2026-10-02T14:00:00.000+05:30",
+      "endDate": "2026-10-02T14:40:00.000+05:30",
+      "source": "com.example.sleeptracker"
+    }
+  ],
+  "expected": [
+    {
+      "id": "n1",
+      "startDate": "2026-10-01T23:00:00.000+05:30",
+      "endDate": "2026-10-02T06:30:00.000+05:30",
+      "source": "com.example.sleeptracker",
+      "stageSampleIds": [
+        "n1"
+      ],
+      "stages": [
+        {
+          "stage": "asleep",
+          "startDate": "2026-10-01T23:00:00.000+05:30",
+          "endDate": "2026-10-02T06:30:00.000+05:30"
+        }
+      ]
+    },
+    {
+      "id": "n2",
+      "startDate": "2026-10-02T14:00:00.000+05:30",
+      "endDate": "2026-10-02T14:40:00.000+05:30",
+      "source": "com.example.sleeptracker",
+      "stageSampleIds": [
+        "n2"
+      ],
+      "stages": [
+        {
+          "stage": "asleep",
+          "startDate": "2026-10-02T14:00:00.000+05:30",
+          "endDate": "2026-10-02T14:40:00.000+05:30"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,160 @@
+{
+  "description": "Two sessions this plugin wrote 30 minutes apart stay apart (grouped by clientId, not by gap) and read back as written, with their clientId and version; a sample whose clientId only looks similar (no :inBed partner) is grouped by gap.",
+  "query": {
+    "startDate": "2026-10-01T12:00:00.000+05:30",
+    "endDate": "2026-10-02T12:00:00.000+05:30"
+  },
+  "samples": [
+    {
+      "id": "p1",
+      "value": "inBed",
+      "startDate": "2026-10-01T22:00:00.000+05:30",
+      "endDate": "2026-10-02T06:00:00.000+05:30",
+      "source": "com.example.app",
+      "clientId": "n1:inBed",
+      "clientVersion": 2
+    },
+    {
+      "id": "p2",
+      "value": "light",
+      "startDate": "2026-10-01T22:30:00.000+05:30",
+      "endDate": "2026-10-02T02:00:00.000+05:30",
+      "source": "com.example.app",
+      "clientId": "n1:0",
+      "clientVersion": 2
+    },
+    {
+      "id": "p3",
+      "value": "deep",
+      "startDate": "2026-10-02T02:00:00.000+05:30",
+      "endDate": "2026-10-02T03:00:00.000+05:30",
+      "source": "com.example.app",
+      "clientId": "n1:1",
+      "clientVersion": 2
+    },
+    {
+      "id": "p4",
+      "value": "rem",
+      "startDate": "2026-10-02T03:00:00.000+05:30",
+      "endDate": "2026-10-02T05:30:00.000+05:30",
+      "source": "com.example.app",
+      "clientId": "n1:2",
+      "clientVersion": 2
+    },
+    {
+      "id": "q1",
+      "value": "inBed",
+      "startDate": "2026-10-02T06:30:00.000+05:30",
+      "endDate": "2026-10-02T07:30:00.000+05:30",
+      "source": "com.example.app",
+      "clientId": "n2:inBed",
+      "clientVersion": 1
+    },
+    {
+      "id": "q2",
+      "value": "asleep",
+      "startDate": "2026-10-02T06:40:00.000+05:30",
+      "endDate": "2026-10-02T07:20:00.000+05:30",
+      "source": "com.example.app",
+      "clientId": "n2:0",
+      "clientVersion": 1
+    },
+    {
+      "id": "r1",
+      "value": "asleep",
+      "startDate": "2026-10-02T08:00:00.000+05:30",
+      "endDate": "2026-10-02T08:30:00.000+05:30",
+      "source": "com.example.app",
+      "clientId": "x:1",
+      "clientVersion": 1
+    }
+  ],
+  "expected": [
+    {
+      "id": "p1",
+      "startDate": "2026-10-01T22:00:00.000+05:30",
+      "endDate": "2026-10-02T06:00:00.000+05:30",
+      "source": "com.example.app",
+      "clientId": "n1",
+      "clientVersion": 2,
+      "stageSampleIds": [
+        "p1",
+        "p2",
+        "p3",
+        "p4"
+      ],
+      "stages": [
+        {
+          "stage": "inBed",
+          "startDate": "2026-10-01T22:00:00.000+05:30",
+          "endDate": "2026-10-01T22:30:00.000+05:30"
+        },
+        {
+          "stage": "light",
+          "startDate": "2026-10-01T22:30:00.000+05:30",
+          "endDate": "2026-10-02T02:00:00.000+05:30"
+        },
+        {
+          "stage": "deep",
+          "startDate": "2026-10-02T02:00:00.000+05:30",
+          "endDate": "2026-10-02T03:00:00.000+05:30"
+        },
+        {
+          "stage": "rem",
+          "startDate": "2026-10-02T03:00:00.000+05:30",
+          "endDate": "2026-10-02T05:30:00.000+05:30"
+        },
+        {
+          "stage": "inBed",
+          "startDate": "2026-10-02T05:30:00.000+05:30",
+          "endDate": "2026-10-02T06:00:00.000+05:30"
+        }
+      ]
+    },
+    {
+      "id": "q1",
+      "startDate": "2026-10-02T06:30:00.000+05:30",
+      "endDate": "2026-10-02T07:30:00.000+05:30",
+      "source": "com.example.app",
+      "clientId": "n2",
+      "clientVersion": 1,
+      "stageSampleIds": [
+        "q1",
+        "q2"
+      ],
+      "stages": [
+        {
+          "stage": "inBed",
+          "startDate": "2026-10-02T06:30:00.000+05:30",
+          "endDate": "2026-10-02T06:40:00.000+05:30"
+        },
+        {
+          "stage": "asleep",
+          "startDate": "2026-10-02T06:40:00.000+05:30",
+          "endDate": "2026-10-02T07:20:00.000+05:30"
+        },
+        {
+          "stage": "inBed",
+          "startDate": "2026-10-02T07:20:00.000+05:30",
+          "endDate": "2026-10-02T07:30:00.000+05:30"
+        }
+      ]
+    },
+    {
+      "id": "r1",
+      "startDate": "2026-10-02T08:00:00.000+05:30",
+      "endDate": "2026-10-02T08:30:00.000+05:30",
+      "source": "com.example.app",
+      "stageSampleIds": [
+        "r1"
+      ],
+      "stages": [
+        {
+          "stage": "asleep",
+          "startDate": "2026-10-02T08:00:00.000+05:30",
+          "endDate": "2026-10-02T08:30:00.000+05:30"
+        }
+      ]
+    }
+  ]
+}

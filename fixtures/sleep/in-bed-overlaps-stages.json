@@ -1,0 +1,78 @@
+{
+  "description": "One app writes in bed for the whole night and asleep / awake inside it (HealthKit's intended overlap): in-bed time no other stage covers becomes inBed stages at either end.",
+  "query": {
+    "startDate": "2026-10-01T12:00:00.000+05:30",
+    "endDate": "2026-10-02T12:00:00.000+05:30"
+  },
+  "samples": [
+    {
+      "id": "b1",
+      "value": "inBed",
+      "startDate": "2026-10-01T22:00:00.000+05:30",
+      "endDate": "2026-10-02T07:00:00.000+05:30",
+      "source": "com.example.sleeptracker"
+    },
+    {
+      "id": "s1",
+      "value": "asleep",
+      "startDate": "2026-10-01T22:30:00.000+05:30",
+      "endDate": "2026-10-02T03:00:00.000+05:30",
+      "source": "com.example.sleeptracker"
+    },
+    {
+      "id": "s2",
+      "value": "awake",
+      "startDate": "2026-10-02T03:00:00.000+05:30",
+      "endDate": "2026-10-02T03:20:00.000+05:30",
+      "source": "com.example.sleeptracker"
+    },
+    {
+      "id": "s3",
+      "value": "asleep",
+      "startDate": "2026-10-02T03:20:00.000+05:30",
+      "endDate": "2026-10-02T06:30:00.000+05:30",
+      "source": "com.example.sleeptracker"
+    }
+  ],
+  "expected": [
+    {
+      "id": "b1",
+      "startDate": "2026-10-01T22:00:00.000+05:30",
+      "endDate": "2026-10-02T07:00:00.000+05:30",
+      "source": "com.example.sleeptracker",
+      "stageSampleIds": [
+        "b1",
+        "s1",
+        "s2",
+        "s3"
+      ],
+      "stages": [
+        {
+          "stage": "inBed",
+          "startDate": "2026-10-01T22:00:00.000+05:30",
+          "endDate": "2026-10-01T22:30:00.000+05:30"
+        },
+        {
+          "stage": "asleep",
+          "startDate": "2026-10-01T22:30:00.000+05:30",
+          "endDate": "2026-10-02T03:00:00.000+05:30"
+        },
+        {
+          "stage": "awake",
+          "startDate": "2026-10-02T03:00:00.000+05:30",
+          "endDate": "2026-10-02T03:20:00.000+05:30"
+        },
+        {
+          "stage": "asleep",
+          "startDate": "2026-10-02T03:20:00.000+05:30",
+          "endDate": "2026-10-02T06:30:00.000+05:30"
+        },
+        {
+          "stage": "inBed",
+          "startDate": "2026-10-02T06:30:00.000+05:30",
+          "endDate": "2026-10-02T07:00:00.000+05:30"
+        }
+      ]
+    }
+  ]
+}

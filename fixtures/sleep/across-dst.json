@@ -1,0 +1,78 @@
+{
+  "description": "The night the clocks go back in Berlin (03:00 CEST becomes 02:00 CET): sessions are instants, not local days, so the 9-hour night is one session.",
+  "query": {
+    "startDate": "2026-10-24T12:00:00.000+02:00",
+    "endDate": "2026-10-25T12:00:00.000+01:00"
+  },
+  "samples": [
+    {
+      "id": "d1",
+      "value": "inBed",
+      "startDate": "2026-10-24T23:00:00.000+02:00",
+      "endDate": "2026-10-25T07:00:00.000+01:00",
+      "source": "com.example.sleeptracker"
+    },
+    {
+      "id": "d2",
+      "value": "asleep",
+      "startDate": "2026-10-24T23:20:00.000+02:00",
+      "endDate": "2026-10-25T02:30:00.000+02:00",
+      "source": "com.example.sleeptracker"
+    },
+    {
+      "id": "d3",
+      "value": "awake",
+      "startDate": "2026-10-25T02:30:00.000+02:00",
+      "endDate": "2026-10-25T02:10:00.000+01:00",
+      "source": "com.example.sleeptracker"
+    },
+    {
+      "id": "d4",
+      "value": "asleep",
+      "startDate": "2026-10-25T02:10:00.000+01:00",
+      "endDate": "2026-10-25T06:40:00.000+01:00",
+      "source": "com.example.sleeptracker"
+    }
+  ],
+  "expected": [
+    {
+      "id": "d1",
+      "startDate": "2026-10-24T23:00:00.000+02:00",
+      "endDate": "2026-10-25T07:00:00.000+01:00",
+      "source": "com.example.sleeptracker",
+      "stageSampleIds": [
+        "d1",
+        "d2",
+        "d3",
+        "d4"
+      ],
+      "stages": [
+        {
+          "stage": "inBed",
+          "startDate": "2026-10-24T23:00:00.000+02:00",
+          "endDate": "2026-10-24T23:20:00.000+02:00"
+        },
+        {
+          "stage": "asleep",
+          "startDate": "2026-10-24T23:20:00.000+02:00",
+          "endDate": "2026-10-25T02:30:00.000+02:00"
+        },
+        {
+          "stage": "awake",
+          "startDate": "2026-10-25T02:30:00.000+02:00",
+          "endDate": "2026-10-25T02:10:00.000+01:00"
+        },
+        {
+          "stage": "asleep",
+          "startDate": "2026-10-25T02:10:00.000+01:00",
+          "endDate": "2026-10-25T06:40:00.000+01:00"
+        },
+        {
+          "stage": "inBed",
+          "startDate": "2026-10-25T06:40:00.000+01:00",
+          "endDate": "2026-10-25T07:00:00.000+01:00"
+        }
+      ]
+    }
+  ]
+}

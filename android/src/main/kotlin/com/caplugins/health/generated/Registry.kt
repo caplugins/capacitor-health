@@ -300,6 +300,7 @@ object Registry {
         "headphoneAudioExposureEvent",
         "nikeFuel",
         "hydration",
+        "sleepSession",
         "mindfulSession",
         "dietaryEnergy",
         "dietaryEnergyFromFat",
@@ -1005,6 +1006,15 @@ object Registry {
             unit = "mL",
             units = listOf("mL", "L", "flOz"),
             aggregates = mapOf("sum" to HydrationRecord.VOLUME_TOTAL),
+        ),
+        RegistryEntry(
+            id = "sleepSession",
+            kind = RegistryKind.SPECIAL,
+            record = SleepSessionRecord::class,
+            time = RecordTime.INTERVAL,
+            readPermission = "android.permission.health.READ_SLEEP",
+            writePermission = "android.permission.health.WRITE_SLEEP",
+            writable = true,
         ),
         RegistryEntry(
             id = "mindfulSession",
