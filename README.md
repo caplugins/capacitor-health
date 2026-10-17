@@ -215,6 +215,13 @@ Android), `relationToMeal`, `mealType` and `specimenSource` (`bloodGlucose`; the
 - HealthKit stores some values as one sample covering many readings (watch data). Such a sample reads
   as one sample whose value is HealthKit's sum or average, with `metadata['hk.count']` holding the
   number of readings.
+- Health Connect stores `heartRate`, `speed`, `power`, `stepsCadence` and `cyclingCadence` as series
+  records holding many points. Each point reads as its own sample (`startDate` = `endDate`); points of
+  a record with several get ids `<seriesId>#<index>` and a `seriesId`, and share its `clientId`.
+  `readSamples`' `limit` counts records for these types, so a page can hold more samples. Each sample
+  you write becomes a one-point record, so `clientId` upserts work per sample as on iOS. Deleting a
+  point's id deletes its whole record, and a deleted record shows up in `getChanges` once, with the
+  record's id: drop the samples whose `id` or `seriesId` matches.
 - Some values exist on one platform only, like flow `none` (iOS) or cervical mucus `unusual`
   (Android). Reads never invent them; writes on the other platform reject with
   `data.reason: 'valueUnsupportedOnPlatform'`. `getSupportedTypes()` lists each type's values here.
@@ -944,11 +951,11 @@ One change from the baseline in a `skinTemperature` sample.
 
 A deleted sample.
 
-| Prop           | Type                                              | Description                                               | Since |
-| -------------- | ------------------------------------------------- | --------------------------------------------------------- | ----- |
-| **`type`**     | <code><a href="#healthtype">HealthType</a></code> |                                                           | 0.1.0 |
-| **`id`**       | <code>string</code>                               |                                                           | 0.1.0 |
-| **`clientId`** | <code>string</code>                               | iOS only: the deleted sample's `clientId`, if it had one. | 0.1.0 |
+| Prop           | Type                                              | Description                                                                                                                                                      | Since |
+| -------------- | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
+| **`type`**     | <code><a href="#healthtype">HealthType</a></code> |                                                                                                                                                                  | 0.1.0 |
+| **`id`**       | <code>string</code>                               | The deleted sample's id. On Android, a deleted series record gives one deletion whose id is the record's: remove the samples whose `id` or `seriesId` equals it. | 0.1.0 |
+| **`clientId`** | <code>string</code>                               | iOS only: the deleted sample's `clientId`, if it had one.                                                                                                        | 0.1.0 |
 
 
 #### GetChangesOptions
@@ -1051,13 +1058,13 @@ Android only.
 
 Pass exactly one of `ids`, `clientIds`, or `startDate` + `endDate`.
 
-| Prop            | Type                                              | Description                                                    | Since |
-| --------------- | ------------------------------------------------- | -------------------------------------------------------------- | ----- |
-| **`type`**      | <code><a href="#healthtype">HealthType</a></code> |                                                                | 0.1.0 |
-| **`ids`**       | <code>string[]</code>                             |                                                                | 0.1.0 |
-| **`clientIds`** | <code>string[]</code>                             |                                                                | 0.1.0 |
-| **`startDate`** | <code>string</code>                               | Deletes this app's samples that overlap `startDate`–`endDate`. | 0.1.0 |
-| **`endDate`**   | <code>string</code>                               |                                                                | 0.1.0 |
+| Prop            | Type                                              | Description                                                                                                                                                        | Since |
+| --------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----- |
+| **`type`**      | <code><a href="#healthtype">HealthType</a></code> |                                                                                                                                                                    | 0.1.0 |
+| **`ids`**       | <code>string[]</code>                             | <a href="#sample">Sample</a> ids. On Android, the id of a point in a series record (`&lt;seriesId&gt;#&lt;index&gt;`) deletes the whole record, every point of it. | 0.1.0 |
+| **`clientIds`** | <code>string[]</code>                             |                                                                                                                                                                    | 0.1.0 |
+| **`startDate`** | <code>string</code>                               | Deletes this app's samples that overlap `startDate`–`endDate`.                                                                                                     | 0.1.0 |
+| **`endDate`**   | <code>string</code>                               |                                                                                                                                                                    | 0.1.0 |
 
 
 ### Type Aliases

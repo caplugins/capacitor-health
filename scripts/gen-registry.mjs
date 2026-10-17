@@ -648,6 +648,30 @@ function renderKotlin(registry) {
       return `        ${record}::class to QuantityAdapter(\n${lines.map((l) => `            ${l},`).join('\n')}\n        ),`;
     });
 
+  const seriesAdapters = registry.types
+    .filter((t) => t.kind === 'quantity' && t.android?.time === 'series')
+    .filter((t) => !adapted.has(t.android.record) && adapted.add(t.android.record))
+    .map((t) => {
+      const { record, valueProperty, wholeNumber } = t.android;
+      recordImport(record);
+      const cls = registry.units[t.unit].android.class;
+      const cast = cls === 'Number' ? (wholeNumber ? '(it.second as Double).toLong()' : 'it.second as Double') : `it.second as ${cls}`;
+      const args = [
+        'startTime = t.start',
+        'startZoneOffset = t.startOffset',
+        'endTime = t.end',
+        'endZoneOffset = t.endOffset',
+        `samples = points.map { ${record}.Sample(time = it.first, ${valueProperty} = ${cast}) }`,
+        'metadata = metadata',
+      ];
+      const lines = [
+        `times = { r -> (r as ${record}).let { RecordTimes(it.startTime, it.startZoneOffset, it.endTime, it.endZoneOffset) } }`,
+        `points = { r -> (r as ${record}).samples.map { it.time to it.${valueProperty} } }`,
+        `build = { t, metadata, points -> ${record}(${args.join(', ')}) }`,
+      ];
+      return `        ${record}::class to SeriesAdapter(\n${lines.map((l) => `            ${l},`).join('\n')}\n        ),`;
+    });
+
   const units = Object.entries(registry.units)
     .filter(([, u]) => u.android)
     .map(([id, u]) => {
@@ -752,6 +776,13 @@ class QuantityAdapter(
     val build: (RecordTimes, Metadata, Any, Map<String, Int>) -> Record,
 )
 
+/** One series record class (T28): its times, its points (time and value object), and its constructor. */
+class SeriesAdapter(
+    val times: (Record) -> RecordTimes,
+    val points: (Record) -> List<Pair<Instant, Any>>,
+    val build: (RecordTimes, Metadata, List<Pair<Instant, Any>>) -> Record,
+)
+
 object Registry {
     /** Every unified type id, in registry order, including types Health Connect doesn't have. */
     val allTypeIds: List<String> = listOf(
@@ -777,6 +808,11 @@ ${entries.join('\n')}
     /** Quantity records the codec reads and builds generically, by record class. */
     val adapters: Map<KClass<out Record>, QuantityAdapter> = mapOf(
 ${adapters.join('\n')}
+    )
+
+    /** Series records, read as one sample per point. */
+    val seriesAdapters: Map<KClass<out Record>, SeriesAdapter> = mapOf(
+${seriesAdapters.join('\n')}
     )
 }
 `;

@@ -473,7 +473,10 @@ function newSample(raw: unknown, i: number, platform: NativePlatform): NewSample
     const start = parseDate(s.startDate, `${at}.startDate`);
     let end = start;
     if (s.endDate !== undefined) [, end] = dateRange(s.startDate, s.endDate, `${at}.`);
-    const instant = platform === 'ios' ? entry.ios?.time === 'instant' : entry.android?.time === 'instant';
+    // A series type's sample is one point of a Health Connect series record (decision #53).
+    const androidTime = entry.android?.time;
+    const instant =
+      platform === 'ios' ? entry.ios?.time === 'instant' : androidTime === 'instant' || androidTime === 'series';
     // Health Connect interval records need an end after their start.
     if (platform === 'android' && entry.android?.time === 'interval' && end.ms <= start.ms) {
       throw invalid(

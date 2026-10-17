@@ -740,6 +740,28 @@ describe('M2 types', () => {
     );
   });
 
+  it('writes series types as single points on Android', () => {
+    const heartRate = { type: 'heartRate', startDate: START, value: 72 };
+    expect(save(heartRate, 'android')).toMatchObject({
+      value: 72,
+      unit: 'count/min',
+      endDate: save(heartRate, 'android').startDate,
+    });
+    rejection(
+      () => save({ ...heartRate, endDate: END }, 'android'),
+      'INVALID_ARGUMENT',
+      'samples[0].endDate',
+      'instantOnly',
+    );
+    rejection(
+      () => save({ ...heartRate, value: 72.5 }, 'android'),
+      'INVALID_ARGUMENT',
+      'samples[0].value',
+      'wholeNumberOnly',
+    );
+    expect(save({ ...heartRate, endDate: END, value: 72.5 }).value).toBe(72.5);
+  });
+
   it('requires an insulin delivery reason on iOS', () => {
     const insulin = { type: 'insulinDelivery', startDate: START, value: 2 };
     rejection(() => save(insulin), 'INVALID_ARGUMENT', 'samples[0].reason', 'required');

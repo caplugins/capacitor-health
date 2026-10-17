@@ -67,7 +67,7 @@ class Changes(
     private suspend fun result(upserted: List<Pair<Record, RegistryEntry>>, deleted: JSArray, tokens: Map<String, String>, hasMore: Boolean): JSObject {
         val cycleStarts = samples.cycleStarts(upserted.map { it.first }.filterIsInstance<MenstruationFlowRecord>())
         return JSObject()
-            .put("upserted", JSArray(upserted.map { (record, entry) -> RecordCodec.encode(record, entry, isCycleStart = cycleStarts[record.metadata.id]) }))
+            .put("upserted", JSArray(upserted.flatMap { (record, entry) -> RecordCodec.encodeAll(record, entry, isCycleStart = cycleStarts[record.metadata.id]) }))
             .put("deleted", deleted)
             .put("nextCursor", encodeBase64(JSONObject().put("v", 1).put("tokens", JSONObject(tokens as Map<*, *>)).toString().toByteArray()))
             .put("hasMore", hasMore)

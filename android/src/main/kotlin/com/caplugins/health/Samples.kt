@@ -85,7 +85,8 @@ class Samples(
         }
 
         val cycleStarts = if (entry.record == MenstruationFlowRecord::class) cycleStarts(records.filterIsInstance<MenstruationFlowRecord>()) else emptyMap()
-        val result = JSObject().put("samples", JSArray(records.map { RecordCodec.encode(it, entry, unit, cycleStarts[it.metadata.id]) }))
+        // A series record gives one sample per point, so a page can hold more samples than `limit` (decision #53).
+        val result = JSObject().put("samples", JSArray(records.flatMap { RecordCodec.encodeAll(it, entry, unit, cycleStarts[it.metadata.id]) }))
         token?.let { result.put("nextCursor", encodeCursor(typeId, it)) }
         HealthLog.debug("readSamples $typeId: ${records.size} records")
         return result
@@ -199,7 +200,8 @@ class Samples(
      */
     suspend fun delete(options: Fields): JSObject {
         val entry: RegistryEntry = types.resolveWritable(options.string("type"))
-        val ids = options.optStrings("ids")
+        // A series point's id (`<recordId>#<index>`) deletes its whole record (decision #53).
+        val ids = options.optStrings("ids")?.map { it.substringBefore('#') }?.distinct()
         val clientIds = options.optStrings("clientIds")
         val token = runCatching { client.getChangesToken(ChangesTokenRequest(setOf(entry.record))) }.getOrNull()
         if (entry.record == MenstruationPeriodRecord::class) {

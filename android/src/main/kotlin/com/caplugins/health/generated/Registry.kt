@@ -132,6 +132,13 @@ class QuantityAdapter(
     val build: (RecordTimes, Metadata, Any, Map<String, Int>) -> Record,
 )
 
+/** One series record class (T28): its times, its points (time and value object), and its constructor. */
+class SeriesAdapter(
+    val times: (Record) -> RecordTimes,
+    val points: (Record) -> List<Pair<Instant, Any>>,
+    val build: (RecordTimes, Metadata, List<Pair<Instant, Any>>) -> Record,
+)
+
 object Registry {
     /** Every unified type id, in registry order, including types Health Connect doesn't have. */
     val allTypeIds: List<String> = listOf(
@@ -710,6 +717,7 @@ object Registry {
             unit = "count/min",
             units = listOf("count/min"),
             aggregates = mapOf("avg" to HeartRateRecord.BPM_AVG, "min" to HeartRateRecord.BPM_MIN, "max" to HeartRateRecord.BPM_MAX, "count" to HeartRateRecord.MEASUREMENTS_COUNT),
+            wholeNumber = true,
         ),
         RegistryEntry(
             id = "restingHeartRate",
@@ -997,6 +1005,35 @@ object Registry {
             times = { r -> (r as BodyWaterMassRecord).let { RecordTimes(it.time, it.zoneOffset, it.time, it.zoneOffset) } },
             value = { r -> (r as BodyWaterMassRecord).mass },
             build = { t, metadata, value, fields -> BodyWaterMassRecord(time = t.start, zoneOffset = t.startOffset, metadata = metadata, mass = value as Mass) },
+        ),
+    )
+
+    /** Series records, read as one sample per point. */
+    val seriesAdapters: Map<KClass<out Record>, SeriesAdapter> = mapOf(
+        StepsCadenceRecord::class to SeriesAdapter(
+            times = { r -> (r as StepsCadenceRecord).let { RecordTimes(it.startTime, it.startZoneOffset, it.endTime, it.endZoneOffset) } },
+            points = { r -> (r as StepsCadenceRecord).samples.map { it.time to it.rate } },
+            build = { t, metadata, points -> StepsCadenceRecord(startTime = t.start, startZoneOffset = t.startOffset, endTime = t.end, endZoneOffset = t.endOffset, samples = points.map { StepsCadenceRecord.Sample(time = it.first, rate = it.second as Double) }, metadata = metadata) },
+        ),
+        SpeedRecord::class to SeriesAdapter(
+            times = { r -> (r as SpeedRecord).let { RecordTimes(it.startTime, it.startZoneOffset, it.endTime, it.endZoneOffset) } },
+            points = { r -> (r as SpeedRecord).samples.map { it.time to it.speed } },
+            build = { t, metadata, points -> SpeedRecord(startTime = t.start, startZoneOffset = t.startOffset, endTime = t.end, endZoneOffset = t.endOffset, samples = points.map { SpeedRecord.Sample(time = it.first, speed = it.second as Velocity) }, metadata = metadata) },
+        ),
+        PowerRecord::class to SeriesAdapter(
+            times = { r -> (r as PowerRecord).let { RecordTimes(it.startTime, it.startZoneOffset, it.endTime, it.endZoneOffset) } },
+            points = { r -> (r as PowerRecord).samples.map { it.time to it.power } },
+            build = { t, metadata, points -> PowerRecord(startTime = t.start, startZoneOffset = t.startOffset, endTime = t.end, endZoneOffset = t.endOffset, samples = points.map { PowerRecord.Sample(time = it.first, power = it.second as Power) }, metadata = metadata) },
+        ),
+        CyclingPedalingCadenceRecord::class to SeriesAdapter(
+            times = { r -> (r as CyclingPedalingCadenceRecord).let { RecordTimes(it.startTime, it.startZoneOffset, it.endTime, it.endZoneOffset) } },
+            points = { r -> (r as CyclingPedalingCadenceRecord).samples.map { it.time to it.revolutionsPerMinute } },
+            build = { t, metadata, points -> CyclingPedalingCadenceRecord(startTime = t.start, startZoneOffset = t.startOffset, endTime = t.end, endZoneOffset = t.endOffset, samples = points.map { CyclingPedalingCadenceRecord.Sample(time = it.first, revolutionsPerMinute = it.second as Double) }, metadata = metadata) },
+        ),
+        HeartRateRecord::class to SeriesAdapter(
+            times = { r -> (r as HeartRateRecord).let { RecordTimes(it.startTime, it.startZoneOffset, it.endTime, it.endZoneOffset) } },
+            points = { r -> (r as HeartRateRecord).samples.map { it.time to it.beatsPerMinute } },
+            build = { t, metadata, points -> HeartRateRecord(startTime = t.start, startZoneOffset = t.startOffset, endTime = t.end, endZoneOffset = t.endOffset, samples = points.map { HeartRateRecord.Sample(time = it.first, beatsPerMinute = (it.second as Double).toLong()) }, metadata = metadata) },
         ),
     )
 }

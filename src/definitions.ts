@@ -502,6 +502,15 @@ export interface SampleBase {
   /** @since 0.1.0 */
   clientVersion?: number;
   /**
+   * Android: the Health Connect series record (heart rate, speed, power, cadence) this sample is a
+   * point of, when the record holds several points. Its points have ids `<seriesId>#<index>` and
+   * share the record's `clientId`; a deletion in `getChanges` names the record, so it matches their
+   * `seriesId`.
+   *
+   * @since 0.2.0
+   */
+  seriesId?: string;
+  /**
    * Native fields the unified shape has no place for, under `hk.` / `hc.` keys.
    *
    * @since 0.1.0
@@ -1008,7 +1017,12 @@ export interface GetChangesOptions {
 export interface DeletedSample {
   /** @since 0.1.0 */
   type: HealthType;
-  /** @since 0.1.0 */
+  /**
+   * The deleted sample's id. On Android, a deleted series record gives one deletion whose id is the
+   * record's: remove the samples whose `id` or `seriesId` equals it.
+   *
+   * @since 0.1.0
+   */
   id: string;
   /**
    * iOS only: the deleted sample's `clientId`, if it had one.
@@ -1074,7 +1088,12 @@ export interface SaveSamplesResult {
 export interface DeleteSamplesOptions {
   /** @since 0.1.0 */
   type: HealthType;
-  /** @since 0.1.0 */
+  /**
+   * Sample ids. On Android, the id of a point in a series record (`<seriesId>#<index>`) deletes the
+   * whole record, every point of it.
+   *
+   * @since 0.1.0
+   */
   ids?: string[];
   /** @since 0.1.0 */
   clientIds?: string[];

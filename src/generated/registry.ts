@@ -1802,6 +1802,7 @@ export const REGISTRY: Readonly<Record<HealthType, RegistryEntry>> = {
       readPermission: 'android.permission.health.READ_HEART_RATE',
       writePermission: 'android.permission.health.WRITE_HEART_RATE',
       writable: true,
+      wholeNumber: true,
       metrics: ['avg', 'min', 'max', 'count'],
     },
   },

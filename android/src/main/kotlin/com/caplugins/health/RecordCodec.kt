@@ -18,6 +18,7 @@ import com.caplugins.health.generated.RecordTimes
 import com.caplugins.health.generated.Registry
 import com.caplugins.health.generated.RegistryEntry
 import com.caplugins.health.generated.RegistryField
+import com.caplugins.health.generated.SeriesAdapter
 import com.getcapacitor.JSArray
 import com.getcapacitor.JSObject
 import java.time.LocalDate
@@ -81,7 +82,28 @@ object RecordCodec {
 
     // region Read
 
-    /** `Sample` JSON for [record]. [isCycleStart] is decision #16's computed flag for flow records. */
+    /**
+     * `Sample` JSON for [record]: one sample, or one per point of a series record (decision #53). A record with
+     * several points gives its points ids `<recordId>#<index>` and a `seriesId`; a one-point record reads as a
+     * sample with the record's id, like any other record.
+     */
+    fun encodeAll(record: Record, entry: RegistryEntry, unit: String? = null, isCycleStart: Boolean? = null): List<JSObject> {
+        val series = Registry.seriesAdapters[record::class] ?: return listOf(encode(record, entry, unit, isCycleStart))
+        val outUnit = unit ?: entry.unit ?: return emptyList()
+        val points = series.points(record)
+        val offset = times(record).startOffset
+        return points.mapIndexed { index, (time, value) ->
+            val date = DateCoding.format(time, offset)
+            encodeBase(record, entry).apply {
+                if (points.size > 1) put("id", "${record.metadata.id}#$index").put("seriesId", record.metadata.id)
+                put("startDate", date).put("endDate", date)
+                put("value", Registry.units.getValue(outUnit).read(value)).put("unit", outUnit)
+                put("native", JSObject().put("type", record::class.simpleName))
+            }
+        }
+    }
+
+    /** `Sample` JSON for a record that isn't a series. [isCycleStart] is decision #16's computed flag for flow records. */
     fun encode(record: Record, entry: RegistryEntry, unit: String? = null, isCycleStart: Boolean? = null): JSObject {
         val json = encodeBase(record, entry)
         val native = JSObject().put("type", record::class.simpleName)
@@ -134,7 +156,7 @@ object RecordCodec {
 
     /** Start and end of any record the plugin handles (connect-client keeps its instant / interval interfaces internal). */
     fun times(record: Record): RecordTimes =
-        Registry.adapters[record::class]?.times?.invoke(record) ?: when (record) {
+        (Registry.adapters[record::class]?.times ?: Registry.seriesAdapters[record::class]?.times)?.invoke(record) ?: when (record) {
             is MenstruationFlowRecord -> RecordTimes(record.time, record.zoneOffset, record.time, record.zoneOffset)
             is IntermenstrualBleedingRecord -> RecordTimes(record.time, record.zoneOffset, record.time, record.zoneOffset)
             is CervicalMucusRecord -> RecordTimes(record.time, record.zoneOffset, record.time, record.zoneOffset)
@@ -215,6 +237,7 @@ object RecordCodec {
     fun decode(fields: Fields, entry: RegistryEntry): Decoded {
         val metadata = metadata(fields)
         Registry.adapters[entry.record]?.let { return Decoded(decodeQuantity(fields, entry, it, metadata)) }
+        Registry.seriesAdapters[entry.record]?.let { return Decoded(decodePoint(fields, entry, it, metadata)) }
         val record: Record = when (entry.record) {
             MenstruationFlowRecord::class -> {
                 val time = instant(fields)
@@ -272,20 +295,36 @@ object RecordCodec {
             }
             RecordTimes(start.toInstant(), start.offset, end.toInstant(), end.offset)
         }
+        val value = quantityValue(fields, entry)
+        val enums = entry.fields.filter { it.property != null && it.valueSet != null }.associate { it.name to enumField(fields, entry, it.name) }
+        return checkingRange(fields, entry) { adapter.build(times, metadata, value, enums) }
+    }
+
+    /** A point of a series type as a one-point series record (decision #53): its `clientId` stays one sample's. */
+    private fun decodePoint(fields: Fields, entry: RegistryEntry, adapter: SeriesAdapter, metadata: Metadata): Record {
+        val time = instant(fields)
+        val value = quantityValue(fields, entry)
+        val times = RecordTimes(time.toInstant(), time.offset, time.toInstant(), time.offset)
+        return checkingRange(fields, entry) { adapter.build(times, metadata, listOf(time.toInstant() to value)) }
+    }
+
+    /** The sample's value as what the record takes, in the sample's unit. */
+    private fun quantityValue(fields: Fields, entry: RegistryEntry): Any {
         val number = fields.double("value")
         if (entry.wholeNumber && number % 1.0 != 0.0) {
             throw HealthException.invalidArgument(fields.field("value"), "must be a whole number on Android", "wholeNumberOnly")
         }
-        val value = Registry.units.getValue(unit(fields, entry)).build(number)
-        val enums = entry.fields.filter { it.property != null && it.valueSet != null }.associate { it.name to enumField(fields, entry, it.name) }
-        return try {
-            adapter.build(times, metadata, value, enums)
+        return Registry.units.getValue(unit(fields, entry)).build(number)
+    }
+
+    private fun checkingRange(fields: Fields, entry: RegistryEntry, build: () -> Record): Record =
+        try {
+            build()
         } catch (e: IllegalArgumentException) {
             // Health Connect checks each value's range; its message quotes the value, so it stays in debug logs.
             HealthLog.debug("Health Connect rejected ${entry.id}: ${e.message}")
             throw HealthException.invalidArgument(fields.field("value"), "is outside the range Health Connect accepts for ${entry.id}", "outOfRange")
         }
-    }
 
     private fun unit(fields: Fields, entry: RegistryEntry): String {
         val unit = fields.optString("unit") ?: entry.unit ?: "degC"

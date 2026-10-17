@@ -12,6 +12,8 @@
 - Typed fields `testType` / `measurementMethod` (`vo2Max`), `relationToMeal`, `mealType`,
   `specimenSource` (`bloodGlucose`) and `reason` (`insulinDelivery`).
 - `UnsupportedReason` `aggregateOnly` for types that only have aggregates on a platform.
+- Android: series records (heart rate, speed, power, cadence) read as one sample per point, with
+  `seriesId` for records holding several points.
 - iOS: values HealthKit would refuse with an exception (effort scores outside 0–10, audio exposure
   samples without a duration) reject with `INVALID_ARGUMENT` before reaching HealthKit.
 - Android: writes that don't fit Health Connect's record shapes or ranges reject with
