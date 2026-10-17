@@ -211,6 +211,24 @@ async function checkWritable(support: TypeSupport, at: Date, row: AcceptanceRow)
     nextCursor = changes.nextCursor;
   }
 
+  // Every unit reads the stored value back (T35).
+  if ((support.units?.length ?? 0) > 1 && REGISTRY[support.type].kind === 'quantity') {
+    const readings: string[] = [];
+    for (const unit of support.units ?? []) {
+      const { samples } = await CapacitorHealth.readSamples({
+        type,
+        startDate: localIso(new Date(at.getTime() - 3600_000)),
+        endDate: localIso(new Date(at.getTime() + 4 * 86_400_000)),
+        unit,
+      });
+      const value = (samples.find((s) => s.clientId === clientId) as { value?: number } | undefined)?.value;
+      readings.push(`${unit} ${value === undefined ? '?' : Number(value.toPrecision(6))}`);
+    }
+    step('units', !readings.some((r) => r.endsWith('?') || r.endsWith('NaN')), readings.join(', '));
+  }
+
+  if (support.aggregatable) await checkAggregate(support, at, step);
+
   const { deleted } = await CapacitorHealth.deleteSamples({ type, clientIds: [clientId] });
   found = await readOwn(type, at, clientId);
   step('delete', deleted >= 1 && found.length === 0, `deleted ${deleted}`);
@@ -224,6 +242,40 @@ async function checkWritable(support: TypeSupport, at: Date, row: AcceptanceRow)
     );
   } else {
     row.steps.changes = 'n/a (follow menstrualFlow, decision #41)';
+  }
+}
+
+/** Aggregates the sample's day (day buckets) with every metric the type has; the sample's bucket must have values. */
+async function checkAggregate(
+  support: TypeSupport,
+  at: Date,
+  step: (name: string, ok: boolean, detail?: string) => void,
+  requireData = true,
+): Promise<void> {
+  const dayStart = new Date(at);
+  dayStart.setHours(0, 0, 0, 0);
+  const dayEnd = new Date(dayStart);
+  dayEnd.setDate(dayEnd.getDate() + 1);
+  const metrics = support.metrics ?? [];
+  try {
+    const { buckets } = await CapacitorHealth.aggregate({
+      type: support.type,
+      startDate: localIso(dayStart),
+      endDate: localIso(dayEnd),
+      metrics,
+      bucket: { unit: 'hour', size: 6 },
+    });
+    const filled = buckets.filter((b) => Object.keys(b.values).length > 0);
+    const values = filled.map((b) =>
+      metrics.map((m) => `${m} ${Number((b.values[m] ?? NaN).toPrecision(6))}`).join(' '),
+    );
+    step(
+      'aggregate',
+      buckets.length === 4 && (!requireData || filled.length >= 1),
+      `${buckets.length} buckets; ${values.join(' / ') || 'no data'}`,
+    );
+  } catch (error) {
+    step('aggregate', false, errorCode(error));
   }
 }
 
@@ -255,6 +307,21 @@ export async function runAcceptance(mode: 'granted' | 'denied' = 'granted'): Pro
           error === 'UNSUPPORTED_TYPE' ? `✓ UNSUPPORTED_TYPE (${support.reason})` : `✗ ${JSON.stringify(error)}`;
         continue;
       }
+      if (mode === 'denied' && !support.readable) {
+        // Aggregate-only: the aggregate is the read. iOS hides denied reads, so it comes back empty.
+        const result = await CapacitorHealth.aggregate({
+          type,
+          startDate: localIso(at),
+          endDate: localIso(new Date()),
+          metrics: support.metrics ?? [],
+        })
+          .then((r) => (r.buckets.some((b) => Object.keys(b.values).length > 0) ? 'values' : 'empty'))
+          .catch(errorCode);
+        const ok = platform === 'ios' ? result === 'empty' : result === 'PERMISSION_DENIED';
+        row.status = ok ? 'aggregateOnly' : 'fail';
+        row.steps.aggregate = `${ok ? '✓' : '✗'} ${result}`;
+        continue;
+      }
       if (mode === 'denied') {
         const read = await CapacitorHealth.readSamples({ type, startDate: localIso(at), endDate: localIso(new Date()) })
           .then((r) => `${r.samples.length} samples`)
@@ -273,6 +340,13 @@ export async function runAcceptance(mode: 'granted' | 'denied' = 'granted'): Pro
       }
       if (!support.readable) {
         row.status = 'aggregateOnly';
+        if (support.aggregatable) {
+          const step = (name: string, ok: boolean, detail = '') => {
+            row.steps[name] = ok ? `✓ ${detail}` : `✗ ${detail}`;
+            if (!ok) row.status = 'fail';
+          };
+          await checkAggregate(support, at, step, false);
+        }
         const error = await CapacitorHealth.readSamples({
           type,
           startDate: localIso(at),
