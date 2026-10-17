@@ -79,6 +79,9 @@
         <h2>Samples</h2>
         <button id="load-types" type="button">Load types</button>
         <label>Type <select id="explore-type"></select></label>
+        <label>or a passthrough id <input id="explore-type-id" placeholder="hk:HKQuantityTypeIdentifierDietaryWater" /></label>
+        <label>Unit <select id="explore-unit"></select></label>
+        <label>Only from apps <input id="explore-sources" placeholder="bundle ids / packages, comma-separated" /></label>
         <label>Last <input id="explore-days" type="number" value="60" min="1" max="3650" /> days</label>
         <pre id="explore-types"></pre>
         <h3>Read</h3>
@@ -87,15 +90,40 @@
         <h3>Write</h3>
         <select id="explore-value" hidden></select>
         <input id="explore-number" type="number" step="0.01" hidden />
+        <label>Extra fields (JSON) <input id="explore-fields" placeholder='{"relationToMeal":"afterMeal"}' /></label>
         <button id="explore-write" type="button">saveSamples() now</button>
         <h3>Delete</h3>
         <button id="explore-delete-range" type="button">deleteSamples() in range</button>
         <input id="explore-client-id" placeholder="clientId" />
         <button id="explore-delete-client" type="button">deleteSamples() by clientId</button>
         <h3>Changes</h3>
+        <label><input id="explore-exclude-own" type="checkbox" /> excludeOwnWrites</label>
         <button id="explore-follow" type="button">getChanges() without cursor</button>
         <button id="explore-changes" type="button">getChanges() with cursor</button>
         <pre id="explore-output"></pre>
+      </section>
+      <section>
+        <h2>Aggregate</h2>
+        <button id="aggregate-load" type="button">Load aggregatable types</button>
+        <label>Type <select id="aggregate-type"></select></label>
+        <div id="aggregate-metrics"></div>
+        <label>Unit <select id="aggregate-unit"></select></label>
+        <label
+          >Bucket
+          <select id="aggregate-bucket">
+            <option value="">none (whole range)</option>
+            <option>minute</option>
+            <option>hour</option>
+            <option selected>day</option>
+            <option>week</option>
+            <option>month</option>
+          </select>
+          × <input id="aggregate-size" type="number" value="1" min="1" style="width: 4em"
+        /></label>
+        <label>Last <input id="aggregate-days" type="number" value="7" min="1" max="3650" /> days</label>
+        <label>Only from apps <input id="aggregate-sources" placeholder="bundle ids / packages, comma-separated" /></label>
+        <button id="aggregate-run" type="button">aggregate()</button>
+        <pre id="aggregate-result"></pre>
       </section>
       <section>
         <h2>Test data</h2>

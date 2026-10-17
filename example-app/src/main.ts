@@ -2,7 +2,7 @@ import { CapacitorHealth, HEALTH_TYPES } from '@caplugins/capacitor-health';
 import type { HealthType } from '@caplugins/capacitor-health';
 
 import { runAcceptance } from './acceptance';
-import { runAggregateCheck, runPassthroughCheck } from './aggregate';
+import { loadAggregateTypes, runAggregate, runAggregateCheck, runPassthroughCheck, updateAggregateOptions } from './aggregate';
 import { changes, deleteByClientId, deleteRange, loadTypes, read, updateValues, write } from './explore';
 import { runChangesCheck, runPeriodCheck, runRoundTrips } from './roundtrip';
 import { deleteTestData, seedTestData } from './seed';
@@ -62,6 +62,9 @@ bind('explore-delete-client', 'explore-output', deleteByClientId);
 bind('explore-follow', 'explore-output', () => changes(true));
 bind('explore-changes', 'explore-output', () => changes(false));
 bind('seed', 'seed-output', seedTestData);
+bind('aggregate-load', 'aggregate-result', loadAggregateTypes);
+document.getElementById('aggregate-type')?.addEventListener('change', updateAggregateOptions);
+bind('aggregate-run', 'aggregate-result', runAggregate);
 bind('seed-delete', 'seed-output', deleteTestData);
 
 bind('round-trip', 'samples', async () => {
