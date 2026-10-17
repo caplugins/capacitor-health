@@ -13,11 +13,15 @@ public class CapacitorHealthPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "requestAuthorization", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "checkAuthorization", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "openHealthSettings", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "openHealthConnectInstall", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "openHealthConnectInstall", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "readSamples", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "saveSamples", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "deleteSamples", returnType: CAPPluginReturnPromise)
     ]
 
     private let store = HKHealthStore()
     private lazy var authorization = Authorization(store: store)
+    private lazy var samples = Samples(store: store)
 
     override public func load() {
         HealthLog.enabled = getConfig().getBoolean("debugLogging", false)
@@ -48,6 +52,26 @@ public class CapacitorHealthPlugin: CAPPlugin, CAPBridgedPlugin {
         let read = call.getArray("read", String.self) ?? []
         let write = call.getArray("write", String.self) ?? []
         call.run { try await self.authorization.check(read: read, write: write) }
+    }
+
+    // MARK: - Samples
+
+    @objc func readSamples(_ call: CAPPluginCall) {
+        guard ensureAvailable(call) else { return }
+        let options = JSONFields(call.options as? [String: Any] ?? [:], path: "")
+        call.run { try await self.samples.read(options) }
+    }
+
+    @objc func saveSamples(_ call: CAPPluginCall) {
+        guard ensureAvailable(call) else { return }
+        let list = (call.getArray("samples") ?? []).compactMap { $0 as? [String: Any] }
+        call.run { try await self.samples.save(list) }
+    }
+
+    @objc func deleteSamples(_ call: CAPPluginCall) {
+        guard ensureAvailable(call) else { return }
+        let options = JSONFields(call.options as? [String: Any] ?? [:], path: "")
+        call.run { try await self.samples.delete(options) }
     }
 
     // MARK: - Settings

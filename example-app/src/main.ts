@@ -1,6 +1,8 @@
 import { CapacitorHealth } from '@caplugins/capacitor-health';
 import type { HealthType } from '@caplugins/capacitor-health';
 
+import { runRoundTrips } from './roundtrip';
+
 /** The reproductive types the example asks access for. */
 const TYPES: HealthType[] = [
   'menstrualFlow',
@@ -57,5 +59,11 @@ bind('check-authorization', 'authorization', async () =>
 );
 bind('open-settings', 'settings', () => CapacitorHealth.openHealthSettings().then(() => 'opened'));
 bind('open-install', 'settings', () => CapacitorHealth.openHealthConnectInstall().then(() => 'opened'));
+
+bind('round-trip', 'samples', async () => {
+  const lines = await runRoundTrips();
+  lines.forEach((line) => console.log(`[example] ${line}`));
+  return lines;
+});
 
 document.getElementById('check-availability')?.click();

@@ -22,7 +22,10 @@ final class AvailabilityTests: XCTestCase {
             "requestAuthorization",
             "checkAuthorization",
             "openHealthSettings",
-            "openHealthConnectInstall"
+            "openHealthConnectInstall",
+            "readSamples",
+            "saveSamples",
+            "deleteSamples"
         ])
     }
 }
