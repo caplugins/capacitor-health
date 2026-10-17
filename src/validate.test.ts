@@ -828,6 +828,19 @@ describe('M2 types', () => {
     expect(validateReadSamples({ type: 'basalEnergy', ...range }, 'ios').type).toBe('basalEnergy');
     expect(validateCheckAuthorization({ read: ['totalEnergy'] }, 'ios').read).toEqual(['totalEnergy']);
     rejection(() => save({ type: 'totalEnergy', startDate: START, value: 1 }), 'READ_ONLY_TYPE', 'samples[0].type');
+    rejection(
+      () => save({ type: 'basalEnergy', startDate: START, endDate: END, value: 1 }, 'android'),
+      'READ_ONLY_TYPE',
+    );
+    rejection(
+      () => validateReadSamples({ type: 'basalMetabolicRate', ...range }, 'ios'),
+      'UNSUPPORTED_TYPE',
+      'type',
+      'notOnPlatform',
+    );
+    expect(save({ type: 'basalMetabolicRate', startDate: START, value: 1600, unit: 'kcal/d' }, 'android').unit).toBe(
+      'kcal/d',
+    );
   });
 
   it('rejects writes of types HealthKit disallows sharing', () => {

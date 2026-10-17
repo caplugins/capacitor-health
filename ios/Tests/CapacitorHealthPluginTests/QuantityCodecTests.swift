@@ -173,6 +173,17 @@ final class QuantityCodecTests: XCTestCase {
         XCTAssertNoThrow(try HealthTypes.requireSamples(try XCTUnwrap(Registry.byId["distance"])))
     }
 
+    /// Decision #21: basal energy is energy over an interval on iOS; the Android-only rate isn't on iOS.
+    func testEnergySplit() throws {
+        let basal = HealthTypes.support(for: "basalEnergy")
+        XCTAssertEqual(basal["readable"] as? Bool, true)
+        XCTAssertEqual(basal["writable"] as? Bool, true)
+        XCTAssertEqual(basal["units"] as? [String], ["kcal", "kJ"])
+        XCTAssertEqual(HealthTypes.support(for: "basalMetabolicRate")["reason"] as? String, "notOnPlatform")
+        let sample = try quantity("basalEnergy", 60, "kcal")
+        XCTAssertEqual(sample.sampleType, HKQuantityType(.basalEnergyBurned))
+    }
+
     func testMergeKeepsOneOrderAcrossMembers() {
         let base = Date(timeIntervalSince1970: 1_800_000_000)
         func sample(_ type: HKQuantityTypeIdentifier, _ minutes: Double, _ meters: Double) -> HKSample {

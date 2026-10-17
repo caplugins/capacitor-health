@@ -156,6 +156,22 @@ class QuantityRecordsTest {
         assertEquals("basalMetabolicRate", types.resolveSamples("basalMetabolicRate").id)
     }
 
+    /** Decision #21: Android stores a rate (kcal/day) and total calories as records. */
+    @Test
+    fun energySplit() {
+        val types = HealthTypes { true }
+        for (id in listOf("basalMetabolicRate", "totalEnergy", "activeEnergy")) {
+            val support = types.support(id)
+            assertTrue(id, support.getBoolean("readable"))
+            assertTrue(id, support.getBoolean("writable"))
+        }
+        assertEquals(listOf("kcal/d", "W"), entry("basalMetabolicRate").units)
+        val rate = decode(sample(entry("basalMetabolicRate"), 1600.0)) as androidx.health.connect.client.records.BasalMetabolicRateRecord
+        assertEquals(1600.0, rate.basalMetabolicRate.inKilocaloriesPerDay, 1e-6)
+        val total = decode(sample(entry("totalEnergy"), 2000.0, "kJ")) as androidx.health.connect.client.records.TotalCaloriesBurnedRecord
+        assertEquals(2000.0, total.energy.inKilojoules, 1e-6)
+    }
+
     @Test
     fun savesReadsAndDeletesThroughHealthConnect() = runTest {
         val client = FakeHealthConnectClient()
