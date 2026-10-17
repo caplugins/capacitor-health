@@ -13,6 +13,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -21,16 +22,21 @@ private class AppRemoteException(message: String) : Exception(message)
 
 /**
  * The Health Connect app (Android 13 and lower) rejects a delete by ids or clientIds when any of them doesn't
- * exist, and deletes nothing (API 33 emulator, Health Connect 2026.09.03, decision #45). FakeHealthConnectClient
- * skips missing ones like Android 14, so this client adds the app's behaviour on top of it.
+ * exist (decision #45), or when ids belong to another app (decision #46), and deletes nothing (API 33 emulator,
+ * Health Connect 2026.09.03). FakeHealthConnectClient skips missing ones like Android 14 and has no other apps, so
+ * this client adds the app's behaviour on top of it: records whose ids are in [othersIds] stand for other apps'.
  */
 private class HealthConnectAppClient(private val fake: FakeHealthConnectClient) : HealthConnectClient by fake {
     var deleteCalls = 0
     var failWith: Exception? = null
+    val othersIds = mutableSetOf<String>()
 
     override suspend fun deleteRecords(recordType: KClass<out Record>, recordIdsList: List<String>, clientRecordIdsList: List<String>) {
         deleteCalls++
         failWith?.let { throw it }
+        // Ownership is checked first: with another app's id and a missing one, only the ownership error shows.
+        val others = recordIdsList.filter { it in othersIds }.sorted()
+        if (others.isNotEmpty()) throw SecurityException("${FakeHealthConnectClient.DEFAULT_PACKAGE_NAME} doesn't own data points of the following UIDs: $others")
         @Suppress("UNCHECKED_CAST")
         val stored = fake.readRecords(ReadRecordsRequest(recordType as KClass<Record>, TimeRangeFilter.between(Instant.EPOCH, Instant.parse("2100-01-01T00:00:00Z")))).records
         val ids = stored.map { it.metadata.id }.toSet()
@@ -117,6 +123,58 @@ class HealthConnectAppDeletesTest {
         client.failWith = AppRemoteException("Database error")
         val error = runCatching { delete("""{"type":"menstrualFlow","clientIds":["c1","missing"]}""") }.exceptionOrNull()
         assertEquals("Database error", error?.message)
+    }
+
+    @Test
+    fun deletingByIdLeavesOtherAppsRecords() = runTest {
+        val own = save(flow(1, "c1"), flow(2, "c2"))
+        val others = save(flow(3, "o1"), flow(4, "o2"))
+        client.othersIds += listOf(others.getString(0), others.getString(1))
+        client.deleteCalls = 0
+        val ids = JSONArray(listOf(others.getString(1), own.getString(0), others.getString(0), own.getString(1)))
+        assertEquals(2, delete("""{"type":"menstrualFlow","ids":$ids}"""))
+        // One call rejected with the other apps' ids, then one without them.
+        assertEquals(2, client.deleteCalls)
+        assertEquals(listOf("o1", "o2"), flowClientIds())
+    }
+
+    @Test
+    fun deletingOnlyOtherAppsRecordsDeletesNothing() = runTest {
+        val others = save(flow(1, "o1"))
+        client.othersIds += others.getString(0)
+        assertEquals(0, delete("""{"type":"menstrualFlow","ids":["${others.getString(0)}"]}"""))
+        assertEquals(listOf("o1"), flowClientIds())
+    }
+
+    @Test
+    fun deletingOtherAppsAndMissingIdsTogether() = runTest {
+        val own = save(flow(1, "c1"))
+        val others = save(flow(2, "o1"))
+        client.othersIds += others.getString(0)
+        val ids = JSONArray(listOf(others.getString(0), "00000000-0000-0000-0000-000000000000", own.getString(0)))
+        assertEquals(1, delete("""{"type":"menstrualFlow","ids":$ids}"""))
+        assertEquals(listOf("o1"), flowClientIds())
+    }
+
+    @Test
+    fun aMissingPermissionStillRejects() = runTest {
+        val own = save(flow(1, "c1"))
+        client.failWith = SecurityException("${FakeHealthConnectClient.DEFAULT_PACKAGE_NAME} lacks the following permissions: [android.permission.health.WRITE_MENSTRUATION]")
+        val error = runCatching { delete("""{"type":"menstrualFlow","ids":["${own.getString(0)}"]}""") }.exceptionOrNull()
+        assertTrue("$error", error is SecurityException)
+    }
+
+    @Test
+    fun recognizesTheAppsOwnershipMessage() {
+        val message = "com.example doesn't own data points of the following UIDs: [16C8BF1D-6be8-3f8e-a6ba-106b901e7f64, 42ef4031-df36-3b89-8cf5-525f879e0a6e]"
+        assertEquals(
+            setOf("16c8bf1d-6be8-3f8e-a6ba-106b901e7f64", "42ef4031-df36-3b89-8cf5-525f879e0a6e"),
+            HealthException.otherAppsRecordIds(SecurityException(message)),
+        )
+        assertNull(HealthException.otherAppsRecordIds(SecurityException("com.example lacks the following permissions: [android.permission.health.WRITE_MENSTRUATION]")))
+        assertNull(HealthException.otherAppsRecordIds(AppRemoteException("Request contains invalid UID.")))
+        // Without the list the ids are found by halving instead.
+        assertEquals(emptySet<String>(), HealthException.otherAppsRecordIds(SecurityException("com.example doesn't own data points")))
     }
 
     @Test

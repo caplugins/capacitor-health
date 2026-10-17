@@ -224,16 +224,20 @@ class Samples(
     }
 
     /**
-     * Deletes by [keys] (ids or clientIds), skipping the ones that don't exist, as Android 14+ does. The Health
-     * Connect app (Android 13 and lower) instead rejects the whole call with `INVALID_UID` and deletes nothing
-     * (decision #45), so on that error the list is halved until each missing key is alone.
+     * Deletes by [keys] (ids or clientIds), skipping the ones that don't exist (as Android 14+ does) and other apps'
+     * records. The Health Connect app (Android 13 and lower) instead rejects the whole call and deletes nothing:
+     * when ids belong to other apps it names them, so they're dropped and the rest retried (decision #46); when a
+     * key doesn't exist (`INVALID_UID`, decision #45) the list is halved until each missing key is alone.
      */
     private suspend fun deleteSkippingMissing(record: KClass<out Record>, keys: List<String>, byClientId: Boolean) {
         if (keys.isEmpty()) return
         try {
             if (byClientId) client.deleteRecords(record, emptyList(), keys) else client.deleteRecords(record, keys, emptyList())
         } catch (e: Exception) {
-            if (!HealthException.isMissingRecord(e)) throw e
+            val othersIds = HealthException.otherAppsRecordIds(e)
+            if (othersIds == null && !HealthException.isMissingRecord(e)) throw e
+            val rest = othersIds?.let { ids -> keys.filterNot { it.lowercase() in ids } } ?: keys
+            if (rest.size < keys.size) return deleteSkippingMissing(record, rest, byClientId)
             if (keys.size == 1) return
             val half = keys.size / 2
             deleteSkippingMissing(record, keys.subList(0, half), byClientId)

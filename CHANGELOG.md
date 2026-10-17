@@ -17,7 +17,8 @@ First release: availability, permissions and reproductive health on iOS (HealthK
   reject with `MISSING_DECLARATION` instead of crashing or failing silently.
 - `openHealthSettings()`, `openHealthConnectInstall()`.
 - `readSamples()` with paging, units and source filters; `saveSamples()` with idempotent `clientId`
-  upserts; `deleteSamples()` by ids, `clientId`s or range (ids that match nothing are skipped).
+  upserts; `deleteSamples()` by ids, `clientId`s or range (ids that match nothing or belong to other
+  apps are skipped).
 - `getChanges()`: incremental changes with an opaque cursor, own writes optionally excluded,
   `CURSOR_EXPIRED` when Health Connect drops a cursor.
 - 44 types: menstrual flow, menstruation periods (native on Android, derived from flow samples on iOS

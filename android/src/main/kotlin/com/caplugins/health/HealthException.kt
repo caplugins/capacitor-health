@@ -80,6 +80,20 @@ class HealthException(
         fun isMissingRecord(error: Throwable): Boolean =
             generateSequence(error) { it.cause }.any { it.message?.contains("invalid uid", ignoreCase = true) == true }
 
+        /**
+         * The Health Connect app's rejection of a delete by ids that names other apps' records: a `SecurityException`
+         * "<package> doesn't own data points of the following UIDs: [<id>, …]" that lists every such id (decision #46).
+         * Returns those ids, lowercased (empty if the list can't be found), or null for any other error, including a
+         * missing permission.
+         */
+        fun otherAppsRecordIds(error: Throwable): Set<String>? {
+            val message = generateSequence(error) { it.cause }
+                .firstOrNull { it is SecurityException && it.message?.contains("own data points", ignoreCase = true) == true }
+                ?.message ?: return null
+            val list = message.substringAfterLast('[', "").substringBefore(']')
+            return list.split(',').map { it.trim().lowercase() }.filter { it.isNotEmpty() }.toSet()
+        }
+
         private fun isRateLimit(error: Throwable): Boolean {
             var current: Throwable? = error
             while (current != null) {
