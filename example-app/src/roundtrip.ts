@@ -121,3 +121,46 @@ export async function runRoundTrips(): Promise<string[]> {
   }
   return lines;
 }
+
+/** getChanges: a fresh cursor, then a write shows up as an upsert and a delete as a deletion. */
+export async function runChangesCheck(): Promise<string[]> {
+  const lines: string[] = [];
+  const log = (ok: boolean, step: string) => lines.push(`${ok ? 'PASS' : 'FAIL'} getChanges: ${step}`);
+  try {
+    const first = await CapacitorHealth.getChanges({ types: ['menstrualFlow', 'ovulationTest'] });
+    log(first.upserted.length === 0 && first.deleted.length === 0 && !!first.nextCursor, `no cursor → only a cursor (${first.nextCursor.length} chars)`);
+
+    const at = new Date();
+    at.setDate(at.getDate() - 3);
+    at.setHours(9, 0, 0, 0);
+    const clientId = `example-changes-${at.getTime()}`;
+    const { ids } = await CapacitorHealth.saveSamples({
+      samples: [{ type: 'ovulationTest', startDate: localIso(at), value: 'lhSurge', clientId }],
+    });
+    const second = await CapacitorHealth.getChanges({ types: ['menstrualFlow', 'ovulationTest'], cursor: first.nextCursor });
+    const upsert = second.upserted.find((s) => s.clientId === clientId);
+    log(!!upsert && upsert.id === ids[0] && second.upserted.length === 1, `write → upsert (${second.upserted.length} upserted)`);
+
+    const own = await CapacitorHealth.getChanges({
+      types: ['menstrualFlow', 'ovulationTest'],
+      cursor: first.nextCursor,
+      excludeOwnWrites: true,
+    });
+    log(own.upserted.length === 0, 'excludeOwnWrites hides it');
+
+    await CapacitorHealth.deleteSamples({ type: 'ovulationTest', clientIds: [clientId] });
+    const third = await CapacitorHealth.getChanges({ types: ['menstrualFlow', 'ovulationTest'], cursor: second.nextCursor });
+    const gone = third.deleted.find((d) => d.id === ids[0]);
+    log(!!gone && gone.type === 'ovulationTest', `delete → deleted (clientId ${gone?.clientId ?? 'not reported'})`);
+
+    const fourth = await CapacitorHealth.getChanges({ types: ['menstrualFlow', 'ovulationTest'], cursor: third.nextCursor });
+    log(fourth.upserted.length === 0 && fourth.deleted.length === 0, 'nothing new after that');
+
+    const mismatch = await CapacitorHealth.getChanges({ types: ['menstrualFlow'], cursor: third.nextCursor }).catch((e) => e);
+    log((mismatch as { code?: string }).code === 'INVALID_ARGUMENT', 'a cursor for other types rejects');
+  } catch (error) {
+    const { code, message } = error as { code?: string; message?: string };
+    log(false, `threw ${code}: ${message}`);
+  }
+  return lines;
+}

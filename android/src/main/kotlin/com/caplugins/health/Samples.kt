@@ -23,7 +23,12 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /** `readSamples`, `saveSamples` and `deleteSamples` (decisions #30, #31, #16). */
-class Samples(private val client: HealthConnectClient, private val types: HealthTypes, private val encodeBase64: (ByteArray) -> String = ::base64, private val decodeBase64: (String) -> ByteArray = ::unbase64) {
+class Samples(
+    private val client: HealthConnectClient,
+    private val types: HealthTypes,
+    private val encodeBase64: (ByteArray) -> String = ::base64,
+    private val decodeBase64: (String) -> ByteArray = ::unbase64,
+) {
     companion object {
         const val DEFAULT_LIMIT = 1000
         const val MAX_LIMIT = 10000
@@ -34,9 +39,9 @@ class Samples(private val client: HealthConnectClient, private val types: Health
         /** Insert at most this many records per call (rate limits, binder size). */
         const val WRITE_CHUNK = 1000
 
-        private fun base64(bytes: ByteArray): String = Base64.encodeToString(bytes, Base64.NO_WRAP)
+        fun base64(bytes: ByteArray): String = Base64.encodeToString(bytes, Base64.NO_WRAP)
 
-        private fun unbase64(value: String): ByteArray = Base64.decode(value, Base64.NO_WRAP)
+        fun unbase64(value: String): ByteArray = Base64.decode(value, Base64.NO_WRAP)
     }
 
     // region Read
@@ -90,7 +95,7 @@ class Samples(private val client: HealthConnectClient, private val types: Health
      * length past both ends, so it finds every covering period whether Health Connect matches interval
      * records by start time or only when they fit inside the range (FakeHealthConnectClient does the latter).
      */
-    private suspend fun cycleStarts(flows: List<MenstruationFlowRecord>): Map<String, Boolean> {
+    suspend fun cycleStarts(flows: List<MenstruationFlowRecord>): Map<String, Boolean> {
         if (flows.isEmpty()) return emptyMap()
         val margin = Duration.ofDays(RecordCodec.MAX_PERIOD_DAYS.toLong() + 1)
         val from = flows.minOf { it.time }.minus(margin)

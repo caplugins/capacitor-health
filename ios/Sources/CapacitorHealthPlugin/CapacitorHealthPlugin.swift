@@ -15,6 +15,7 @@ public class CapacitorHealthPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "openHealthSettings", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "openHealthConnectInstall", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "readSamples", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "getChanges", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "saveSamples", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "deleteSamples", returnType: CAPPluginReturnPromise)
     ]
@@ -22,6 +23,7 @@ public class CapacitorHealthPlugin: CAPPlugin, CAPBridgedPlugin {
     private let store = HKHealthStore()
     private lazy var authorization = Authorization(store: store)
     private lazy var samples = Samples(store: store)
+    private lazy var changes = Changes(store: store)
 
     override public func load() {
         HealthLog.enabled = getConfig().getBoolean("debugLogging", false)
@@ -60,6 +62,12 @@ public class CapacitorHealthPlugin: CAPPlugin, CAPBridgedPlugin {
         guard ensureAvailable(call) else { return }
         let options = JSONFields(call.options as? [String: Any] ?? [:], path: "")
         call.run { try await self.samples.read(options) }
+    }
+
+    @objc func getChanges(_ call: CAPPluginCall) {
+        guard ensureAvailable(call) else { return }
+        let options = JSONFields(call.options as? [String: Any] ?? [:], path: "")
+        call.run { try await self.changes.changes(options) }
     }
 
     @objc func saveSamples(_ call: CAPPluginCall) {

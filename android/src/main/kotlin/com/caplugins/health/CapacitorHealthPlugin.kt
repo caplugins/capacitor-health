@@ -36,6 +36,7 @@ class CapacitorHealthPlugin : Plugin() {
     private val types by lazy { HealthTypes(features) }
     private val authorization by lazy { Authorization(types, features) }
     private val samples by lazy { Samples(client, types) }
+    private val changes by lazy { Changes(client, types, samples, context.packageName, Samples::base64, Samples::unbase64) }
     private val permissionContract = PermissionController.createRequestPermissionResultContract()
 
     override fun load() {
@@ -132,6 +133,13 @@ class CapacitorHealthPlugin : Plugin() {
         launch(call) {
             requireAvailable()
             samples.read(Fields(call.data))
+        }
+
+    @PluginMethod
+    fun getChanges(call: PluginCall) =
+        launch(call) {
+            requireAvailable()
+            changes.changes(Fields(call.data))
         }
 
     @PluginMethod

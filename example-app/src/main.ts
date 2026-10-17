@@ -1,7 +1,7 @@
 import { CapacitorHealth } from '@caplugins/capacitor-health';
 import type { HealthType } from '@caplugins/capacitor-health';
 
-import { runRoundTrips } from './roundtrip';
+import { runChangesCheck, runRoundTrips } from './roundtrip';
 
 /** The reproductive types the example asks access for. */
 const TYPES: HealthType[] = [
@@ -65,5 +65,14 @@ bind('round-trip', 'samples', async () => {
   lines.forEach((line) => console.log(`[example] ${line}`));
   return lines;
 });
+
+bind('changes-check', 'changes', async () => {
+  const lines = await runChangesCheck();
+  lines.forEach((line) => console.log(`[example] ${line}`));
+  return lines;
+});
+
+// For scripted runs (DevTools / Web Inspector): `await window.example.runChangesCheck()`.
+(window as unknown as { example: unknown }).example = { CapacitorHealth, runRoundTrips, runChangesCheck };
 
 document.getElementById('check-availability')?.click();
