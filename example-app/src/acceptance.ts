@@ -1,5 +1,5 @@
 import { Capacitor } from '@capacitor/core';
-import { CapacitorHealth, HEALTH_TYPES } from '@caplugins/capacitor-health';
+import { CapacitorHealth, HEALTH_TYPES, REGISTRY } from '@caplugins/capacitor-health';
 import type { HealthType, NewSample, Sample, TypeSupport } from '@caplugins/capacitor-health';
 
 import { localIso } from './roundtrip';
@@ -119,14 +119,16 @@ function sampleFor(support: TypeSupport, at: Date, clientId: string, variant: 0 
       };
     default:
       if (support.units) {
-        // Quantities cover five minutes on iOS, which some types need (audio exposure).
+        // Quantities cover five minutes on iOS (audio exposure needs a duration) and for Health Connect's
+        // interval records; its instant records are a single moment.
+        const interval = platform === 'ios' || REGISTRY[support.type].android?.time === 'interval';
         const quantity = {
           ...base,
           type: support.type,
           value: (QUANTITY_VALUES[support.type] ?? 1) + variant,
           unit: support.units[0],
         };
-        return (platform === 'ios' ? { ...quantity, endDate: later(at) } : quantity) as NewSample;
+        return (interval ? { ...quantity, endDate: later(at) } : quantity) as NewSample;
       }
       return (
         value !== undefined ? { ...base, type: support.type, value } : { ...base, type: support.type }

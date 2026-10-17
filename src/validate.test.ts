@@ -716,6 +716,30 @@ describe('M2 types', () => {
     expect(save({ ...audio, endDate: END }).endDate).toBe('2026-10-01T09:00:00.000+05:30');
   });
 
+  it('checks Health Connect interval records and whole numbers on Android', () => {
+    const steps = { type: 'steps', startDate: START, endDate: END, value: 1200 };
+    expect(save(steps, 'android')).toMatchObject({ value: 1200, unit: 'count' });
+    rejection(
+      () => save({ ...steps, endDate: START }, 'android'),
+      'INVALID_ARGUMENT',
+      'samples[0].endDate',
+      'intervalOnly',
+    );
+    rejection(
+      () => save({ ...steps, value: 12.5 }, 'android'),
+      'INVALID_ARGUMENT',
+      'samples[0].value',
+      'wholeNumberOnly',
+    );
+    expect(save({ ...steps, value: 12.5, endDate: START }).value).toBe(12.5);
+    rejection(
+      () => save({ type: 'weight', startDate: START, endDate: END, value: 70 }, 'android'),
+      'INVALID_ARGUMENT',
+      'samples[0].endDate',
+      'instantOnly',
+    );
+  });
+
   it('requires an insulin delivery reason on iOS', () => {
     const insulin = { type: 'insulinDelivery', startDate: START, value: 2 };
     rejection(() => save(insulin), 'INVALID_ARGUMENT', 'samples[0].reason', 'required');

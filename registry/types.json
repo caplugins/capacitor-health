@@ -902,6 +902,7 @@
       },
       "android": {
         "record": "StepsRecord",
+        "wholeNumber": true,
         "time": "interval",
         "readPermission": "android.permission.health.READ_STEPS",
         "writePermission": "android.permission.health.WRITE_STEPS",
@@ -1192,6 +1193,7 @@
       },
       "android": {
         "record": "WheelchairPushesRecord",
+        "wholeNumber": true,
         "time": "interval",
         "readPermission": "android.permission.health.READ_WHEELCHAIR_PUSHES",
         "writePermission": "android.permission.health.WRITE_WHEELCHAIR_PUSHES",
@@ -1711,6 +1713,7 @@
       },
       "android": {
         "record": "RestingHeartRateRecord",
+        "wholeNumber": true,
         "time": "instant",
         "readPermission": "android.permission.health.READ_RESTING_HEART_RATE",
         "writePermission": "android.permission.health.WRITE_RESTING_HEART_RATE",

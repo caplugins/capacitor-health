@@ -43,7 +43,11 @@ class HealthException(
         fun unsupportedType(type: String, reason: String) =
             HealthException(
                 UNSUPPORTED_TYPE,
-                if (reason == "featureUnavailable") "$type needs a Health Connect feature this device doesn't have." else "$type isn't available on Android.",
+                when (reason) {
+                    "featureUnavailable" -> "$type needs a Health Connect feature this device doesn't have."
+                    "aggregateOnly" -> "$type has no records on Android, only aggregates."
+                    else -> "$type isn't available on Android."
+                },
                 JSObject().put("type", type).put("reason", reason),
             )
 

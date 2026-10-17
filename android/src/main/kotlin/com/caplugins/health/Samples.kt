@@ -49,7 +49,7 @@ class Samples(
 
     suspend fun read(options: Fields): JSObject {
         val typeId = options.string("type")
-        val entry = types.resolve(typeId)
+        val entry = types.resolveSamples(typeId)
         val start = options.date("startDate").toInstant()
         val end = options.date("endDate").toInstant()
         val limit = (options.optInt("limit") ?: DEFAULT_LIMIT).coerceIn(1, MAX_LIMIT)

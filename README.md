@@ -186,7 +186,9 @@ when the platform recorded one. Times are kept to the millisecond. On writes, An
 offsets of your dates; iOS stores the optional IANA `timeZone` you pass as `HKMetadataKeyTimeZone`.
 
 Ranges (`startDate`–`endDate`) match samples that **overlap** them on both platforms. One exception:
-Android's `skinTemperature` matches by start time, as Health Connect does.
+on Android, records that cover a period of time (`steps`, `distance`, the energy types,
+`floorsClimbed`, `elevationGained`, `wheelchairPushes`, `skinTemperature`) match by start time, as
+Health Connect does; menstruation periods still match by overlap.
 
 ### Samples
 
@@ -239,6 +241,11 @@ Android), `relationToMeal`, `mealType` and `specimenSource` (`bloodGlucose`; the
   / `headphoneAudioExposure` samples need an `endDate` at least a second after `startDate`
   (`INVALID_ARGUMENT` with `data.reason` `outOfRange` / `intervalOnly`). `insulinDelivery` needs a
   `reason` on iOS.
+- On Android, Health Connect's record shapes apply: records that cover a period of time need an
+  `endDate` after `startDate` (`intervalOnly`), single-moment records (weight, height, body
+  temperature, …) an `endDate` equal to `startDate` or none (`instantOnly`), and `steps`,
+  `wheelchairPushes` and `restingHeartRate` whole numbers (`wholeNumberOnly`). Values outside Health
+  Connect's ranges (a weight above 1,000 kg, a percentage above 100, …) reject with `outOfRange`.
 
 ### Changes (`getChanges`)
 
@@ -914,7 +921,7 @@ One change from the baseline in a `skinTemperature` sample.
 | Prop            | Type                                              | Description                                                                                                                                                                                                                                                                                 | Default           | Since |
 | --------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | ----- |
 | **`type`**      | <code><a href="#healthtype">HealthType</a></code> | A combined id (`distance`, `speed`, `power`) reads every member type HealthKit has on iOS; each sample keeps the combined id as its `type` and names its member in `native.type`. Aggregate-only types (`reason: 'aggregateOnly'` in `getSupportedTypes()`) reject with `UNSUPPORTED_TYPE`. |                   | 0.1.0 |
-| **`startDate`** | <code>string</code>                               | Returns samples that overlap `startDate`–`endDate`. ISO 8601 with an offset.                                                                                                                                                                                                                |                   | 0.1.0 |
+| **`startDate`** | <code>string</code>                               | Returns samples that overlap `startDate`–`endDate` (on Android, records covering a period of time other than menstruation periods match by start time). ISO 8601 with an offset.                                                                                                            |                   | 0.1.0 |
 | **`endDate`**   | <code>string</code>                               |                                                                                                                                                                                                                                                                                             |                   | 0.1.0 |
 | **`limit`**     | <code>number</code>                               | Page size. Default 1,000, maximum 10,000.                                                                                                                                                                                                                                                   | <code>1000</code> | 0.1.0 |
 | **`ascending`** | <code>boolean</code>                              | Oldest first.                                                                                                                                                                                                                                                                               | <code>true</code> | 0.1.0 |
@@ -1101,18 +1108,14 @@ Status per type, for the types passed in.
 
 Make all properties in T optional
 
-<code>{
- [P in keyof T]?: T[P];
- }</code>
+<code>{ [P in keyof T]?: T[P]; }</code>
 
 
 #### Record
 
 Construct a type with a set of properties K of type T
 
-<code>{
- [P in K]: T;
- }</code>
+<code>{ [P in K]: T; }</code>
 
 
 #### AuthorizationStatus

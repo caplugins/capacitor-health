@@ -911,7 +911,8 @@ export interface ReadSamplesOptions {
    */
   type: HealthType;
   /**
-   * Returns samples that overlap `startDate`–`endDate`. ISO 8601 with an offset.
+   * Returns samples that overlap `startDate`–`endDate` (on Android, records covering a period of time
+   * other than menstruation periods match by start time). ISO 8601 with an offset.
    *
    * @since 0.1.0
    */

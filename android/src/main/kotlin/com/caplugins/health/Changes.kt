@@ -27,7 +27,7 @@ class Changes(
     suspend fun changes(options: Fields): JSObject {
         val ids = options.optStrings("types")?.takeIf { it.isNotEmpty() }
             ?: throw HealthException.invalidArgument("types", "must be a non-empty array of types")
-        val entries = ids.map(types::resolve)
+        val entries = ids.map(types::resolveSamples)
         val cursor = options.optString("cursor")
         if (cursor == null) {
             val tokens = entries.associate { it.id to client.getChangesToken(ChangesTokenRequest(setOf(it.record))) }

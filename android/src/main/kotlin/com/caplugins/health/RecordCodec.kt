@@ -1,6 +1,5 @@
 package com.caplugins.health
 
-import androidx.health.connect.client.records.BasalBodyTemperatureRecord
 import androidx.health.connect.client.records.CervicalMucusRecord
 import androidx.health.connect.client.records.IntermenstrualBleedingRecord
 import androidx.health.connect.client.records.MenstruationFlowRecord
@@ -13,6 +12,9 @@ import androidx.health.connect.client.records.metadata.Device
 import androidx.health.connect.client.records.metadata.Metadata
 import androidx.health.connect.client.units.Temperature
 import androidx.health.connect.client.units.TemperatureDelta
+import com.caplugins.health.generated.QuantityAdapter
+import com.caplugins.health.generated.RecordTime
+import com.caplugins.health.generated.RecordTimes
 import com.caplugins.health.generated.Registry
 import com.caplugins.health.generated.RegistryEntry
 import com.caplugins.health.generated.RegistryField
@@ -25,7 +27,10 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.temporal.ChronoUnit
 
-/** Health Connect record ⇄ bridge JSON for every M1 record. Value and field maps come from the registry. */
+/**
+ * Health Connect record ⇄ bridge JSON. Quantity records go through their generated [QuantityAdapter]; the
+ * others are hand-coded here. Value, unit and field maps come from the registry.
+ */
 object RecordCodec {
     /** The records one new sample turns into; [primary]'s id is what `saveSamples` returns for it. */
     class Decoded(val primary: Record, val extras: List<Record> = emptyList())
@@ -81,6 +86,11 @@ object RecordCodec {
         val json = encodeBase(record, entry)
         val native = JSObject().put("type", record::class.simpleName)
         val outUnit = unit ?: entry.unit
+        val adapter = Registry.adapters[record::class]
+        if (adapter != null && outUnit != null) {
+            json.put("value", Registry.units.getValue(outUnit).read(adapter.value(record))).put("unit", outUnit)
+            adapter.fields(record).forEach { (name, raw) -> putEnumField(json, entry.field(name), raw) }
+        }
         when (record) {
             is MenstruationFlowRecord -> {
                 json.put("value", unifiedValue(record.flow, entry.valueSet))
@@ -103,10 +113,6 @@ object RecordCodec {
                     field?.whenFalse -> json.put("protectionUsed", false)
                 }
             }
-            is BasalBodyTemperatureRecord -> {
-                json.put("value", inUnit(record.temperature, outUnit ?: "degC")).put("unit", outUnit)
-                putEnumField(json, entry.field("measurementLocation"), record.measurementLocation)
-            }
             is SkinTemperatureRecord -> {
                 val u = outUnit ?: "degC"
                 json.put("unit", u)
@@ -126,19 +132,16 @@ object RecordCodec {
         return json.put("native", native)
     }
 
-    class Times(val start: java.time.Instant, val startOffset: ZoneOffset?, val end: java.time.Instant, val endOffset: ZoneOffset?)
-
-    /** Start and end of any M1 record (connect-client keeps its instant / interval interfaces internal). */
-    fun times(record: Record): Times =
-        when (record) {
-            is MenstruationFlowRecord -> Times(record.time, record.zoneOffset, record.time, record.zoneOffset)
-            is IntermenstrualBleedingRecord -> Times(record.time, record.zoneOffset, record.time, record.zoneOffset)
-            is CervicalMucusRecord -> Times(record.time, record.zoneOffset, record.time, record.zoneOffset)
-            is OvulationTestRecord -> Times(record.time, record.zoneOffset, record.time, record.zoneOffset)
-            is SexualActivityRecord -> Times(record.time, record.zoneOffset, record.time, record.zoneOffset)
-            is BasalBodyTemperatureRecord -> Times(record.time, record.zoneOffset, record.time, record.zoneOffset)
-            is SkinTemperatureRecord -> Times(record.startTime, record.startZoneOffset, record.endTime, record.endZoneOffset)
-            is MenstruationPeriodRecord -> Times(record.startTime, record.startZoneOffset, record.endTime, record.endZoneOffset)
+    /** Start and end of any record the plugin handles (connect-client keeps its instant / interval interfaces internal). */
+    fun times(record: Record): RecordTimes =
+        Registry.adapters[record::class]?.times?.invoke(record) ?: when (record) {
+            is MenstruationFlowRecord -> RecordTimes(record.time, record.zoneOffset, record.time, record.zoneOffset)
+            is IntermenstrualBleedingRecord -> RecordTimes(record.time, record.zoneOffset, record.time, record.zoneOffset)
+            is CervicalMucusRecord -> RecordTimes(record.time, record.zoneOffset, record.time, record.zoneOffset)
+            is OvulationTestRecord -> RecordTimes(record.time, record.zoneOffset, record.time, record.zoneOffset)
+            is SexualActivityRecord -> RecordTimes(record.time, record.zoneOffset, record.time, record.zoneOffset)
+            is SkinTemperatureRecord -> RecordTimes(record.startTime, record.startZoneOffset, record.endTime, record.endZoneOffset)
+            is MenstruationPeriodRecord -> RecordTimes(record.startTime, record.startZoneOffset, record.endTime, record.endZoneOffset)
             else -> throw HealthException(HealthException.NATIVE_ERROR, "${record::class.simpleName} has no codec.")
         }
 
@@ -211,6 +214,7 @@ object RecordCodec {
 
     fun decode(fields: Fields, entry: RegistryEntry): Decoded {
         val metadata = metadata(fields)
+        Registry.adapters[entry.record]?.let { return Decoded(decodeQuantity(fields, entry, it, metadata)) }
         val record: Record = when (entry.record) {
             MenstruationFlowRecord::class -> {
                 val time = instant(fields)
@@ -249,21 +253,38 @@ object RecordCodec {
                 } ?: SexualActivityRecord.PROTECTION_USED_UNKNOWN
                 SexualActivityRecord(time.toInstant(), time.offset, metadata, protection)
             }
-            BasalBodyTemperatureRecord::class -> {
-                val time = instant(fields)
-                BasalBodyTemperatureRecord(
-                    time = time.toInstant(),
-                    zoneOffset = time.offset,
-                    metadata = metadata,
-                    temperature = temperature(fields.double("value"), unit(fields, entry)),
-                    measurementLocation = enumField(fields, entry, "measurementLocation"),
-                )
-            }
             SkinTemperatureRecord::class -> decodeSkinTemperature(fields, entry, metadata)
             MenstruationPeriodRecord::class -> return decodePeriod(fields, metadata)
             else -> throw HealthException(HealthException.NATIVE_ERROR, "${entry.id} has no codec.")
         }
         return Decoded(record)
+    }
+
+    /** A quantity record through its generated adapter (T27). */
+    private fun decodeQuantity(fields: Fields, entry: RegistryEntry, adapter: QuantityAdapter, metadata: Metadata): Record {
+        val times = if (entry.time == RecordTime.INSTANT) {
+            instant(fields).let { RecordTimes(it.toInstant(), it.offset, it.toInstant(), it.offset) }
+        } else {
+            val start = fields.date("startDate")
+            val end = if (fields.has("endDate")) fields.date("endDate") else start
+            if (!end.toInstant().isAfter(start.toInstant())) {
+                throw HealthException.invalidArgument(fields.field("endDate"), "must be after startDate on Android", "intervalOnly")
+            }
+            RecordTimes(start.toInstant(), start.offset, end.toInstant(), end.offset)
+        }
+        val number = fields.double("value")
+        if (entry.wholeNumber && number % 1.0 != 0.0) {
+            throw HealthException.invalidArgument(fields.field("value"), "must be a whole number on Android", "wholeNumberOnly")
+        }
+        val value = Registry.units.getValue(unit(fields, entry)).build(number)
+        val enums = entry.fields.filter { it.property != null && it.valueSet != null }.associate { it.name to enumField(fields, entry, it.name) }
+        return try {
+            adapter.build(times, metadata, value, enums)
+        } catch (e: IllegalArgumentException) {
+            // Health Connect checks each value's range; its message quotes the value, so it stays in debug logs.
+            HealthLog.debug("Health Connect rejected ${entry.id}: ${e.message}")
+            throw HealthException.invalidArgument(fields.field("value"), "is outside the range Health Connect accepts for ${entry.id}", "outOfRange")
+        }
     }
 
     private fun unit(fields: Fields, entry: RegistryEntry): String {

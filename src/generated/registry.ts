@@ -390,6 +390,8 @@ export interface RegistryEntry {
     maxDurationDays?: number;
     /** No readable records; only `aggregate()` serves it. */
     aggregateOnly?: true;
+    /** The record stores a whole number. */
+    wholeNumber?: true;
     /** `aggregate()` metrics Health Connect serves. */
     metrics?: readonly AggregateMetric[];
   };
@@ -976,6 +978,7 @@ export const REGISTRY: Readonly<Record<HealthType, RegistryEntry>> = {
       readPermission: 'android.permission.health.READ_STEPS',
       writePermission: 'android.permission.health.WRITE_STEPS',
       writable: true,
+      wholeNumber: true,
       metrics: ['sum'],
     },
   },
@@ -1276,6 +1279,7 @@ export const REGISTRY: Readonly<Record<HealthType, RegistryEntry>> = {
       readPermission: 'android.permission.health.READ_WHEELCHAIR_PUSHES',
       writePermission: 'android.permission.health.WRITE_WHEELCHAIR_PUSHES',
       writable: true,
+      wholeNumber: true,
       metrics: ['sum'],
     },
   },
@@ -1820,6 +1824,7 @@ export const REGISTRY: Readonly<Record<HealthType, RegistryEntry>> = {
       readPermission: 'android.permission.health.READ_RESTING_HEART_RATE',
       writePermission: 'android.permission.health.WRITE_RESTING_HEART_RATE',
       writable: true,
+      wholeNumber: true,
       metrics: ['avg', 'min', 'max'],
     },
   },

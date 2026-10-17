@@ -41,6 +41,7 @@ import androidx.health.connect.client.records.TotalCaloriesBurnedRecord
 import androidx.health.connect.client.records.Vo2MaxRecord
 import androidx.health.connect.client.records.WeightRecord
 import androidx.health.connect.client.records.WheelchairPushesRecord
+import androidx.health.connect.client.records.metadata.Metadata
 import androidx.health.connect.client.units.BloodGlucose
 import androidx.health.connect.client.units.Energy
 import androidx.health.connect.client.units.Length
@@ -52,6 +53,8 @@ import androidx.health.connect.client.units.Temperature
 import androidx.health.connect.client.units.Velocity
 import androidx.health.connect.client.units.Volume
 import java.time.Duration
+import java.time.Instant
+import java.time.ZoneOffset
 import kotlin.reflect.KClass
 
 enum class RegistryKind { QUANTITY, CATEGORY, EVENT, SPECIAL }
@@ -109,7 +112,24 @@ class RegistryEntry(
     val aggregates: Map<String, AggregateMetric<*>> = emptyMap(),
     /** No readable records; only aggregate() serves it (decision #21). */
     val aggregateOnly: Boolean = false,
+    /** The value property is a Long: writes reject fractions. */
+    val wholeNumber: Boolean = false,
     val fields: List<RegistryField> = emptyList(),
+)
+
+/** A record's start and end; an instant record's are equal. */
+class RecordTimes(val start: Instant, val startOffset: ZoneOffset?, val end: Instant, val endOffset: ZoneOffset?)
+
+/**
+ * One quantity record class, generated so the codec needn't hand-code it (T27): its times, its main value (a
+ * unit object or number, for [RegistryUnit.read]), its enum fields by unified name, and its constructor, which
+ * takes the value from [RegistryUnit.build] and the enum fields' constants.
+ */
+class QuantityAdapter(
+    val times: (Record) -> RecordTimes,
+    val value: (Record) -> Any,
+    val fields: (Record) -> Map<String, Int> = { emptyMap() },
+    val build: (RecordTimes, Metadata, Any, Map<String, Int>) -> Record,
 )
 
 object Registry {
@@ -505,6 +525,7 @@ object Registry {
             unit = "count",
             units = listOf("count"),
             aggregates = mapOf("sum" to StepsRecord.COUNT_TOTAL),
+            wholeNumber = true,
         ),
         RegistryEntry(
             id = "distance",
@@ -608,6 +629,7 @@ object Registry {
             unit = "count",
             units = listOf("count"),
             aggregates = mapOf("sum" to WheelchairPushesRecord.COUNT_TOTAL),
+            wholeNumber = true,
         ),
         RegistryEntry(
             id = "stepsCadence",
@@ -701,6 +723,7 @@ object Registry {
             unit = "count/min",
             units = listOf("count/min"),
             aggregates = mapOf("avg" to RestingHeartRateRecord.BPM_AVG, "min" to RestingHeartRateRecord.BPM_MIN, "max" to RestingHeartRateRecord.BPM_MAX),
+            wholeNumber = true,
         ),
         RegistryEntry(
             id = "heartRateVariabilityRmssd",
@@ -858,4 +881,122 @@ object Registry {
     )
 
     val byId: Map<String, RegistryEntry> = entries.associateBy { it.id }
+
+    /** Quantity records the codec reads and builds generically, by record class. */
+    val adapters: Map<KClass<out Record>, QuantityAdapter> = mapOf(
+        BasalBodyTemperatureRecord::class to QuantityAdapter(
+            times = { r -> (r as BasalBodyTemperatureRecord).let { RecordTimes(it.time, it.zoneOffset, it.time, it.zoneOffset) } },
+            value = { r -> (r as BasalBodyTemperatureRecord).temperature },
+            fields = { r -> (r as BasalBodyTemperatureRecord).let { mapOf("measurementLocation" to it.measurementLocation) } },
+            build = { t, metadata, value, fields -> BasalBodyTemperatureRecord(time = t.start, zoneOffset = t.startOffset, metadata = metadata, temperature = value as Temperature, measurementLocation = fields.getValue("measurementLocation")) },
+        ),
+        StepsRecord::class to QuantityAdapter(
+            times = { r -> (r as StepsRecord).let { RecordTimes(it.startTime, it.startZoneOffset, it.endTime, it.endZoneOffset) } },
+            value = { r -> (r as StepsRecord).count },
+            build = { t, metadata, value, fields -> StepsRecord(startTime = t.start, startZoneOffset = t.startOffset, endTime = t.end, endZoneOffset = t.endOffset, metadata = metadata, count = (value as Double).toLong()) },
+        ),
+        DistanceRecord::class to QuantityAdapter(
+            times = { r -> (r as DistanceRecord).let { RecordTimes(it.startTime, it.startZoneOffset, it.endTime, it.endZoneOffset) } },
+            value = { r -> (r as DistanceRecord).distance },
+            build = { t, metadata, value, fields -> DistanceRecord(startTime = t.start, startZoneOffset = t.startOffset, endTime = t.end, endZoneOffset = t.endOffset, metadata = metadata, distance = value as Length) },
+        ),
+        ActiveCaloriesBurnedRecord::class to QuantityAdapter(
+            times = { r -> (r as ActiveCaloriesBurnedRecord).let { RecordTimes(it.startTime, it.startZoneOffset, it.endTime, it.endZoneOffset) } },
+            value = { r -> (r as ActiveCaloriesBurnedRecord).energy },
+            build = { t, metadata, value, fields -> ActiveCaloriesBurnedRecord(startTime = t.start, startZoneOffset = t.startOffset, endTime = t.end, endZoneOffset = t.endOffset, metadata = metadata, energy = value as Energy) },
+        ),
+        BasalMetabolicRateRecord::class to QuantityAdapter(
+            times = { r -> (r as BasalMetabolicRateRecord).let { RecordTimes(it.time, it.zoneOffset, it.time, it.zoneOffset) } },
+            value = { r -> (r as BasalMetabolicRateRecord).basalMetabolicRate },
+            build = { t, metadata, value, fields -> BasalMetabolicRateRecord(time = t.start, zoneOffset = t.startOffset, metadata = metadata, basalMetabolicRate = value as Power) },
+        ),
+        TotalCaloriesBurnedRecord::class to QuantityAdapter(
+            times = { r -> (r as TotalCaloriesBurnedRecord).let { RecordTimes(it.startTime, it.startZoneOffset, it.endTime, it.endZoneOffset) } },
+            value = { r -> (r as TotalCaloriesBurnedRecord).energy },
+            build = { t, metadata, value, fields -> TotalCaloriesBurnedRecord(startTime = t.start, startZoneOffset = t.startOffset, endTime = t.end, endZoneOffset = t.endOffset, metadata = metadata, energy = value as Energy) },
+        ),
+        FloorsClimbedRecord::class to QuantityAdapter(
+            times = { r -> (r as FloorsClimbedRecord).let { RecordTimes(it.startTime, it.startZoneOffset, it.endTime, it.endZoneOffset) } },
+            value = { r -> (r as FloorsClimbedRecord).floors },
+            build = { t, metadata, value, fields -> FloorsClimbedRecord(startTime = t.start, startZoneOffset = t.startOffset, endTime = t.end, endZoneOffset = t.endOffset, metadata = metadata, floors = value as Double) },
+        ),
+        ElevationGainedRecord::class to QuantityAdapter(
+            times = { r -> (r as ElevationGainedRecord).let { RecordTimes(it.startTime, it.startZoneOffset, it.endTime, it.endZoneOffset) } },
+            value = { r -> (r as ElevationGainedRecord).elevation },
+            build = { t, metadata, value, fields -> ElevationGainedRecord(startTime = t.start, startZoneOffset = t.startOffset, endTime = t.end, endZoneOffset = t.endOffset, metadata = metadata, elevation = value as Length) },
+        ),
+        WheelchairPushesRecord::class to QuantityAdapter(
+            times = { r -> (r as WheelchairPushesRecord).let { RecordTimes(it.startTime, it.startZoneOffset, it.endTime, it.endZoneOffset) } },
+            value = { r -> (r as WheelchairPushesRecord).count },
+            build = { t, metadata, value, fields -> WheelchairPushesRecord(startTime = t.start, startZoneOffset = t.startOffset, endTime = t.end, endZoneOffset = t.endOffset, metadata = metadata, count = (value as Double).toLong()) },
+        ),
+        Vo2MaxRecord::class to QuantityAdapter(
+            times = { r -> (r as Vo2MaxRecord).let { RecordTimes(it.time, it.zoneOffset, it.time, it.zoneOffset) } },
+            value = { r -> (r as Vo2MaxRecord).vo2MillilitersPerMinuteKilogram },
+            fields = { r -> (r as Vo2MaxRecord).let { mapOf("measurementMethod" to it.measurementMethod) } },
+            build = { t, metadata, value, fields -> Vo2MaxRecord(time = t.start, zoneOffset = t.startOffset, metadata = metadata, vo2MillilitersPerMinuteKilogram = value as Double, measurementMethod = fields.getValue("measurementMethod")) },
+        ),
+        RestingHeartRateRecord::class to QuantityAdapter(
+            times = { r -> (r as RestingHeartRateRecord).let { RecordTimes(it.time, it.zoneOffset, it.time, it.zoneOffset) } },
+            value = { r -> (r as RestingHeartRateRecord).beatsPerMinute },
+            build = { t, metadata, value, fields -> RestingHeartRateRecord(time = t.start, zoneOffset = t.startOffset, metadata = metadata, beatsPerMinute = (value as Double).toLong()) },
+        ),
+        HeartRateVariabilityRmssdRecord::class to QuantityAdapter(
+            times = { r -> (r as HeartRateVariabilityRmssdRecord).let { RecordTimes(it.time, it.zoneOffset, it.time, it.zoneOffset) } },
+            value = { r -> (r as HeartRateVariabilityRmssdRecord).heartRateVariabilityMillis },
+            build = { t, metadata, value, fields -> HeartRateVariabilityRmssdRecord(time = t.start, zoneOffset = t.startOffset, metadata = metadata, heartRateVariabilityMillis = value as Double) },
+        ),
+        OxygenSaturationRecord::class to QuantityAdapter(
+            times = { r -> (r as OxygenSaturationRecord).let { RecordTimes(it.time, it.zoneOffset, it.time, it.zoneOffset) } },
+            value = { r -> (r as OxygenSaturationRecord).percentage },
+            build = { t, metadata, value, fields -> OxygenSaturationRecord(time = t.start, zoneOffset = t.startOffset, metadata = metadata, percentage = value as Percentage) },
+        ),
+        RespiratoryRateRecord::class to QuantityAdapter(
+            times = { r -> (r as RespiratoryRateRecord).let { RecordTimes(it.time, it.zoneOffset, it.time, it.zoneOffset) } },
+            value = { r -> (r as RespiratoryRateRecord).rate },
+            build = { t, metadata, value, fields -> RespiratoryRateRecord(time = t.start, zoneOffset = t.startOffset, metadata = metadata, rate = value as Double) },
+        ),
+        BodyTemperatureRecord::class to QuantityAdapter(
+            times = { r -> (r as BodyTemperatureRecord).let { RecordTimes(it.time, it.zoneOffset, it.time, it.zoneOffset) } },
+            value = { r -> (r as BodyTemperatureRecord).temperature },
+            fields = { r -> (r as BodyTemperatureRecord).let { mapOf("measurementLocation" to it.measurementLocation) } },
+            build = { t, metadata, value, fields -> BodyTemperatureRecord(time = t.start, zoneOffset = t.startOffset, metadata = metadata, temperature = value as Temperature, measurementLocation = fields.getValue("measurementLocation")) },
+        ),
+        BloodGlucoseRecord::class to QuantityAdapter(
+            times = { r -> (r as BloodGlucoseRecord).let { RecordTimes(it.time, it.zoneOffset, it.time, it.zoneOffset) } },
+            value = { r -> (r as BloodGlucoseRecord).level },
+            fields = { r -> (r as BloodGlucoseRecord).let { mapOf("relationToMeal" to it.relationToMeal, "mealType" to it.mealType, "specimenSource" to it.specimenSource) } },
+            build = { t, metadata, value, fields -> BloodGlucoseRecord(time = t.start, zoneOffset = t.startOffset, metadata = metadata, level = value as BloodGlucose, relationToMeal = fields.getValue("relationToMeal"), mealType = fields.getValue("mealType"), specimenSource = fields.getValue("specimenSource")) },
+        ),
+        WeightRecord::class to QuantityAdapter(
+            times = { r -> (r as WeightRecord).let { RecordTimes(it.time, it.zoneOffset, it.time, it.zoneOffset) } },
+            value = { r -> (r as WeightRecord).weight },
+            build = { t, metadata, value, fields -> WeightRecord(time = t.start, zoneOffset = t.startOffset, metadata = metadata, weight = value as Mass) },
+        ),
+        HeightRecord::class to QuantityAdapter(
+            times = { r -> (r as HeightRecord).let { RecordTimes(it.time, it.zoneOffset, it.time, it.zoneOffset) } },
+            value = { r -> (r as HeightRecord).height },
+            build = { t, metadata, value, fields -> HeightRecord(time = t.start, zoneOffset = t.startOffset, metadata = metadata, height = value as Length) },
+        ),
+        BodyFatRecord::class to QuantityAdapter(
+            times = { r -> (r as BodyFatRecord).let { RecordTimes(it.time, it.zoneOffset, it.time, it.zoneOffset) } },
+            value = { r -> (r as BodyFatRecord).percentage },
+            build = { t, metadata, value, fields -> BodyFatRecord(time = t.start, zoneOffset = t.startOffset, metadata = metadata, percentage = value as Percentage) },
+        ),
+        LeanBodyMassRecord::class to QuantityAdapter(
+            times = { r -> (r as LeanBodyMassRecord).let { RecordTimes(it.time, it.zoneOffset, it.time, it.zoneOffset) } },
+            value = { r -> (r as LeanBodyMassRecord).mass },
+            build = { t, metadata, value, fields -> LeanBodyMassRecord(time = t.start, zoneOffset = t.startOffset, metadata = metadata, mass = value as Mass) },
+        ),
+        BoneMassRecord::class to QuantityAdapter(
+            times = { r -> (r as BoneMassRecord).let { RecordTimes(it.time, it.zoneOffset, it.time, it.zoneOffset) } },
+            value = { r -> (r as BoneMassRecord).mass },
+            build = { t, metadata, value, fields -> BoneMassRecord(time = t.start, zoneOffset = t.startOffset, metadata = metadata, mass = value as Mass) },
+        ),
+        BodyWaterMassRecord::class to QuantityAdapter(
+            times = { r -> (r as BodyWaterMassRecord).let { RecordTimes(it.time, it.zoneOffset, it.time, it.zoneOffset) } },
+            value = { r -> (r as BodyWaterMassRecord).mass },
+            build = { t, metadata, value, fields -> BodyWaterMassRecord(time = t.start, zoneOffset = t.startOffset, metadata = metadata, mass = value as Mass) },
+        ),
+    )
 }

@@ -97,6 +97,7 @@ async function renderTypeScript(registry) {
         if (a.feature) entry.android.feature = a.feature;
         if (a.maxDurationDays) entry.android.maxDurationDays = a.maxDurationDays;
         if (a.aggregateOnly) entry.android.aggregateOnly = true;
+        if (a.wholeNumber) entry.android.wholeNumber = true;
         const metrics = androidMetrics(t);
         if (metrics) entry.android.metrics = metrics;
       }
@@ -220,6 +221,8 @@ export interface RegistryEntry {
     maxDurationDays?: number;
     /** No readable records; only \`aggregate()\` serves it. */
     aggregateOnly?: true;
+    /** The record stores a whole number. */
+    wholeNumber?: true;
     /** \`aggregate()\` metrics Health Connect serves. */
     metrics?: readonly AggregateMetric[];
   };
@@ -541,7 +544,10 @@ function renderKotlin(registry) {
   const imports = new Set([
     'androidx.health.connect.client.aggregate.AggregateMetric',
     'androidx.health.connect.client.records.Record',
+    'androidx.health.connect.client.records.metadata.Metadata',
     'java.time.Duration',
+    'java.time.Instant',
+    'java.time.ZoneOffset',
     'kotlin.reflect.KClass',
   ]);
   const recordImport = (cls) => imports.add(`androidx.health.connect.client.records.${cls}`);
@@ -589,6 +595,7 @@ function renderKotlin(registry) {
         args.push(`aggregates = mapOf(${metrics.join(', ')})`);
       }
       if (a.aggregateOnly) args.push('aggregateOnly = true');
+      if (a.wholeNumber) args.push('wholeNumber = true');
       const fields = Object.entries(t.fields ?? {})
         .filter(([, f]) => f.android)
         .map(([name, f]) => {
@@ -604,6 +611,41 @@ function renderKotlin(registry) {
         });
       if (fields.length) args.push(`fields = listOf(\n${fields.join('\n')}\n            )`);
       return `        RegistryEntry(\n${args.map((x) => `            ${x},`).join('\n')}\n        ),`;
+    });
+
+  // One adapter per quantity record with a plain value; series (T28) and special records are hand-coded.
+  const adapted = new Set();
+  const adapters = registry.types
+    .filter((t) => t.kind === 'quantity' && t.android && !t.android.aggregateOnly && t.android.time !== 'series')
+    .filter((t) => !adapted.has(t.android.record) && adapted.add(t.android.record))
+    .map((t) => {
+      const { record, time, valueProperty, wholeNumber } = t.android;
+      recordImport(record);
+      const cls = registry.units[t.unit].android.class;
+      const cast = cls === 'Number' ? (wholeNumber ? '(value as Double).toLong()' : 'value as Double') : `value as ${cls}`;
+      const instant = time === 'instant';
+      const times = instant
+        ? `RecordTimes(it.time, it.zoneOffset, it.time, it.zoneOffset)`
+        : `RecordTimes(it.startTime, it.startZoneOffset, it.endTime, it.endZoneOffset)`;
+      const timeArgs = instant
+        ? ['time = t.start', 'zoneOffset = t.startOffset']
+        : ['startTime = t.start', 'startZoneOffset = t.startOffset', 'endTime = t.end', 'endZoneOffset = t.endOffset'];
+      const enumFields = Object.entries(t.fields ?? {}).filter(([, f]) => f.android?.property);
+      for (const [name, f] of enumFields) {
+        if (f.type !== 'enum') throw new Error(`${t.id}.${name}: adapters only handle enum fields`);
+      }
+      const args = [...timeArgs, 'metadata = metadata', `${valueProperty} = ${cast}`];
+      args.push(...enumFields.map(([name, f]) => `${f.android.property} = fields.getValue(${q(name)})`));
+      const lines = [
+        `times = { r -> (r as ${record}).let { ${times} } }`,
+        `value = { r -> (r as ${record}).${valueProperty} }`,
+      ];
+      if (enumFields.length) {
+        const pairs = enumFields.map(([name, f]) => `${q(name)} to it.${f.android.property}`).join(', ');
+        lines.push(`fields = { r -> (r as ${record}).let { mapOf(${pairs}) } }`);
+      }
+      lines.push(`build = { t, metadata, value, fields -> ${record}(${args.join(', ')}) }`);
+      return `        ${record}::class to QuantityAdapter(\n${lines.map((l) => `            ${l},`).join('\n')}\n        ),`;
     });
 
   const units = Object.entries(registry.units)
@@ -690,7 +732,24 @@ class RegistryEntry(
     val aggregates: Map<String, AggregateMetric<*>> = emptyMap(),
     /** No readable records; only aggregate() serves it (decision #21). */
     val aggregateOnly: Boolean = false,
+    /** The value property is a Long: writes reject fractions. */
+    val wholeNumber: Boolean = false,
     val fields: List<RegistryField> = emptyList(),
+)
+
+/** A record's start and end; an instant record's are equal. */
+class RecordTimes(val start: Instant, val startOffset: ZoneOffset?, val end: Instant, val endOffset: ZoneOffset?)
+
+/**
+ * One quantity record class, generated so the codec needn't hand-code it (T27): its times, its main value (a
+ * unit object or number, for [RegistryUnit.read]), its enum fields by unified name, and its constructor, which
+ * takes the value from [RegistryUnit.build] and the enum fields' constants.
+ */
+class QuantityAdapter(
+    val times: (Record) -> RecordTimes,
+    val value: (Record) -> Any,
+    val fields: (Record) -> Map<String, Int> = { emptyMap() },
+    val build: (RecordTimes, Metadata, Any, Map<String, Int>) -> Record,
 )
 
 object Registry {
@@ -714,6 +773,11 @@ ${entries.join('\n')}
     )
 
     val byId: Map<String, RegistryEntry> = entries.associateBy { it.id }
+
+    /** Quantity records the codec reads and builds generically, by record class. */
+    val adapters: Map<KClass<out Record>, QuantityAdapter> = mapOf(
+${adapters.join('\n')}
+    )
 }
 `;
 }

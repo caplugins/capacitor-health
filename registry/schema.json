@@ -278,6 +278,7 @@
           "additionalProperties": { "$ref": "#/$defs/hcConstant" }
         },
         "aggregateOnly": { "description": "Readable only through aggregate(); the record gives the permissions (decision #21).", "type": "boolean" },
+        "wholeNumber": { "description": "The value property is a Long: writes reject fractions.", "type": "boolean" },
         "notes": { "$ref": "#/$defs/notes" }
       }
     }

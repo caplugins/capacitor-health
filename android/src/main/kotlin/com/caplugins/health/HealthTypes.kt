@@ -23,6 +23,10 @@ class HealthTypes(private val features: (Int) -> Boolean) {
     fun resolveWritable(typeId: String): RegistryEntry =
         resolve(typeId).also { if (!it.writable) throw HealthException.readOnlyType(typeId) }
 
+    /** Like [resolve], rejecting aggregate-only types (`basalEnergy`), which have no records to read or follow. */
+    fun resolveSamples(typeId: String): RegistryEntry =
+        resolve(typeId).also { if (it.aggregateOnly) throw HealthException.unsupportedType(typeId, "aggregateOnly") }
+
     /** `TypeSupport` for one unified id (requirement R18). */
     fun support(typeId: String): JSObject {
         val result = JSObject().put("type", typeId).put("aggregatable", false)
@@ -38,6 +42,9 @@ class HealthTypes(private val features: (Int) -> Boolean) {
                 .put("readable", false)
                 .put("writable", false)
                 .put("reason", failure?.data?.getString("reason") ?: "notOnPlatform")
+        }
+        if (entry.aggregateOnly) {
+            return result.put("supported", true).put("readable", false).put("writable", false).put("reason", "aggregateOnly")
         }
         result.put("supported", true).put("readable", true).put("writable", entry.writable)
         if (!entry.writable) result.put("reason", "readOnly")

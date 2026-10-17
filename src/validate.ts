@@ -474,6 +474,14 @@ function newSample(raw: unknown, i: number, platform: NativePlatform): NewSample
     let end = start;
     if (s.endDate !== undefined) [, end] = dateRange(s.startDate, s.endDate, `${at}.`);
     const instant = platform === 'ios' ? entry.ios?.time === 'instant' : entry.android?.time === 'instant';
+    // Health Connect interval records need an end after their start.
+    if (platform === 'android' && entry.android?.time === 'interval' && end.ms <= start.ms) {
+      throw invalid(
+        `${at}.endDate`,
+        `must be after startDate: ${entry.id} covers a period of time on Android`,
+        'intervalOnly',
+      );
+    }
     if (platform === 'ios' && entry.ios?.time === 'interval' && end.ms - start.ms < 1000) {
       throw invalid(
         `${at}.endDate`,
@@ -494,6 +502,9 @@ function newSample(raw: unknown, i: number, platform: NativePlatform): NewSample
     if (entry.kind === 'quantity') {
       result.value = finiteNumber(s.value, `${at}.value`);
       result.unit = unit(s.unit, `${at}.unit`, entry);
+      if (platform === 'android' && entry.android?.wholeNumber && !Number.isInteger(result.value)) {
+        throw invalid(`${at}.value`, 'must be a whole number on Android', 'wholeNumberOnly');
+      }
       // The registry only gives ranges to single-unit types, so the value is in the range's unit.
       const range = platform === 'ios' ? entry.ios?.range : undefined;
       if (range && ((result.value as number) < range.min || (result.value as number) > range.max)) {

@@ -14,6 +14,9 @@
 - `UnsupportedReason` `aggregateOnly` for types that only have aggregates on a platform.
 - iOS: values HealthKit would refuse with an exception (effort scores outside 0–10, audio exposure
   samples without a duration) reject with `INVALID_ARGUMENT` before reaching HealthKit.
+- Android: writes that don't fit Health Connect's record shapes or ranges reject with
+  `INVALID_ARGUMENT` and `data.reason` `intervalOnly`, `instantOnly`, `wholeNumberOnly` or
+  `outOfRange`.
 
 ## 0.1.0 (unreleased)
 
