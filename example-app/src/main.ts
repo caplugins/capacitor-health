@@ -2,7 +2,7 @@ import { CapacitorHealth, HEALTH_TYPES } from '@caplugins/capacitor-health';
 import type { HealthType } from '@caplugins/capacitor-health';
 
 import { runAcceptance } from './acceptance';
-import { runAggregateCheck } from './aggregate';
+import { runAggregateCheck, runPassthroughCheck } from './aggregate';
 import { changes, deleteByClientId, deleteRange, loadTypes, read, updateValues, write } from './explore';
 import { runChangesCheck, runPeriodCheck, runRoundTrips } from './roundtrip';
 import { deleteTestData, seedTestData } from './seed';
@@ -103,6 +103,12 @@ bind('aggregate-check', 'aggregate-output', async () => {
   return lines;
 });
 
+bind('passthrough-check', 'passthrough-output', async () => {
+  const lines = await runPassthroughCheck();
+  lines.forEach((line) => console.log(`[passthrough] ${line}`));
+  return lines;
+});
+
 // For scripted runs (DevTools / Web Inspector): `await window.example.runChangesCheck()`.
 (window as unknown as { example: unknown }).example = {
   CapacitorHealth,
@@ -111,6 +117,7 @@ bind('aggregate-check', 'aggregate-output', async () => {
   runPeriodCheck,
   runAcceptance,
   runAggregateCheck,
+  runPassthroughCheck,
   seedTestData,
   deleteTestData,
   loadTypes,

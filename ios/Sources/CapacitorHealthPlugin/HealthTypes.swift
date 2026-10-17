@@ -45,10 +45,38 @@ enum HealthTypes {
         if entry.aggregateOnly { throw HealthError.unsupportedType(entry.typeId, reason: "aggregateOnly") }
     }
 
+    /// The registry entry for `typeId`, or a stand-in for an `hk:` passthrough id.
+    static func entry(_ typeId: String, registry: [String: RegistryEntry] = Registry.byId) -> RegistryEntry? {
+        registry[typeId] ?? passthroughEntry(typeId)
+    }
+
+    /// A stand-in entry for `hk:` + an unregistered quantity or category identifier (decision #59), or nil.
+    /// It writes only identifiers the generated passthrough tables list; quantities take the unit-table units
+    /// that fit the type, the first of them by default.
+    static func passthroughEntry(_ typeId: String) -> RegistryEntry? {
+        guard typeId.hasPrefix("hk:") else { return nil }
+        let identifier = String(typeId.dropFirst(3))
+        let quantity = identifier.hasPrefix("HKQuantityTypeIdentifier")
+        guard quantity || identifier.hasPrefix("HKCategoryTypeIdentifier"),
+              !Registry.entries.contains(where: { $0.identifier == identifier }),
+              !BloodPressure.memberTypes.contains(where: { $0.identifier == identifier }) else { return nil }
+        let type: HKSampleType? = quantity
+            ? HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier(rawValue: identifier))
+            : HKObjectType.categoryType(forIdentifier: HKCategoryTypeIdentifier(rawValue: identifier))
+        let units = (type as? HKQuantityType).map { quantityType in
+            Registry.unitOrder.filter { id in Registry.units[id].map { quantityType.is(compatibleWith: HKUnit(from: $0.ios)) } ?? false }
+        } ?? []
+        let writable = quantity ? Registry.passthroughQuantities.contains(identifier) : Registry.passthroughCategories[identifier] != nil
+        return RegistryEntry(
+            typeId, quantity ? .quantity : .category, identifier, minOS: "15.0", isAvailable: { type != nil },
+            writable: writable, unit: units.first, units: units
+        )
+    }
+
     /// The entry and HealthKit type for `typeId`, or why there is none.
     static func lookup(_ typeId: String, registry: [String: RegistryEntry] = Registry.byId)
         -> Result<(RegistryEntry, HKSampleType), Unavailability> {
-        guard let entry = registry[typeId] else { return .failure(.notOnPlatform) }
+        guard let entry = entry(typeId, registry: registry) else { return .failure(.notOnPlatform) }
         guard let type = sampleType(for: entry) else { return .failure(.osVersion) }
         return .success((entry, type))
     }
@@ -92,4 +120,9 @@ enum HealthTypes {
         if !entry.writable { result["reason"] = "readOnly" }
         return result
     }
+}
+
+extension RegistryEntry {
+    /// An `hk:` passthrough id's stand-in entry (decision #59).
+    var isPassthrough: Bool { typeId.hasPrefix("hk:") }
 }

@@ -89,7 +89,8 @@ enum SampleCodec {
             // A series sample (several values in one object) reads as one sample: HealthKit's sum or mean.
             if quantitySample.count > 1 { extra["hk.count"] = quantitySample.count }
         } else if let categorySample = sample as? HKCategorySample, entry.kind == .category {
-            json["value"] = unifiedValue(raw: categorySample.value, valueSet: entry.valueSet)
+            // Passthrough ids keep HealthKit's raw value (decision #59).
+            json["value"] = entry.isPassthrough ? categorySample.value : unifiedValue(raw: categorySample.value, valueSet: entry.valueSet)
             native["value"] = categorySample.value
         }
         json["native"] = native
@@ -227,6 +228,14 @@ enum SampleCodec {
                 )
             }
             return HKQuantitySample(type: quantityType, quantity: quantity, start: start, end: end, device: device, metadata: metadata)
+        case .category where entry.isPassthrough:
+            guard let categoryType = type as? HKCategoryType else { break }
+            // HealthKit raises an exception for a value outside the category's enum.
+            let raw = fields.optionalInt("value") ?? 0
+            guard Registry.passthroughCategories[entry.identifier]?.contains(raw) == true else {
+                throw HealthError.invalidArgument(fields.field("value"), "isn't a value HealthKit accepts here", reason: "valueUnsupportedOnPlatform")
+            }
+            return HKCategorySample(type: categoryType, value: raw, start: start, end: end, device: device, metadata: metadata)
         case .category:
             guard let categoryType = type as? HKCategoryType, let valueSet = entry.valueSet else { break }
             let raw = try rawValue(try fields.string("value"), valueSet: valueSet, field: fields.field("value"))

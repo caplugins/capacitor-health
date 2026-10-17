@@ -48,7 +48,7 @@ final class Authorization {
         let readTypes = Set(read.flatMap(Self.readTypes).map { $0 as HKObjectType })
         var shareTypes = Set<HKSampleType>()
         for typeId in write {
-            guard let entry = Registry.byId[typeId], HealthTypes.sampleType(for: entry) != nil else { continue }
+            guard let entry = HealthTypes.entry(typeId), HealthTypes.sampleType(for: entry) != nil else { continue }
             // Asking to share a type HealthKit disallows raises an exception, so this must never get through.
             let (writable, type) = try HealthTypes.resolveWritable(typeId)
             shareTypes.formUnion(HealthTypes.shareTypes(for: writable, type: type))
@@ -69,7 +69,7 @@ final class Authorization {
 
     /// The HealthKit types reading `typeId` needs: every member of a combined, aggregate-only or correlation type.
     private static func readTypes(_ typeId: String) -> [HKSampleType] {
-        Registry.byId[typeId].map(HealthTypes.authorizationTypes) ?? []
+        HealthTypes.entry(typeId).map(HealthTypes.authorizationTypes) ?? []
     }
 
     /// Share access to every type writing `typeId` needs: granted only when all are, refused when any is.

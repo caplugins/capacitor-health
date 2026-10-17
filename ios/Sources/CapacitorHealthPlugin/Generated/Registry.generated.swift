@@ -316,6 +316,77 @@ enum Registry {
         "dBASPL": RegistryUnit("dBASPL")
     ]
 
+    /** The unit ids in table order, for picking the first unit that fits a passthrough quantity. */
+    static let unitOrder: [String] = ["count", "count/min", "m", "km", "cm", "mi", "ft", "in", "kcal", "kJ", "kg", "g", "lb", "degC", "degF", "%", "ms", "s", "min", "h", "mmHg", "mg/dL", "mmol/L", "m/s", "km/h", "mph", "W", "mL/(kg·min)", "L", "mL", "kcal/(kg·h)", "appleEffortScore", "mcS", "L/min", "IU", "dBASPL"]
+
+    /** Unregistered quantity identifiers `hk:` passthrough ids may write (decision #59). */
+    static let passthroughQuantities: Set<String> = [
+        "HKQuantityTypeIdentifierDietaryBiotin",
+        "HKQuantityTypeIdentifierDietaryCaffeine",
+        "HKQuantityTypeIdentifierDietaryCalcium",
+        "HKQuantityTypeIdentifierDietaryCarbohydrates",
+        "HKQuantityTypeIdentifierDietaryChloride",
+        "HKQuantityTypeIdentifierDietaryCholesterol",
+        "HKQuantityTypeIdentifierDietaryChromium",
+        "HKQuantityTypeIdentifierDietaryCopper",
+        "HKQuantityTypeIdentifierDietaryEnergyConsumed",
+        "HKQuantityTypeIdentifierDietaryFatMonounsaturated",
+        "HKQuantityTypeIdentifierDietaryFatPolyunsaturated",
+        "HKQuantityTypeIdentifierDietaryFatSaturated",
+        "HKQuantityTypeIdentifierDietaryFatTotal",
+        "HKQuantityTypeIdentifierDietaryFiber",
+        "HKQuantityTypeIdentifierDietaryFolate",
+        "HKQuantityTypeIdentifierDietaryIodine",
+        "HKQuantityTypeIdentifierDietaryIron",
+        "HKQuantityTypeIdentifierDietaryMagnesium",
+        "HKQuantityTypeIdentifierDietaryManganese",
+        "HKQuantityTypeIdentifierDietaryMolybdenum",
+        "HKQuantityTypeIdentifierDietaryNiacin",
+        "HKQuantityTypeIdentifierDietaryPantothenicAcid",
+        "HKQuantityTypeIdentifierDietaryPhosphorus",
+        "HKQuantityTypeIdentifierDietaryPotassium",
+        "HKQuantityTypeIdentifierDietaryProtein",
+        "HKQuantityTypeIdentifierDietaryRiboflavin",
+        "HKQuantityTypeIdentifierDietarySelenium",
+        "HKQuantityTypeIdentifierDietarySodium",
+        "HKQuantityTypeIdentifierDietarySugar",
+        "HKQuantityTypeIdentifierDietaryThiamin",
+        "HKQuantityTypeIdentifierDietaryVitaminA",
+        "HKQuantityTypeIdentifierDietaryVitaminB12",
+        "HKQuantityTypeIdentifierDietaryVitaminB6",
+        "HKQuantityTypeIdentifierDietaryVitaminC",
+        "HKQuantityTypeIdentifierDietaryVitaminD",
+        "HKQuantityTypeIdentifierDietaryVitaminE",
+        "HKQuantityTypeIdentifierDietaryVitaminK",
+        "HKQuantityTypeIdentifierDietaryWater",
+        "HKQuantityTypeIdentifierDietaryZinc"
+    ]
+
+    /** Unregistered category identifiers `hk:` passthrough ids may write, with the raw values HealthKit accepts. */
+    static let passthroughCategories: [String: [Int]] = [
+        "HKCategoryTypeIdentifierMindfulSession": [0],
+        "HKCategoryTypeIdentifierHandwashingEvent": [0],
+        "HKCategoryTypeIdentifierToothbrushingEvent": [0],
+        "HKCategoryTypeIdentifierSleepAnalysis": [0, 1, 2],
+        "HKCategoryTypeIdentifierChestTightnessOrPain": [0, 1, 2, 3, 4],
+        "HKCategoryTypeIdentifierCoughing": [0, 1, 2, 3, 4],
+        "HKCategoryTypeIdentifierDizziness": [0, 1, 2, 3, 4],
+        "HKCategoryTypeIdentifierFainting": [0, 1, 2, 3, 4],
+        "HKCategoryTypeIdentifierFever": [0, 1, 2, 3, 4],
+        "HKCategoryTypeIdentifierGeneralizedBodyAche": [0, 1, 2, 3, 4],
+        "HKCategoryTypeIdentifierHeartburn": [0, 1, 2, 3, 4],
+        "HKCategoryTypeIdentifierLossOfSmell": [0, 1, 2, 3, 4],
+        "HKCategoryTypeIdentifierLossOfTaste": [0, 1, 2, 3, 4],
+        "HKCategoryTypeIdentifierRapidPoundingOrFlutteringHeartbeat": [0, 1, 2, 3, 4],
+        "HKCategoryTypeIdentifierRunnyNose": [0, 1, 2, 3, 4],
+        "HKCategoryTypeIdentifierShortnessOfBreath": [0, 1, 2, 3, 4],
+        "HKCategoryTypeIdentifierSinusCongestion": [0, 1, 2, 3, 4],
+        "HKCategoryTypeIdentifierSkippedHeartbeat": [0, 1, 2, 3, 4],
+        "HKCategoryTypeIdentifierSoreThroat": [0, 1, 2, 3, 4],
+        "HKCategoryTypeIdentifierVomiting": [0, 1, 2, 3, 4],
+        "HKCategoryTypeIdentifierWheezing": [0, 1, 2, 3, 4]
+    ]
+
     static let valueSets: [String: RegistryValueSet] = [
         "bleeding": RegistryValueSet([("unspecified", 1), ("light", 2), ("medium", 3), ("heavy", 4), ("none", 5)]),
         "cervicalMucusAppearance": RegistryValueSet([("dry", 1), ("sticky", 2), ("creamy", 3), ("watery", 4), ("eggWhite", 5)]),

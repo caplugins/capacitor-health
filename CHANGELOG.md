@@ -15,6 +15,7 @@
   `BloodPressureRecord` on Android).
 - Typed fields `testType` / `measurementMethod` (`vo2Max`), `relationToMeal`, `mealType`,
   `specimenSource` (`bloodGlucose`) and `reason` (`insulinDelivery`).
+- iOS: passthrough ids (`hk:` + a HealthKit identifier) for types without a unified id yet.
 - `UnsupportedReason` `aggregateOnly` for types that only have aggregates on a platform.
 - Android: series records (heart rate, speed, power, cadence) read as one sample per point, with
   `seriesId` for records holding several points.

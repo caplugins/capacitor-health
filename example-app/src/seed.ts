@@ -1,6 +1,6 @@
 import { Capacitor } from '@capacitor/core';
 import { CapacitorHealth } from '@caplugins/capacitor-health';
-import type { HealthType, NewSample } from '@caplugins/capacitor-health';
+import type { NewSample } from '@caplugins/capacitor-health';
 
 import { localIso } from './roundtrip';
 
@@ -67,7 +67,7 @@ export async function seedTestData(): Promise<string> {
 }
 
 export async function deleteTestData(): Promise<string> {
-  const byType = new Map<HealthType, string[]>();
+  const byType = new Map<NewSample['type'], string[]>();
   for (const sample of seedSamples()) {
     byType.set(sample.type, [...(byType.get(sample.type) ?? []), sample.clientId as string]);
   }

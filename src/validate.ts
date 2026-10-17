@@ -23,7 +23,7 @@ import type {
   SampleDevice,
   SaveSamplesOptions,
 } from './definitions';
-import { REGISTRY, VALUE_SETS } from './generated/registry';
+import { REGISTRY, UNITS, VALUE_SETS } from './generated/registry';
 import type { HealthType, RegistryEntry } from './generated/registry';
 
 export type NativePlatform = 'ios' | 'android';
@@ -169,8 +169,41 @@ function hasOwn(object: object, key: string): boolean {
   return Object.prototype.hasOwnProperty.call(object, key);
 }
 
+/** `hk:` + a HealthKit quantity or category identifier, `hc:` + a Health Connect record class (decision #59). */
+const PASSTHROUGH_ID = /^(hk:HK(Quantity|Category)TypeIdentifier[A-Za-z0-9]+|hc:[A-Z][A-Za-z0-9]*Record)$/;
+const IOS_UNITS = Object.keys(UNITS).filter((id) => UNITS[id].ios);
+
+type Entry = RegistryEntry & { passthrough?: true };
+
+/**
+ * A stand-in registry entry for a passthrough id: `hk:` ids exist on iOS only, `hc:` ids on neither
+ * platform yet. Registered identifiers reject: their unified id carries the checks HealthKit needs
+ * (shareability, value ranges, required metadata), which a passthrough id would skip.
+ */
+function passthroughEntry(id: string, field: string): Entry {
+  if (id.startsWith('hc:')) return { id: id as HealthType, kind: 'special', group: 'other', passthrough: true };
+  const identifier = id.slice(3);
+  // Blood pressure's members are written through their correlation, never alone.
+  const registered = /^HKQuantityTypeIdentifierBloodPressure(Systolic|Diastolic)$/.test(identifier)
+    ? REGISTRY.bloodPressure
+    : Object.values(REGISTRY).find((entry) => entry.ios?.identifier === identifier && !entry.ios.derivedFrom);
+  if (registered) {
+    throw invalid(field, `is registered: use '${registered.id}'`, 'registeredType', { type: registered.id });
+  }
+  const quantity = identifier.startsWith('HKQuantity');
+  return {
+    id: id as HealthType,
+    kind: quantity ? 'quantity' : 'category',
+    group: 'other',
+    ...(quantity ? { units: IOS_UNITS } : {}),
+    ios: { identifier, minOS: '15.0', writable: true, time: 'any' },
+    passthrough: true,
+  };
+}
+
 /** The registry entry for a type the caller names; rejects unknown ids. */
-function knownType(value: unknown, field: string): RegistryEntry {
+function knownType(value: unknown, field: string): Entry {
+  if (typeof value === 'string' && PASSTHROUGH_ID.test(value)) return passthroughEntry(value, field);
   if (typeof value !== 'string' || !hasOwn(REGISTRY, value)) {
     throw healthError('UNSUPPORTED_TYPE', `${field} is not a type this plugin knows.`, {
       field,
@@ -598,7 +631,20 @@ function newSample(raw: unknown, i: number, platform: NativePlatform): NewSample
     result = { type: entry.id, startDate: start.iso, endDate: end.iso };
     rejectIfSet(s, at, entry, ['flow', 'deltas', 'baseline']);
 
-    if (entry.kind === 'quantity') {
+    if ((entry as Entry).passthrough) {
+      if (entry.kind === 'quantity') {
+        result.value = finiteNumber(s.value, `${at}.value`);
+        if (s.unit === undefined) throw invalid(`${at}.unit`, 'is required for a passthrough quantity', 'required');
+        result.unit = unit(s.unit, `${at}.unit`, entry);
+      } else {
+        const value = s.value ?? 0;
+        if (typeof value !== 'number' || !Number.isInteger(value) || value < 0) {
+          throw invalid(`${at}.value`, 'must be a non-negative integer (HealthKit raw value)');
+        }
+        result.value = value;
+        rejectIfSet(s, at, entry, ['unit']);
+      }
+    } else if (entry.kind === 'quantity') {
       result.value = finiteNumber(s.value, `${at}.value`);
       result.unit = unit(s.unit, `${at}.unit`, entry);
       if (platform === 'android' && entry.android?.wholeNumber && !Number.isInteger(result.value)) {

@@ -947,6 +947,97 @@ describe('aggregate', () => {
   });
 });
 
+describe('passthrough ids', () => {
+  const water = 'hk:HKQuantityTypeIdentifierDietaryWater' as const;
+  const sleep = 'hk:HKCategoryTypeIdentifierSleepAnalysis' as const;
+
+  it('accepts hk: ids on iOS only', () => {
+    expect(validateReadSamples({ type: water, startDate: START, endDate: END }, 'ios').type).toBe(water);
+    expect(validateReadSamples({ type: water, startDate: START, endDate: END, unit: 'mL' }, 'ios').unit).toBe('mL');
+    rejection(
+      () => validateReadSamples({ type: water, startDate: START, endDate: END }, 'android'),
+      'UNSUPPORTED_TYPE',
+      'type',
+      'notOnPlatform',
+    );
+    expect(validateGetChanges({ types: [water, 'steps'] }, 'ios').types).toEqual([water, 'steps']);
+    expect(validateCheckAuthorization({ read: [water], write: [sleep] }, 'ios')).toEqual({
+      read: [water],
+      write: [sleep],
+    });
+  });
+
+  it('checks the id syntax and rejects hc: ids for now', () => {
+    rejection(
+      () => validateReadSamples({ type: 'hk:StepCount' as never, startDate: START, endDate: END }, 'ios'),
+      'UNSUPPORTED_TYPE',
+      'type',
+      'unknownType',
+    );
+    rejection(
+      () => validateReadSamples({ type: 'hc:HydrationRecord', startDate: START, endDate: END }, 'android'),
+      'UNSUPPORTED_TYPE',
+      'type',
+      'notOnPlatform',
+    );
+    rejection(
+      () => validateReadSamples({ type: 'hc:hydration' as never, startDate: START, endDate: END }, 'android'),
+      'UNSUPPORTED_TYPE',
+      'type',
+      'unknownType',
+    );
+  });
+
+  it('writes native values', () => {
+    expect(save({ type: water, startDate: START, value: 250, unit: 'mL' })).toMatchObject({ value: 250, unit: 'mL' });
+    rejection(
+      () => save({ type: water, startDate: START, value: 250 }),
+      'INVALID_ARGUMENT',
+      'samples[0].unit',
+      'required',
+    );
+    rejection(
+      () => save({ type: water, startDate: START, value: 250, unit: 'cups' }),
+      'INVALID_ARGUMENT',
+      'samples[0].unit',
+      'unknownUnit',
+    );
+    expect(save({ type: sleep, startDate: START, endDate: END, value: 3 }).value).toBe(3);
+    expect(save({ type: 'hk:HKCategoryTypeIdentifierMindfulSession', startDate: START, endDate: END }).value).toBe(0);
+    rejection(() => save({ type: sleep, startDate: START, value: 'asleep' }), 'INVALID_ARGUMENT', 'samples[0].value');
+  });
+
+  it('points registered identifiers to their unified id', () => {
+    const error = rejection(
+      () =>
+        validateReadSamples({ type: 'hk:HKQuantityTypeIdentifierStepCount', startDate: START, endDate: END }, 'ios'),
+      'INVALID_ARGUMENT',
+      'type',
+      'registeredType',
+    );
+    expect(error.data?.type).toBe('steps');
+    rejection(
+      () => validateCheckAuthorization({ write: ['hk:HKQuantityTypeIdentifierAppleExerciseTime'] }, 'ios'),
+      'INVALID_ARGUMENT',
+      'write[0]',
+      'registeredType',
+    );
+    const member = 'hk:HKQuantityTypeIdentifierBloodPressureSystolic' as const;
+    expect(rejection(() => validateCheckAuthorization({ read: [member] }, 'ios'), 'INVALID_ARGUMENT').data?.type).toBe(
+      'bloodPressure',
+    );
+  });
+
+  it("can't be aggregated", () => {
+    rejection(
+      () => validateAggregate({ type: water as never, startDate: START, endDate: END, metrics: ['sum'] }, 'ios'),
+      'UNSUPPORTED_TYPE',
+      'type',
+      'notAggregatable',
+    );
+  });
+});
+
 describe('deleteSamples', () => {
   it('accepts exactly one selector', () => {
     expect(validateDeleteSamples({ type: 'menstrualFlow', ids: ['a'] }, 'ios')).toEqual({

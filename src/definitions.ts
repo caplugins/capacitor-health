@@ -16,6 +16,17 @@ export type {
   QuantityHealthType,
 } from './generated/registry';
 
+/**
+ * A native type the registry doesn't cover yet: `hk:` plus a HealthKit quantity or category
+ * identifier (`hk:HKQuantityTypeIdentifierDietaryWater`), on iOS. Values stay native: quantities in
+ * a unit you name, categories as HealthKit's raw integers. `hc:` plus a Health Connect record class
+ * is reserved: every record of the Health Connect library the plugin uses is registered, so `hc:`
+ * ids reject with `UNSUPPORTED_TYPE` for now.
+ *
+ * @since 0.2.0
+ */
+export type PassthroughType = `hk:${string}` | `hc:${string}`;
+
 declare module '@capacitor/cli' {
   export interface PluginsConfig {
     /**
@@ -278,7 +289,7 @@ export type AuthorizationStatus = 'granted' | 'notGranted' | 'notDetermined' | '
  *
  * @since 0.1.0
  */
-export type AuthorizationStatusMap = Partial<Record<HealthType, AuthorizationStatus>>;
+export type AuthorizationStatusMap = Partial<Record<HealthType | PassthroughType, AuthorizationStatus>>;
 
 /**
  * @since 0.1.0
@@ -289,13 +300,13 @@ export interface AuthorizationOptions {
    *
    * @since 0.1.0
    */
-  read?: HealthType[];
+  read?: (HealthType | PassthroughType)[];
   /**
    * Types to write. Read-only types reject with `READ_ONLY_TYPE`.
    *
    * @since 0.1.0
    */
-  write?: HealthType[];
+  write?: (HealthType | PassthroughType)[];
   /**
    * Android only. Extra Health Connect permissions, requested only when set and supported by the
    * device (see `getSupportedTypes().android`). The app's manifest must declare them too.
@@ -330,9 +341,9 @@ export interface AndroidAuthorizationOptions {
  */
 export interface CheckAuthorizationOptions {
   /** @since 0.1.0 */
-  read?: HealthType[];
+  read?: (HealthType | PassthroughType)[];
   /** @since 0.1.0 */
-  write?: HealthType[];
+  write?: (HealthType | PassthroughType)[];
 }
 
 /**
@@ -488,7 +499,7 @@ export interface SampleBase {
    */
   id: string;
   /** @since 0.1.0 */
-  type: HealthType;
+  type: HealthType | PassthroughType;
   /** @since 0.1.0 */
   startDate: string;
   /**
@@ -763,7 +774,33 @@ export interface BloodPressureSample extends SampleBase {
   measurementLocation?: string;
 }
 
+/**
+ * A sample of a passthrough type (`hk:…`), with its native value.
+ *
+ * @since 0.2.0
+ */
+export interface PassthroughSample extends SampleBase {
+  /** @since 0.2.0 */
+  kind: 'quantity' | 'category';
+  /** @since 0.2.0 */
+  type: PassthroughType;
+  /**
+   * A quantity in `unit`, or a category's raw HealthKit value.
+   *
+   * @since 0.2.0
+   */
+  value: number;
+  /**
+   * Quantities: the unit asked for in `readSamples()`, else the first unit of the plugin's unit table
+   * that fits the HealthKit type.
+   *
+   * @since 0.2.0
+   */
+  unit?: string;
+}
+
 export type Sample =
+  | PassthroughSample
   | QuantitySample
   | CategorySample
   | EventSample
@@ -978,7 +1015,30 @@ export interface NewBloodPressureSample extends NewSampleBase {
   measurementLocation?: string;
 }
 
+/**
+ * A new sample of a passthrough type (`hk:…`, iOS).
+ *
+ * @since 0.2.0
+ */
+export interface NewPassthroughSample extends NewSampleBase {
+  /** @since 0.2.0 */
+  type: PassthroughType;
+  /**
+   * Quantities: the amount in `unit`. Categories: HealthKit's raw value (0 for types without values).
+   *
+   * @since 0.2.0
+   */
+  value: number;
+  /**
+   * Quantities: required, one of the plugin's unit ids that fits the HealthKit type (`mL`, `kcal`, …).
+   *
+   * @since 0.2.0
+   */
+  unit?: string;
+}
+
 export type NewSample =
+  | NewPassthroughSample
   | NewQuantitySample
   | NewCategorySample
   | NewEventSample
@@ -999,7 +1059,7 @@ export interface ReadSamplesOptions {
    *
    * @since 0.1.0
    */
-  type: HealthType;
+  type: HealthType | PassthroughType;
   /**
    * Returns samples that overlap `startDate`–`endDate` (on Android, records covering a period of time
    * other than menstruation periods match by start time). ISO 8601 with an offset.
@@ -1172,7 +1232,7 @@ export interface GetChangesOptions {
    *
    * @since 0.1.0
    */
-  types: HealthType[];
+  types: (HealthType | PassthroughType)[];
   /**
    * `nextCursor` from the previous call. Without it, the call returns no changes, only a cursor
    * marking "now": read existing data with `readSamples()` first, then follow changes from there.
@@ -1203,7 +1263,7 @@ export interface GetChangesOptions {
  */
 export interface DeletedSample {
   /** @since 0.1.0 */
-  type: HealthType;
+  type: HealthType | PassthroughType;
   /**
    * The deleted sample's id. On Android, a deleted series record gives one deletion whose id is the
    * record's: remove the samples whose `id` or `seriesId` equals it.
@@ -1274,7 +1334,7 @@ export interface SaveSamplesResult {
  */
 export interface DeleteSamplesOptions {
   /** @since 0.1.0 */
-  type: HealthType;
+  type: HealthType | PassthroughType;
   /**
    * Sample ids. On Android, the id of a point in a series record (`<seriesId>#<index>`) deletes the
    * whole record, every point of it.
