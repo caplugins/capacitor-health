@@ -599,9 +599,9 @@ ${units.join(',\n')}
     static let unitOrder: [String] = [${Object.entries(registry.units).filter(([, u]) => u.ios).map(([id]) => q(id)).join(', ')}]
 
     /** Unregistered quantity identifiers \`hk:\` passthrough ids may write (decision #59). */
-    static let passthroughQuantities: Set<String> = [
-${passthrough.quantities.map((id) => `        ${q(id)}`).join(',\n')}
-    ]
+    static let passthroughQuantities: Set<String> = ${
+      passthrough.quantities.length ? `[\n${passthrough.quantities.map((id) => `        ${q(id)}`).join(',\n')}\n    ]` : '[]'
+    }
 
     /** Unregistered category identifiers \`hk:\` passthrough ids may write, with the raw values HealthKit accepts. */
     static let passthroughCategories: [String: [Int]] = [

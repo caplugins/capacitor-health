@@ -18,7 +18,7 @@ export type {
 
 /**
  * A native type the registry doesn't cover yet: `hk:` plus a HealthKit quantity or category
- * identifier (`hk:HKQuantityTypeIdentifierDietaryWater`), on iOS. Values stay native: quantities in
+ * identifier (`hk:HKCategoryTypeIdentifierHandwashingEvent`), on iOS. Values stay native: quantities in
  * a unit you name, categories as HealthKit's raw integers. `hc:` plus a Health Connect record class
  * is reserved: every record of the Health Connect library the plugin uses is registered, so `hc:`
  * ids reject with `UNSUPPORTED_TYPE` for now.
@@ -663,6 +663,14 @@ export interface EventSample extends SampleBase {
    * @since 0.1.0
    */
   protectionUsed?: boolean;
+  /**
+   * `mindfulSession` on Android: `meditation`, `breathing`, `music`, `movement` or `unguided`. Absent
+   * when not recorded; HealthKit mindful sessions have no type. Health Connect's title and notes read as
+   * `metadata['hc.title']` / `metadata['hc.notes']`.
+   *
+   * @since 0.3.0
+   */
+  sessionType?: string;
 }
 
 /**
@@ -931,6 +939,8 @@ export interface NewEventSample extends NewSampleBase {
   type: EventHealthType;
   /** @since 0.1.0 */
   protectionUsed?: boolean;
+  /** `mindfulSession`, Android only. @since 0.3.0 */
+  sessionType?: string;
 }
 
 /**

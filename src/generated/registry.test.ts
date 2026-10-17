@@ -15,7 +15,9 @@ import {
 
 describe('generated TypeScript registry', () => {
   it('lists every type in registry order', () => {
-    expect([...HEALTH_TYPES]).toEqual(types.types.map((t) => t.id));
+    // Single-nutrient types follow the hand-written ones, one per nutrient (decision #61).
+    const nutrientTypes = Object.keys(types.nutrients).map((n) => `dietary${n[0].toUpperCase()}${n.slice(1)}`);
+    expect([...HEALTH_TYPES]).toEqual([...types.types.map((t) => t.id), ...nutrientTypes]);
     expect(Object.keys(REGISTRY)).toEqual([...HEALTH_TYPES]);
   });
 

@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.3.0 (unreleased)
+
+### Added
+
+- `hydration` (`dietaryWater` ⇄ `HydrationRecord`) in mL, L or US fl oz.
+- 42 single-nutrient types (`dietaryProtein`, `dietaryEnergy`, `dietaryVitaminC`, …): HealthKit
+  dietary samples on iOS, `aggregate()` sums on Android (decision #61).
+- `mindfulSession` (HealthKit mindful sessions ⇄ `MindfulnessSessionRecord`, Android only where
+  Health Connect has the feature), with `sessionType` on Android.
+- Units `mg`, `mcg`, `oz` and `flOz`.
+
+### Changed
+
+- iOS passthrough ids for identifiers that now have a unified id (`hk:HKQuantityTypeIdentifierDietaryWater`,
+  every `hk:HKQuantityTypeIdentifierDietary…`, `hk:HKCategoryTypeIdentifierMindfulSession`) reject with
+  `INVALID_ARGUMENT`, `data.reason` `registeredType` and the unified id in `data.type` (decision #59).
+
 ## 0.2.0 (unreleased)
 
 ### Added

@@ -29,6 +29,9 @@ class Aggregation(
     private val zone: () -> ZoneId = ZoneId::systemDefault,
 ) {
     companion object {
+        /** The bucket unit of types without units, whose only metric is a duration in seconds. */
+        const val DURATION_UNIT = "s"
+
         /** The metrics `aggregate()` serves for [entry], in a stable order. */
         fun metrics(entry: RegistryEntry): List<String> = listOf("sum", "avg", "min", "max", "count", "duration").filter { it in entry.aggregates }
 
@@ -73,8 +76,11 @@ class Aggregation(
         val start = options.date("startDate").toInstant()
         val end = options.date("endDate").toInstant()
         if (!end.isAfter(start)) throw HealthException.invalidArgument("endDate", "must be after startDate", "emptyRange")
-        val unit = options.optString("unit") ?: entry.unit ?: ""
-        if (unit !in entry.units) throw HealthException.invalidArgument("unit", "isn't a unit of $typeId")
+        // A type without units (a session: only `duration`) reports its buckets in seconds.
+        val unit = options.optString("unit") ?: entry.unit ?: DURATION_UNIT
+        if (unit !in entry.units && !(entry.units.isEmpty() && unit == DURATION_UNIT)) {
+            throw HealthException.invalidArgument("unit", "isn't a unit of $typeId")
+        }
         val metrics: Map<String, AggregateMetric<*>> = requested.associateWith { entry.aggregates.getValue(it) }
         val origins = options.optStrings("sourceIds")?.map { DataOrigin(it) }?.toSet() ?: emptySet()
         val bucket = options.optObject("bucket")

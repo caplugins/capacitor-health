@@ -12,18 +12,13 @@ final class PassthroughTests: XCTestCase {
         return try SampleCodec.decode(JSONFields(json, path: "samples[0]"), entry: entry, type: type)
     }
 
-    func testQuantityUsesTheUnitsThatFit() throws {
-        let water = try XCTUnwrap(HealthTypes.passthroughEntry("hk:HKQuantityTypeIdentifierDietaryWater"))
-        XCTAssertEqual(water.units, ["L", "mL", "flOz"])
-        XCTAssertEqual(water.unit, "L")
-        XCTAssertTrue(water.writable)
-        let sample = try XCTUnwrap(try decode(["type": "hk:HKQuantityTypeIdentifierDietaryWater", "startDate": noon, "value": 250, "unit": "mL"]) as? HKQuantitySample)
-        XCTAssertEqual(sample.quantity.doubleValue(for: .liter()), 0.25, accuracy: 1e-9)
-        let json = SampleCodec.encode(sample, entry: water, unit: "mL")
-        XCTAssertEqual(json["type"] as? String, "hk:HKQuantityTypeIdentifierDietaryWater")
-        XCTAssertEqual(json["value"] as? Double ?? 0, 250, accuracy: 1e-9)
-        XCTAssertEqual(json["kind"] as? String, "quantity")
-        XCTAssertThrowsError(try decode(["type": "hk:HKQuantityTypeIdentifierDietaryWater", "startDate": noon, "value": 1, "unit": "kcal"]))
+    func testEveryCatalogQuantityIsRegistered() {
+        // Since T41 every quantity identifier of the iOS 27 SDK has a unified id; a newer one reads only.
+        XCTAssertTrue(Registry.passthroughQuantities.isEmpty)
+        XCTAssertNil(HealthTypes.passthroughEntry("hk:HKQuantityTypeIdentifierDietaryWater"))
+        let future = HealthTypes.passthroughEntry("hk:HKQuantityTypeIdentifierSomethingFromTheFuture")
+        XCTAssertEqual(future?.writable, false)
+        XCTAssertEqual(future?.kind, .quantity)
     }
 
     func testCategoryKeepsRawValuesHealthKitAccepts() throws {
@@ -36,13 +31,14 @@ final class PassthroughTests: XCTestCase {
         XCTAssertThrowsError(try decode(["type": sleep, "startDate": noon, "endDate": end, "value": 3])) { error in
             XCTAssertEqual(HealthError.from(error).data["reason"] as? String, "valueUnsupportedOnPlatform")
         }
-        XCTAssertThrowsError(try decode(["type": "hk:HKCategoryTypeIdentifierMindfulSession", "startDate": noon, "endDate": end, "value": 1]))
-        XCTAssertNoThrow(try decode(["type": "hk:HKCategoryTypeIdentifierMindfulSession", "startDate": noon, "endDate": end]))
+        XCTAssertThrowsError(try decode(["type": "hk:HKCategoryTypeIdentifierHandwashingEvent", "startDate": noon, "endDate": end, "value": 1]))
+        XCTAssertNoThrow(try decode(["type": "hk:HKCategoryTypeIdentifierHandwashingEvent", "startDate": noon, "endDate": end]))
     }
 
     func testRegisteredAndUnknownIdsHaveNoPassthrough() {
         XCTAssertNil(HealthTypes.passthroughEntry("hk:HKQuantityTypeIdentifierStepCount"))
         XCTAssertNil(HealthTypes.passthroughEntry("hk:HKQuantityTypeIdentifierBloodPressureSystolic"))
+        XCTAssertNil(HealthTypes.passthroughEntry("hk:HKCategoryTypeIdentifierMindfulSession"))
         XCTAssertNil(HealthTypes.passthroughEntry("hk:HKWorkoutTypeIdentifier"))
         XCTAssertNil(HealthTypes.passthroughEntry("hc:HydrationRecord"))
         XCTAssertThrowsError(try HealthTypes.resolve("hc:HydrationRecord")) { error in
@@ -55,8 +51,8 @@ final class PassthroughTests: XCTestCase {
 
     func testAuthorizationAsksForPassthroughTypes() async throws {
         XCTAssertEqual(
-            HealthTypes.authorizationTypes(for: try XCTUnwrap(HealthTypes.entry("hk:HKQuantityTypeIdentifierDietaryWater"))),
-            [HKQuantityType(.dietaryWater)]
+            HealthTypes.authorizationTypes(for: try XCTUnwrap(HealthTypes.entry("hk:HKCategoryTypeIdentifierToothbrushingEvent"))),
+            [HKCategoryType(.toothbrushingEvent)]
         )
     }
 }

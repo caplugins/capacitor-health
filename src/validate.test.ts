@@ -948,7 +948,8 @@ describe('aggregate', () => {
 });
 
 describe('passthrough ids', () => {
-  const water = 'hk:HKQuantityTypeIdentifierDietaryWater' as const;
+  // Every quantity of the iOS 27 SDK is registered since T41; a newer identifier still passes through.
+  const water = 'hk:HKQuantityTypeIdentifierSomethingFromTheFuture' as const;
   const sleep = 'hk:HKCategoryTypeIdentifierSleepAnalysis' as const;
 
   it('accepts hk: ids on iOS only', () => {
@@ -1003,7 +1004,7 @@ describe('passthrough ids', () => {
       'unknownUnit',
     );
     expect(save({ type: sleep, startDate: START, endDate: END, value: 3 }).value).toBe(3);
-    expect(save({ type: 'hk:HKCategoryTypeIdentifierMindfulSession', startDate: START, endDate: END }).value).toBe(0);
+    expect(save({ type: 'hk:HKCategoryTypeIdentifierHandwashingEvent', startDate: START, endDate: END }).value).toBe(0);
     rejection(() => save({ type: sleep, startDate: START, value: 'asleep' }), 'INVALID_ARGUMENT', 'samples[0].value');
   });
 
@@ -1022,6 +1023,14 @@ describe('passthrough ids', () => {
       'write[0]',
       'registeredType',
     );
+    for (const [id, type] of [
+      ['hk:HKQuantityTypeIdentifierDietaryWater', 'hydration'],
+      ['hk:HKQuantityTypeIdentifierDietaryProtein', 'dietaryProtein'],
+      ['hk:HKCategoryTypeIdentifierMindfulSession', 'mindfulSession'],
+    ] as const) {
+      const registered = rejection(() => validateCheckAuthorization({ read: [id] }, 'ios'), 'INVALID_ARGUMENT');
+      expect(registered.data?.type).toBe(type);
+    }
     const member = 'hk:HKQuantityTypeIdentifierBloodPressureSystolic' as const;
     expect(rejection(() => validateCheckAuthorization({ read: [member] }, 'ios'), 'INVALID_ARGUMENT').data?.type).toBe(
       'bloodPressure',
@@ -1131,5 +1140,67 @@ describe('withValidation', () => {
     await plugin.saveSamples({ samples: [{ type: 'acne', startDate: START, value: 'mild' }] });
     await plugin.deleteSamples({ type: 'acne', ids: ['x'] });
     for (const fn of Object.values(native)) expect(fn).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('hydration, single nutrients and mindful sessions (T41)', () => {
+  const range = { startDate: START, endDate: END };
+
+  it('writes hydration in any volume unit, as an interval on Android', () => {
+    expect(save({ type: 'hydration', startDate: START, value: 8, unit: 'flOz' })).toMatchObject({ unit: 'flOz' });
+    expect(save({ type: 'hydration', startDate: START, value: 250 }).unit).toBe('mL');
+    rejection(
+      () => save({ type: 'hydration', startDate: START, value: 250 }, 'android'),
+      'INVALID_ARGUMENT',
+      'samples[0].endDate',
+      'intervalOnly',
+    );
+    expect(save({ type: 'hydration', ...range, value: 250 }, 'android').value).toBe(250);
+  });
+
+  it('keeps single nutrients to samples on iOS and aggregates on Android', () => {
+    expect(save({ type: 'dietaryProtein', ...range, value: 30 }).unit).toBe('g');
+    expect(save({ type: 'dietaryVitaminC', ...range, value: 90, unit: 'mg' }).unit).toBe('mg');
+    expect(save({ type: 'dietaryEnergy', ...range, value: 500, unit: 'kJ' }).unit).toBe('kJ');
+    rejection(() => save({ type: 'dietaryProtein', ...range, value: 30 }, 'android'), 'READ_ONLY_TYPE');
+    rejection(
+      () => validateReadSamples({ type: 'dietaryProtein', ...range }, 'android'),
+      'UNSUPPORTED_TYPE',
+      'type',
+      'aggregateOnly',
+    );
+    expect(validateAggregate({ type: 'dietaryProtein', ...range, metrics: ['sum'] }, 'android').type).toBe(
+      'dietaryProtein',
+    );
+    rejection(
+      () => validateReadSamples({ type: 'dietaryTransFat', ...range }, 'ios'),
+      'UNSUPPORTED_TYPE',
+      'type',
+      'notOnPlatform',
+    );
+  });
+
+  it('stores the mindful session type on Android only', () => {
+    expect(save({ type: 'mindfulSession', ...range, sessionType: 'breathing' }, 'android').sessionType).toBe(
+      'breathing',
+    );
+    rejection(
+      () => save({ type: 'mindfulSession', ...range, sessionType: 'breathing' }),
+      'INVALID_ARGUMENT',
+      'samples[0].sessionType',
+      'valueUnsupportedOnPlatform',
+    );
+    rejection(
+      () => save({ type: 'mindfulSession', ...range, sessionType: 'yoga' }, 'android'),
+      'INVALID_ARGUMENT',
+      'samples[0].sessionType',
+    );
+    expect(save({ type: 'mindfulSession', ...range }).type).toBe('mindfulSession');
+    for (const platform of ['ios', 'android'] as const) {
+      rejection(
+        () => validateAggregate({ type: 'mindfulSession', ...range, metrics: ['duration'] }, platform),
+        'UNSUPPORTED_TYPE',
+      );
+    }
   });
 });

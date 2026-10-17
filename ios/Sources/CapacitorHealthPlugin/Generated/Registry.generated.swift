@@ -302,7 +302,51 @@ enum Registry {
         "insulinDelivery",
         "environmentalAudioExposureEvent",
         "headphoneAudioExposureEvent",
-        "nikeFuel"
+        "nikeFuel",
+        "hydration",
+        "mindfulSession",
+        "dietaryEnergy",
+        "dietaryEnergyFromFat",
+        "dietaryProtein",
+        "dietaryCarbohydrates",
+        "dietaryFiber",
+        "dietarySugar",
+        "dietaryTotalFat",
+        "dietarySaturatedFat",
+        "dietaryMonounsaturatedFat",
+        "dietaryPolyunsaturatedFat",
+        "dietaryUnsaturatedFat",
+        "dietaryTransFat",
+        "dietaryCholesterol",
+        "dietarySodium",
+        "dietaryPotassium",
+        "dietaryCalcium",
+        "dietaryIron",
+        "dietaryMagnesium",
+        "dietaryPhosphorus",
+        "dietaryZinc",
+        "dietaryCopper",
+        "dietaryManganese",
+        "dietarySelenium",
+        "dietaryChromium",
+        "dietaryMolybdenum",
+        "dietaryIodine",
+        "dietaryChloride",
+        "dietaryVitaminA",
+        "dietaryVitaminB6",
+        "dietaryVitaminB12",
+        "dietaryVitaminC",
+        "dietaryVitaminD",
+        "dietaryVitaminE",
+        "dietaryVitaminK",
+        "dietaryThiamin",
+        "dietaryRiboflavin",
+        "dietaryNiacin",
+        "dietaryPantothenicAcid",
+        "dietaryBiotin",
+        "dietaryFolate",
+        "dietaryFolicAcid",
+        "dietaryCaffeine"
     ]
 
     static let units: [String: RegistryUnit] = [
@@ -352,51 +396,10 @@ enum Registry {
     static let unitOrder: [String] = ["count", "count/min", "m", "km", "cm", "mi", "ft", "in", "kcal", "kJ", "kg", "g", "mg", "mcg", "oz", "lb", "degC", "degF", "%", "ms", "s", "min", "h", "mmHg", "mg/dL", "mmol/L", "m/s", "km/h", "mph", "W", "mL/(kg·min)", "L", "mL", "flOz", "kcal/(kg·h)", "appleEffortScore", "mcS", "L/min", "IU", "dBASPL"]
 
     /** Unregistered quantity identifiers `hk:` passthrough ids may write (decision #59). */
-    static let passthroughQuantities: Set<String> = [
-        "HKQuantityTypeIdentifierDietaryBiotin",
-        "HKQuantityTypeIdentifierDietaryCaffeine",
-        "HKQuantityTypeIdentifierDietaryCalcium",
-        "HKQuantityTypeIdentifierDietaryCarbohydrates",
-        "HKQuantityTypeIdentifierDietaryChloride",
-        "HKQuantityTypeIdentifierDietaryCholesterol",
-        "HKQuantityTypeIdentifierDietaryChromium",
-        "HKQuantityTypeIdentifierDietaryCopper",
-        "HKQuantityTypeIdentifierDietaryEnergyConsumed",
-        "HKQuantityTypeIdentifierDietaryFatMonounsaturated",
-        "HKQuantityTypeIdentifierDietaryFatPolyunsaturated",
-        "HKQuantityTypeIdentifierDietaryFatSaturated",
-        "HKQuantityTypeIdentifierDietaryFatTotal",
-        "HKQuantityTypeIdentifierDietaryFiber",
-        "HKQuantityTypeIdentifierDietaryFolate",
-        "HKQuantityTypeIdentifierDietaryIodine",
-        "HKQuantityTypeIdentifierDietaryIron",
-        "HKQuantityTypeIdentifierDietaryMagnesium",
-        "HKQuantityTypeIdentifierDietaryManganese",
-        "HKQuantityTypeIdentifierDietaryMolybdenum",
-        "HKQuantityTypeIdentifierDietaryNiacin",
-        "HKQuantityTypeIdentifierDietaryPantothenicAcid",
-        "HKQuantityTypeIdentifierDietaryPhosphorus",
-        "HKQuantityTypeIdentifierDietaryPotassium",
-        "HKQuantityTypeIdentifierDietaryProtein",
-        "HKQuantityTypeIdentifierDietaryRiboflavin",
-        "HKQuantityTypeIdentifierDietarySelenium",
-        "HKQuantityTypeIdentifierDietarySodium",
-        "HKQuantityTypeIdentifierDietarySugar",
-        "HKQuantityTypeIdentifierDietaryThiamin",
-        "HKQuantityTypeIdentifierDietaryVitaminA",
-        "HKQuantityTypeIdentifierDietaryVitaminB12",
-        "HKQuantityTypeIdentifierDietaryVitaminB6",
-        "HKQuantityTypeIdentifierDietaryVitaminC",
-        "HKQuantityTypeIdentifierDietaryVitaminD",
-        "HKQuantityTypeIdentifierDietaryVitaminE",
-        "HKQuantityTypeIdentifierDietaryVitaminK",
-        "HKQuantityTypeIdentifierDietaryWater",
-        "HKQuantityTypeIdentifierDietaryZinc"
-    ]
+    static let passthroughQuantities: Set<String> = []
 
     /** Unregistered category identifiers `hk:` passthrough ids may write, with the raw values HealthKit accepts. */
     static let passthroughCategories: [String: [Int]] = [
-        "HKCategoryTypeIdentifierMindfulSession": [0],
         "HKCategoryTypeIdentifierHandwashingEvent": [0],
         "HKCategoryTypeIdentifierToothbrushingEvent": [0],
         "HKCategoryTypeIdentifierSleepAnalysis": [0, 1, 2],
@@ -1629,6 +1632,358 @@ enum Registry {
             writable: false,
             unit: "count",
             units: ["count"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "hydration",
+            .quantity,
+            "HKQuantityTypeIdentifierDietaryWater",
+            minOS: "9.0",
+            unit: "mL",
+            units: ["mL", "L", "flOz"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry("mindfulSession", .event, "HKCategoryTypeIdentifierMindfulSession", minOS: "10.0"),
+        RegistryEntry(
+            "dietaryEnergy",
+            .quantity,
+            "HKQuantityTypeIdentifierDietaryEnergyConsumed",
+            minOS: "8.0",
+            unit: "kcal",
+            units: ["kcal", "kJ"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "dietaryProtein",
+            .quantity,
+            "HKQuantityTypeIdentifierDietaryProtein",
+            minOS: "8.0",
+            unit: "g",
+            units: ["g", "mg", "mcg", "oz"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "dietaryCarbohydrates",
+            .quantity,
+            "HKQuantityTypeIdentifierDietaryCarbohydrates",
+            minOS: "8.0",
+            unit: "g",
+            units: ["g", "mg", "mcg", "oz"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "dietaryFiber",
+            .quantity,
+            "HKQuantityTypeIdentifierDietaryFiber",
+            minOS: "8.0",
+            unit: "g",
+            units: ["g", "mg", "mcg", "oz"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "dietarySugar",
+            .quantity,
+            "HKQuantityTypeIdentifierDietarySugar",
+            minOS: "8.0",
+            unit: "g",
+            units: ["g", "mg", "mcg", "oz"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "dietaryTotalFat",
+            .quantity,
+            "HKQuantityTypeIdentifierDietaryFatTotal",
+            minOS: "8.0",
+            unit: "g",
+            units: ["g", "mg", "mcg", "oz"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "dietarySaturatedFat",
+            .quantity,
+            "HKQuantityTypeIdentifierDietaryFatSaturated",
+            minOS: "8.0",
+            unit: "g",
+            units: ["g", "mg", "mcg", "oz"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "dietaryMonounsaturatedFat",
+            .quantity,
+            "HKQuantityTypeIdentifierDietaryFatMonounsaturated",
+            minOS: "8.0",
+            unit: "g",
+            units: ["g", "mg", "mcg", "oz"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "dietaryPolyunsaturatedFat",
+            .quantity,
+            "HKQuantityTypeIdentifierDietaryFatPolyunsaturated",
+            minOS: "8.0",
+            unit: "g",
+            units: ["g", "mg", "mcg", "oz"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "dietaryCholesterol",
+            .quantity,
+            "HKQuantityTypeIdentifierDietaryCholesterol",
+            minOS: "8.0",
+            unit: "g",
+            units: ["g", "mg", "mcg", "oz"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "dietarySodium",
+            .quantity,
+            "HKQuantityTypeIdentifierDietarySodium",
+            minOS: "8.0",
+            unit: "g",
+            units: ["g", "mg", "mcg", "oz"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "dietaryPotassium",
+            .quantity,
+            "HKQuantityTypeIdentifierDietaryPotassium",
+            minOS: "8.0",
+            unit: "g",
+            units: ["g", "mg", "mcg", "oz"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "dietaryCalcium",
+            .quantity,
+            "HKQuantityTypeIdentifierDietaryCalcium",
+            minOS: "8.0",
+            unit: "g",
+            units: ["g", "mg", "mcg", "oz"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "dietaryIron",
+            .quantity,
+            "HKQuantityTypeIdentifierDietaryIron",
+            minOS: "8.0",
+            unit: "g",
+            units: ["g", "mg", "mcg", "oz"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "dietaryMagnesium",
+            .quantity,
+            "HKQuantityTypeIdentifierDietaryMagnesium",
+            minOS: "8.0",
+            unit: "g",
+            units: ["g", "mg", "mcg", "oz"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "dietaryPhosphorus",
+            .quantity,
+            "HKQuantityTypeIdentifierDietaryPhosphorus",
+            minOS: "8.0",
+            unit: "g",
+            units: ["g", "mg", "mcg", "oz"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "dietaryZinc",
+            .quantity,
+            "HKQuantityTypeIdentifierDietaryZinc",
+            minOS: "8.0",
+            unit: "g",
+            units: ["g", "mg", "mcg", "oz"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "dietaryCopper",
+            .quantity,
+            "HKQuantityTypeIdentifierDietaryCopper",
+            minOS: "8.0",
+            unit: "g",
+            units: ["g", "mg", "mcg", "oz"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "dietaryManganese",
+            .quantity,
+            "HKQuantityTypeIdentifierDietaryManganese",
+            minOS: "8.0",
+            unit: "g",
+            units: ["g", "mg", "mcg", "oz"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "dietarySelenium",
+            .quantity,
+            "HKQuantityTypeIdentifierDietarySelenium",
+            minOS: "8.0",
+            unit: "g",
+            units: ["g", "mg", "mcg", "oz"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "dietaryChromium",
+            .quantity,
+            "HKQuantityTypeIdentifierDietaryChromium",
+            minOS: "8.0",
+            unit: "g",
+            units: ["g", "mg", "mcg", "oz"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "dietaryMolybdenum",
+            .quantity,
+            "HKQuantityTypeIdentifierDietaryMolybdenum",
+            minOS: "8.0",
+            unit: "g",
+            units: ["g", "mg", "mcg", "oz"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "dietaryIodine",
+            .quantity,
+            "HKQuantityTypeIdentifierDietaryIodine",
+            minOS: "8.0",
+            unit: "g",
+            units: ["g", "mg", "mcg", "oz"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "dietaryChloride",
+            .quantity,
+            "HKQuantityTypeIdentifierDietaryChloride",
+            minOS: "8.0",
+            unit: "g",
+            units: ["g", "mg", "mcg", "oz"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "dietaryVitaminA",
+            .quantity,
+            "HKQuantityTypeIdentifierDietaryVitaminA",
+            minOS: "8.0",
+            unit: "g",
+            units: ["g", "mg", "mcg", "oz"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "dietaryVitaminB6",
+            .quantity,
+            "HKQuantityTypeIdentifierDietaryVitaminB6",
+            minOS: "8.0",
+            unit: "g",
+            units: ["g", "mg", "mcg", "oz"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "dietaryVitaminB12",
+            .quantity,
+            "HKQuantityTypeIdentifierDietaryVitaminB12",
+            minOS: "8.0",
+            unit: "g",
+            units: ["g", "mg", "mcg", "oz"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "dietaryVitaminC",
+            .quantity,
+            "HKQuantityTypeIdentifierDietaryVitaminC",
+            minOS: "8.0",
+            unit: "g",
+            units: ["g", "mg", "mcg", "oz"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "dietaryVitaminD",
+            .quantity,
+            "HKQuantityTypeIdentifierDietaryVitaminD",
+            minOS: "8.0",
+            unit: "g",
+            units: ["g", "mg", "mcg", "oz"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "dietaryVitaminE",
+            .quantity,
+            "HKQuantityTypeIdentifierDietaryVitaminE",
+            minOS: "8.0",
+            unit: "g",
+            units: ["g", "mg", "mcg", "oz"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "dietaryVitaminK",
+            .quantity,
+            "HKQuantityTypeIdentifierDietaryVitaminK",
+            minOS: "8.0",
+            unit: "g",
+            units: ["g", "mg", "mcg", "oz"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "dietaryThiamin",
+            .quantity,
+            "HKQuantityTypeIdentifierDietaryThiamin",
+            minOS: "8.0",
+            unit: "g",
+            units: ["g", "mg", "mcg", "oz"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "dietaryRiboflavin",
+            .quantity,
+            "HKQuantityTypeIdentifierDietaryRiboflavin",
+            minOS: "8.0",
+            unit: "g",
+            units: ["g", "mg", "mcg", "oz"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "dietaryNiacin",
+            .quantity,
+            "HKQuantityTypeIdentifierDietaryNiacin",
+            minOS: "8.0",
+            unit: "g",
+            units: ["g", "mg", "mcg", "oz"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "dietaryPantothenicAcid",
+            .quantity,
+            "HKQuantityTypeIdentifierDietaryPantothenicAcid",
+            minOS: "8.0",
+            unit: "g",
+            units: ["g", "mg", "mcg", "oz"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "dietaryBiotin",
+            .quantity,
+            "HKQuantityTypeIdentifierDietaryBiotin",
+            minOS: "8.0",
+            unit: "g",
+            units: ["g", "mg", "mcg", "oz"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "dietaryFolate",
+            .quantity,
+            "HKQuantityTypeIdentifierDietaryFolate",
+            minOS: "8.0",
+            unit: "g",
+            units: ["g", "mg", "mcg", "oz"],
+            aggregation: .cumulative
+        ),
+        RegistryEntry(
+            "dietaryCaffeine",
+            .quantity,
+            "HKQuantityTypeIdentifierDietaryCaffeine",
+            minOS: "8.0",
+            unit: "g",
+            units: ["g", "mg", "mcg", "oz"],
             aggregation: .cumulative
         )
     ]

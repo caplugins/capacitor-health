@@ -209,6 +209,52 @@ final class RegistryRawValuesTests: XCTestCase {
         }
     }
 
+    func testNutritionIdentifiers() {
+        XCTAssertEqual(HKQuantityTypeIdentifier.dietaryWater.rawValue, "HKQuantityTypeIdentifierDietaryWater")
+        XCTAssertEqual(HKQuantityTypeIdentifier.dietaryEnergyConsumed.rawValue, "HKQuantityTypeIdentifierDietaryEnergyConsumed")
+        XCTAssertEqual(HKQuantityTypeIdentifier.dietaryProtein.rawValue, "HKQuantityTypeIdentifierDietaryProtein")
+        XCTAssertEqual(HKQuantityTypeIdentifier.dietaryCarbohydrates.rawValue, "HKQuantityTypeIdentifierDietaryCarbohydrates")
+        XCTAssertEqual(HKQuantityTypeIdentifier.dietaryFiber.rawValue, "HKQuantityTypeIdentifierDietaryFiber")
+        XCTAssertEqual(HKQuantityTypeIdentifier.dietarySugar.rawValue, "HKQuantityTypeIdentifierDietarySugar")
+        XCTAssertEqual(HKQuantityTypeIdentifier.dietaryFatTotal.rawValue, "HKQuantityTypeIdentifierDietaryFatTotal")
+        XCTAssertEqual(HKQuantityTypeIdentifier.dietaryFatSaturated.rawValue, "HKQuantityTypeIdentifierDietaryFatSaturated")
+        XCTAssertEqual(HKQuantityTypeIdentifier.dietaryFatMonounsaturated.rawValue, "HKQuantityTypeIdentifierDietaryFatMonounsaturated")
+        XCTAssertEqual(HKQuantityTypeIdentifier.dietaryFatPolyunsaturated.rawValue, "HKQuantityTypeIdentifierDietaryFatPolyunsaturated")
+        XCTAssertEqual(HKQuantityTypeIdentifier.dietaryCholesterol.rawValue, "HKQuantityTypeIdentifierDietaryCholesterol")
+        XCTAssertEqual(HKQuantityTypeIdentifier.dietarySodium.rawValue, "HKQuantityTypeIdentifierDietarySodium")
+        XCTAssertEqual(HKQuantityTypeIdentifier.dietaryPotassium.rawValue, "HKQuantityTypeIdentifierDietaryPotassium")
+        XCTAssertEqual(HKQuantityTypeIdentifier.dietaryCalcium.rawValue, "HKQuantityTypeIdentifierDietaryCalcium")
+        XCTAssertEqual(HKQuantityTypeIdentifier.dietaryIron.rawValue, "HKQuantityTypeIdentifierDietaryIron")
+        XCTAssertEqual(HKQuantityTypeIdentifier.dietaryMagnesium.rawValue, "HKQuantityTypeIdentifierDietaryMagnesium")
+        XCTAssertEqual(HKQuantityTypeIdentifier.dietaryPhosphorus.rawValue, "HKQuantityTypeIdentifierDietaryPhosphorus")
+        XCTAssertEqual(HKQuantityTypeIdentifier.dietaryZinc.rawValue, "HKQuantityTypeIdentifierDietaryZinc")
+        XCTAssertEqual(HKQuantityTypeIdentifier.dietaryCopper.rawValue, "HKQuantityTypeIdentifierDietaryCopper")
+        XCTAssertEqual(HKQuantityTypeIdentifier.dietaryManganese.rawValue, "HKQuantityTypeIdentifierDietaryManganese")
+        XCTAssertEqual(HKQuantityTypeIdentifier.dietarySelenium.rawValue, "HKQuantityTypeIdentifierDietarySelenium")
+        XCTAssertEqual(HKQuantityTypeIdentifier.dietaryChromium.rawValue, "HKQuantityTypeIdentifierDietaryChromium")
+        XCTAssertEqual(HKQuantityTypeIdentifier.dietaryMolybdenum.rawValue, "HKQuantityTypeIdentifierDietaryMolybdenum")
+        XCTAssertEqual(HKQuantityTypeIdentifier.dietaryIodine.rawValue, "HKQuantityTypeIdentifierDietaryIodine")
+        XCTAssertEqual(HKQuantityTypeIdentifier.dietaryChloride.rawValue, "HKQuantityTypeIdentifierDietaryChloride")
+        XCTAssertEqual(HKQuantityTypeIdentifier.dietaryVitaminA.rawValue, "HKQuantityTypeIdentifierDietaryVitaminA")
+        XCTAssertEqual(HKQuantityTypeIdentifier.dietaryVitaminB6.rawValue, "HKQuantityTypeIdentifierDietaryVitaminB6")
+        XCTAssertEqual(HKQuantityTypeIdentifier.dietaryVitaminB12.rawValue, "HKQuantityTypeIdentifierDietaryVitaminB12")
+        XCTAssertEqual(HKQuantityTypeIdentifier.dietaryVitaminC.rawValue, "HKQuantityTypeIdentifierDietaryVitaminC")
+        XCTAssertEqual(HKQuantityTypeIdentifier.dietaryVitaminD.rawValue, "HKQuantityTypeIdentifierDietaryVitaminD")
+        XCTAssertEqual(HKQuantityTypeIdentifier.dietaryVitaminE.rawValue, "HKQuantityTypeIdentifierDietaryVitaminE")
+        XCTAssertEqual(HKQuantityTypeIdentifier.dietaryVitaminK.rawValue, "HKQuantityTypeIdentifierDietaryVitaminK")
+        XCTAssertEqual(HKQuantityTypeIdentifier.dietaryThiamin.rawValue, "HKQuantityTypeIdentifierDietaryThiamin")
+        XCTAssertEqual(HKQuantityTypeIdentifier.dietaryRiboflavin.rawValue, "HKQuantityTypeIdentifierDietaryRiboflavin")
+        XCTAssertEqual(HKQuantityTypeIdentifier.dietaryNiacin.rawValue, "HKQuantityTypeIdentifierDietaryNiacin")
+        XCTAssertEqual(HKQuantityTypeIdentifier.dietaryPantothenicAcid.rawValue, "HKQuantityTypeIdentifierDietaryPantothenicAcid")
+        XCTAssertEqual(HKQuantityTypeIdentifier.dietaryBiotin.rawValue, "HKQuantityTypeIdentifierDietaryBiotin")
+        XCTAssertEqual(HKQuantityTypeIdentifier.dietaryFolate.rawValue, "HKQuantityTypeIdentifierDietaryFolate")
+        XCTAssertEqual(HKQuantityTypeIdentifier.dietaryCaffeine.rawValue, "HKQuantityTypeIdentifierDietaryCaffeine")
+    }
+
+    func testMindfulnessIdentifiers() {
+        XCTAssertEqual(HKCategoryTypeIdentifier.mindfulSession.rawValue, "HKCategoryTypeIdentifierMindfulSession")
+    }
+
     func testNutrientIdentifiers() {
         XCTAssertEqual(HKQuantityTypeIdentifier.dietaryEnergyConsumed.rawValue, "HKQuantityTypeIdentifierDietaryEnergyConsumed")
         XCTAssertEqual(HKQuantityTypeIdentifier.dietaryProtein.rawValue, "HKQuantityTypeIdentifierDietaryProtein")

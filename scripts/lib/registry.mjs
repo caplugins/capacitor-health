@@ -12,7 +12,47 @@ export const SCHEMA_PATH = join(ROOT, 'registry', 'schema.json');
 export const TYPES_PATH = join(ROOT, 'registry', 'types.json');
 
 export function loadRegistry(path = TYPES_PATH) {
-  return JSON.parse(readFileSync(path, 'utf8'));
+  return expandNutrients(JSON.parse(readFileSync(path, 'utf8')));
+}
+
+/** Units a single-nutrient type accepts, by its canonical unit's dimension. */
+const NUTRIENT_UNITS = { mass: ['g', 'mg', 'mcg', 'oz'], energy: ['kcal', 'kJ'] };
+
+/** "protein" → "dietaryProtein": the single-nutrient type id (decision #61). */
+export const nutrientTypeId = (nutrient) => `dietary${nutrient[0].toUpperCase()}${nutrient.slice(1)}`;
+
+/**
+ * Appends one quantity type per nutrient (decision #61), so the nutrient table stays the single source
+ * for them: a HealthKit dietary quantity on iOS, aggregate-only through `NutritionRecord` on Android.
+ * Everything downstream (schema, checks, generators, coverage) sees them as ordinary types.
+ */
+export function expandNutrients(registry) {
+  if (!registry.nutrients) return registry;
+  const types = Object.entries(registry.nutrients).map(([id, n]) => {
+    const dimension = registry.units[n.unit]?.dimension;
+    const type = {
+      id: nutrientTypeId(id),
+      kind: 'quantity',
+      group: 'nutrition',
+      unit: n.unit,
+      units: NUTRIENT_UNITS[dimension] ?? [n.unit],
+    };
+    if (n.ios) type.ios = { identifier: n.ios.identifier, minOS: n.ios.minOS, writable: true, aggregation: 'cumulative' };
+    if (n.android) {
+      type.android = {
+        record: 'NutritionRecord',
+        time: 'interval',
+        readPermission: 'android.permission.health.READ_NUTRITION',
+        writePermission: 'android.permission.health.WRITE_NUTRITION',
+        writable: false,
+        aggregates: { sum: n.android.aggregate },
+        aggregateOnly: true,
+      };
+    }
+    type.notes = `Single nutrient ${id} (decision #61)`;
+    return type;
+  });
+  return { ...registry, types: [...registry.types, ...types] };
 }
 
 let compiled;
@@ -174,8 +214,10 @@ export function semanticErrors(registry) {
       }
       if (type.kind === 'event' && valueProperty) errors.push(`${at}.android.valueProperty makes no sense for event types`);
       const { aggregates, aggregateOnly } = type.android;
-      if (aggregates && type.kind !== 'quantity' && type.kind !== 'special') {
-        errors.push(`${at}.android.aggregates only apply to quantity and special types`);
+      if (aggregates && type.kind === 'event') {
+        if (Object.keys(aggregates).some((m) => m !== 'duration')) errors.push(`${at}.android.aggregates: an event only has a duration`);
+      } else if (aggregates && type.kind !== 'quantity' && type.kind !== 'special') {
+        errors.push(`${at}.android.aggregates only apply to quantity, event (duration) and special types`);
       }
       if (aggregateOnly && !aggregates) errors.push(`${at}: an aggregate-only type needs android.aggregates`);
       if (aggregateOnly && type.android.writable) errors.push(`${at}: an aggregate-only type can't be writable`);

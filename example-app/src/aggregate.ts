@@ -39,29 +39,37 @@ export async function runAggregateCheck(): Promise<string[]> {
 }
 
 /**
- * iOS: writes, reads and deletes a passthrough type (`hk:` + an identifier the registry doesn't cover yet):
- * 250 mL of water and a sleep sample with HealthKit's raw value.
+ * iOS: writes, reads and deletes passthrough types (`hk:` + an identifier the registry doesn't cover yet): a
+ * handwashing and a toothbrushing event with HealthKit's raw value. Every quantity identifier is registered.
  */
 export async function runPassthroughCheck(): Promise<string[]> {
-  const water = 'hk:HKQuantityTypeIdentifierDietaryWater' as const;
-  const sleep = 'hk:HKCategoryTypeIdentifierSleepAnalysis' as const;
+  const handwashing = 'hk:HKCategoryTypeIdentifierHandwashingEvent' as const;
+  const toothbrushing = 'hk:HKCategoryTypeIdentifierToothbrushingEvent' as const;
   const start = new Date();
   start.setMinutes(0, 0, 0);
   const hour = { startDate: localIso(start), endDate: localIso(new Date(start.getTime() + 3600_000)) };
+  const brushing = { startDate: hour.startDate, endDate: localIso(new Date(start.getTime() + 120_000)) };
+  // Passthrough ids aren't in the app's main request: ask for them here (the sheet shows only if they're new).
+  await CapacitorHealth.requestAuthorization({ read: [handwashing, toothbrushing], write: [handwashing, toothbrushing] });
   await CapacitorHealth.saveSamples({
     samples: [
-      { type: water, startDate: hour.startDate, value: 250, unit: 'mL', clientId: 'example-passthrough-water' },
-      { type: sleep, ...hour, value: 2, clientId: 'example-passthrough-sleep' },
+      { type: handwashing, startDate: hour.startDate, value: 0, clientId: 'example-passthrough-handwashing' },
+      { type: toothbrushing, ...brushing, value: 0, clientId: 'example-passthrough-toothbrushing' },
     ],
   });
-  const read = async (type: typeof water | typeof sleep, unit?: string) =>
-    (await CapacitorHealth.readSamples({ type, ...hour, ...(unit ? { unit } : {}) })).samples
+  const read = async (type: typeof handwashing | typeof toothbrushing) =>
+    (await CapacitorHealth.readSamples({ type, ...hour })).samples
       .filter((s) => s.clientId?.startsWith('example-passthrough'))
-      .map((s) => `${s.type} ${s.kind} ${(s as { value: number }).value} ${(s as { unit?: string }).unit ?? ''}`.trim());
-  const lines = [...(await read(water, 'mL')), ...(await read(water)), ...(await read(sleep))];
-  const deleted = (await CapacitorHealth.deleteSamples({ type: water, clientIds: ['example-passthrough-water'] })).deleted;
-  const deletedSleep = (await CapacitorHealth.deleteSamples({ type: sleep, clientIds: ['example-passthrough-sleep'] })).deleted;
-  return [...lines, `deleted ${deleted + deletedSleep}`];
+      .map((s) => `${s.type} ${s.kind} ${(s as { value: number }).value}`);
+  const lines = [...(await read(handwashing)), ...(await read(toothbrushing))];
+  let deleted = 0;
+  for (const [type, clientId] of [
+    [handwashing, 'example-passthrough-handwashing'],
+    [toothbrushing, 'example-passthrough-toothbrushing'],
+  ] as const) {
+    deleted += (await CapacitorHealth.deleteSamples({ type, clientIds: [clientId] })).deleted;
+  }
+  return [...lines, `deleted ${deleted}`];
 }
 
 let aggregatable: TypeSupport[] = [];

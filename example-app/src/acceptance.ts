@@ -111,6 +111,13 @@ function sampleFor(support: TypeSupport, at: Date, clientId: string, variant: 0 
       return { ...base, type: 'menstrualFlow', value, ...(platform === 'ios' ? { isCycleStart: variant === 0 } : {}) };
     case 'bloodPressure':
       return { ...base, type: 'bloodPressure', systolic: 120 + variant, diastolic: 80, unit: 'mmHg' };
+    case 'mindfulSession':
+      return {
+        ...base,
+        type: 'mindfulSession',
+        endDate: later(at),
+        ...(platform === 'android' ? { sessionType: variant === 0 ? 'meditation' : 'breathing' } : {}),
+      };
     case 'insulinDelivery':
       return {
         ...base,
@@ -154,6 +161,9 @@ function sameValue(sample: Sample | undefined, expected: NewSample): boolean {
   if (expected.type === 'bloodPressure') {
     const reading = sample as { systolic?: number; diastolic?: number };
     return reading.systolic === expected.systolic && reading.diastolic === expected.diastolic;
+  }
+  if (expected.type === 'mindfulSession') {
+    return (sample as { sessionType?: string }).sessionType === expected.sessionType && sample.endDate !== sample.startDate;
   }
   if (expected.type === 'sexualActivity')
     return (sample as { protectionUsed?: boolean }).protectionUsed === expected.protectionUsed;

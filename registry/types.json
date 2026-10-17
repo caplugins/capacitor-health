@@ -2567,6 +2567,42 @@
         "writable": false,
         "aggregation": "cumulative"
       }
+    },
+    {
+      "id": "hydration",
+      "kind": "quantity",
+      "group": "nutrition",
+      "unit": "mL",
+      "units": ["mL", "L", "flOz"],
+      "ios": {"identifier": "HKQuantityTypeIdentifierDietaryWater", "minOS": "9.0", "writable": true, "aggregation": "cumulative"},
+      "android": {
+        "record": "HydrationRecord",
+        "time": "interval",
+        "readPermission": "android.permission.health.READ_HYDRATION",
+        "writePermission": "android.permission.health.WRITE_HYDRATION",
+        "writable": true,
+        "valueProperty": "volume",
+        "aggregates": {"sum": "VOLUME_TOTAL"}
+      },
+      "notes": "Water drunk over an interval; an instant on iOS is allowed, Android needs an end after the start"
+    },
+    {
+      "id": "mindfulSession",
+      "kind": "event",
+      "group": "mindfulness",
+      "fields": {
+        "sessionType": {"type": "enum", "values": "mindfulnessSessionType", "android": {"property": "mindfulnessSessionType"}}
+      },
+      "ios": {"identifier": "HKCategoryTypeIdentifierMindfulSession", "minOS": "10.0", "writable": true},
+      "android": {
+        "record": "MindfulnessSessionRecord",
+        "time": "interval",
+        "readPermission": "android.permission.health.READ_MINDFULNESS",
+        "writePermission": "android.permission.health.WRITE_MINDFULNESS",
+        "writable": true,
+        "feature": "FEATURE_MINDFULNESS_SESSION"
+      },
+      "notes": "Android: title and notes read as hc.title / hc.notes metadata. No aggregate: connect-client 1.1.0 has no platform mapping for MINDFULNESS_DURATION_TOTAL, so Android 14+ rejects it (decision #63)"
     }
   ]
 }

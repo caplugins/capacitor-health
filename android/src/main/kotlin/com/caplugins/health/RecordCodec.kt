@@ -1,10 +1,14 @@
+@file:OptIn(ExperimentalMindfulnessSessionApi::class)
+
 package com.caplugins.health
 
+import androidx.health.connect.client.feature.ExperimentalMindfulnessSessionApi
 import androidx.health.connect.client.records.BloodPressureRecord
 import androidx.health.connect.client.records.CervicalMucusRecord
 import androidx.health.connect.client.records.IntermenstrualBleedingRecord
 import androidx.health.connect.client.records.MenstruationFlowRecord
 import androidx.health.connect.client.records.MenstruationPeriodRecord
+import androidx.health.connect.client.records.MindfulnessSessionRecord
 import androidx.health.connect.client.records.OvulationTestRecord
 import androidx.health.connect.client.records.Record
 import androidx.health.connect.client.records.SexualActivityRecord
@@ -154,6 +158,14 @@ object RecordCodec {
                 putEnumField(json, entry.field("bodyPosition"), record.bodyPosition)
                 putEnumField(json, entry.field("measurementLocation"), record.measurementLocation)
             }
+            is MindfulnessSessionRecord -> {
+                putEnumField(json, entry.field("sessionType"), record.mindfulnessSessionType)
+                // Health Connect's free text has no unified field (mapping rule 3).
+                val metadata = json.getJSObject("metadata") ?: JSObject()
+                record.title?.let { metadata.put("hc.title", it) }
+                record.notes?.let { metadata.put("hc.notes", it) }
+                json.put("metadata", metadata)
+            }
             is MenstruationPeriodRecord -> {
                 json.put("firstDay", PeriodDays.firstDay(record).toString())
                 json.put("lastDay", PeriodDays.lastDay(record).toString())
@@ -173,6 +185,7 @@ object RecordCodec {
             is SexualActivityRecord -> RecordTimes(record.time, record.zoneOffset, record.time, record.zoneOffset)
             is BloodPressureRecord -> RecordTimes(record.time, record.zoneOffset, record.time, record.zoneOffset)
             is SkinTemperatureRecord -> RecordTimes(record.startTime, record.startZoneOffset, record.endTime, record.endZoneOffset)
+            is MindfulnessSessionRecord -> RecordTimes(record.startTime, record.startZoneOffset, record.endTime, record.endZoneOffset)
             is MenstruationPeriodRecord -> RecordTimes(record.startTime, record.startZoneOffset, record.endTime, record.endZoneOffset)
             else -> throw HealthException(HealthException.NATIVE_ERROR, "${record::class.simpleName} has no codec.")
         }
@@ -237,6 +250,16 @@ object RecordCodec {
         return start
     }
 
+    /** Start and end of an interval record, which Health Connect needs to end after it starts. */
+    private fun interval(fields: Fields): Pair<OffsetDateTime, OffsetDateTime> {
+        val start = fields.date("startDate")
+        val end = if (fields.has("endDate")) fields.date("endDate") else start
+        if (!end.toInstant().isAfter(start.toInstant())) {
+            throw HealthException.invalidArgument(fields.field("endDate"), "must be after startDate on Android", "intervalOnly")
+        }
+        return start to end
+    }
+
     private fun enumField(fields: Fields, entry: RegistryEntry, name: String): Int {
         val field = entry.field(name) ?: return 0
         val set = field.valueSet ?: return 0
@@ -287,6 +310,17 @@ object RecordCodec {
                 SexualActivityRecord(time.toInstant(), time.offset, metadata, protection)
             }
             SkinTemperatureRecord::class -> decodeSkinTemperature(fields, entry, metadata)
+            MindfulnessSessionRecord::class -> {
+                val (start, end) = interval(fields)
+                MindfulnessSessionRecord(
+                    startTime = start.toInstant(),
+                    startZoneOffset = start.offset,
+                    endTime = end.toInstant(),
+                    endZoneOffset = end.offset,
+                    metadata = metadata,
+                    mindfulnessSessionType = enumField(fields, entry, "sessionType"),
+                )
+            }
             BloodPressureRecord::class -> decodeBloodPressure(fields, entry, metadata)
             MenstruationPeriodRecord::class -> return decodePeriod(fields, metadata)
             else -> throw HealthException(HealthException.NATIVE_ERROR, "${entry.id} has no codec.")
@@ -299,12 +333,7 @@ object RecordCodec {
         val times = if (entry.time == RecordTime.INSTANT) {
             instant(fields).let { RecordTimes(it.toInstant(), it.offset, it.toInstant(), it.offset) }
         } else {
-            val start = fields.date("startDate")
-            val end = if (fields.has("endDate")) fields.date("endDate") else start
-            if (!end.toInstant().isAfter(start.toInstant())) {
-                throw HealthException.invalidArgument(fields.field("endDate"), "must be after startDate on Android", "intervalOnly")
-            }
-            RecordTimes(start.toInstant(), start.offset, end.toInstant(), end.offset)
+            interval(fields).let { (start, end) -> RecordTimes(start.toInstant(), start.offset, end.toInstant(), end.offset) }
         }
         val value = quantityValue(fields, entry)
         val enums = entry.fields.filter { it.property != null && it.valueSet != null }.associate { it.name to enumField(fields, entry, it.name) }
