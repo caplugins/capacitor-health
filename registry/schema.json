@@ -4,10 +4,16 @@
   "title": "capacitor-health type registry",
   "description": "Single source for every unified health type (decision #12). scripts/gen-registry.mjs turns it into the TypeScript, Swift and Kotlin registries. Semantic checks the schema can't express (cross-references, maps covering every value) live in scripts/lib/registry.mjs.",
   "type": "object",
-  "required": ["valueSets", "types"],
+  "required": ["units", "valueSets", "types"],
   "additionalProperties": false,
   "properties": {
     "$schema": { "type": "string" },
+    "units": {
+      "description": "Every unit a type can use, keyed by the unified unit id apps pass and get back.",
+      "type": "object",
+      "propertyNames": { "type": "string", "pattern": "^[A-Za-z%][A-Za-z0-9/()·%]*$" },
+      "additionalProperties": { "$ref": "#/$defs/unitDef" }
+    },
     "valueSets": {
       "description": "Enumerations shared by types and fields, keyed by name.",
       "type": "object",
@@ -21,10 +27,47 @@
     }
   },
   "$defs": {
+    "unitDef": {
+      "type": "object",
+      "required": ["dimension"],
+      "additionalProperties": false,
+      "properties": {
+        "dimension": { "description": "Units of one type must share a dimension.", "$ref": "#/$defs/camelId" },
+        "ios": {
+          "description": "HKUnit string (HKUnit(from:)); the generated XCTest checks each type's units are compatible with its HealthKit type. Absent: no HealthKit unit.",
+          "type": "string",
+          "minLength": 1
+        },
+        "percent": { "description": "0–100 across the bridge, 0–1 in HealthKit (decision #15).", "const": true },
+        "android": {
+          "description": "How Health Connect holds the value. Absent: no Health Connect unit.",
+          "type": "object",
+          "required": ["class"],
+          "additionalProperties": false,
+          "properties": {
+            "class": {
+              "description": "Number: a plain Long / Double property. Otherwise the androidx.health.connect.client.units class.",
+              "enum": ["Number", "Length", "Energy", "Mass", "Temperature", "TemperatureDelta", "Percentage", "Pressure", "BloodGlucose", "Velocity", "Power", "Volume"]
+            },
+            "factory": { "description": "Companion factory, e.g. meters.", "$ref": "#/$defs/camelId" },
+            "accessor": { "description": "Property reading the value back, e.g. inMeters.", "$ref": "#/$defs/camelId" },
+            "scale": { "description": "Factory units per one of this unit (cm → 0.01 with meters).", "type": "number", "exclusiveMinimum": 0 }
+          },
+          "allOf": [
+            {
+              "if": { "properties": { "class": { "enum": ["Number", "Percentage"] } } },
+              "then": { "not": { "anyOf": [{ "required": ["factory"] }, { "required": ["accessor"] }] } },
+              "else": { "required": ["factory", "accessor"] }
+            }
+          ]
+        },
+        "notes": { "$ref": "#/$defs/notes" }
+      }
+    },
     "camelId": { "type": "string", "pattern": "^[a-z][A-Za-z0-9]*$" },
     "osVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+$" },
     "notes": { "type": "string", "minLength": 1 },
-    "unit": { "type": "string", "enum": ["degC", "degF"] },
+    "unit": { "description": "A key of the top-level units table.", "type": "string", "minLength": 1 },
     "hcConstant": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
     "hcPermission": { "type": "string", "pattern": "^android\\.permission\\.health\\.(READ|WRITE)_[A-Z_]+$" },
 
@@ -139,7 +182,7 @@
           "description": "quantity: number + unit. category: one value from a value set. event: no value, only start/end. special: bespoke codec in Special/ (still registered).",
           "enum": ["quantity", "category", "event", "special"]
         },
-        "group": { "enum": ["reproductiveHealth", "symptoms"] },
+        "group": { "enum": ["reproductiveHealth", "symptoms", "activity", "vitals", "body", "other"] },
         "values": { "description": "Value set name of the main value (category kind).", "$ref": "#/$defs/camelId" },
         "unit": { "description": "Canonical unit returned by default.", "$ref": "#/$defs/unit" },
         "units": { "description": "Units callers may ask for.", "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/unit" } },
@@ -165,13 +208,14 @@
 
     "iosMapping": {
       "type": "object",
-      "required": ["identifier", "minOS", "writable"],
+      "required": ["minOS", "writable"],
+      "oneOf": [{ "required": ["identifier"] }, { "required": ["members"] }],
       "additionalProperties": false,
       "properties": {
         "identifier": {
           "description": "Runtime identifier string. For a derived type, the identifier it's derived from (authorization uses it).",
           "type": "string",
-          "pattern": "^HK(Category|Quantity)TypeIdentifier[A-Z][A-Za-z0-9]*$"
+          "pattern": "^HK(Category|Quantity|Correlation)TypeIdentifier[A-Z][A-Za-z0-9]*$"
         },
         "minOS": { "$ref": "#/$defs/osVersion" },
         "writable": { "type": "boolean" },
@@ -184,6 +228,15 @@
           "enum": ["cumulative", "discreteArithmetic", "discreteTemporallyWeighted", "discreteEquivalentContinuousLevel"]
         },
         "derivedFrom": { "description": "Unified id this type is derived from (no HealthKit object of its own).", "$ref": "#/$defs/camelId" },
+        "members": {
+          "description": "Combined id (decision #14): the unified ids whose HealthKit types it reads together.",
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/camelId" }
+        },
+        "writeTo": { "description": "Combined id: the member a write goes to unless the sample names a member.", "$ref": "#/$defs/camelId" },
+        "aggregateOnly": { "description": "No samples of its own: only aggregate() serves it (decision #21).", "type": "boolean" },
         "notes": { "$ref": "#/$defs/notes" }
       }
     },
@@ -201,6 +254,13 @@
         "valueProperty": { "description": "Record property holding the main value.", "$ref": "#/$defs/camelId" },
         "feature": { "description": "HealthConnectFeatures constant gating the record.", "type": "string", "pattern": "^FEATURE_[A-Z_]+$" },
         "maxDurationDays": { "description": "Longest interval the record accepts (inclusive).", "type": "integer", "minimum": 1 },
+        "aggregates": {
+          "description": "aggregate() metric → AggregateMetric constant on the record class.",
+          "type": "object",
+          "propertyNames": { "enum": ["sum", "avg", "min", "max", "count", "duration"] },
+          "additionalProperties": { "$ref": "#/$defs/hcConstant" }
+        },
+        "aggregateOnly": { "description": "Readable only through aggregate(); the record gives the permissions (decision #21).", "type": "boolean" },
         "notes": { "$ref": "#/$defs/notes" }
       }
     }

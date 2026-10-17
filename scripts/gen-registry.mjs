@@ -27,7 +27,25 @@ const supportedValues = (set, platform) =>
 
 // ---------------------------------------------------------------- TypeScript
 
+/** aggregate() metrics HealthKit serves for a type, from its (or its first member's) aggregation style. */
+function iosMetrics(t, registry) {
+  if (!t.ios) return null;
+  const style = t.ios.aggregation ?? registry.types.find((x) => x.id === t.ios.members?.[0])?.ios?.aggregation;
+  if (!style) return null;
+  return style === 'cumulative' ? ['sum'] : ['avg', 'min', 'max'];
+}
+
+const METRIC_ORDER = ['sum', 'avg', 'min', 'max', 'count', 'duration'];
+const androidMetrics = (t) =>
+  t.android?.aggregates ? METRIC_ORDER.filter((m) => t.android.aggregates[m] !== undefined) : null;
+
 async function renderTypeScript(registry) {
+  const units = Object.fromEntries(
+    Object.entries(registry.units).map(([id, u]) => [
+      id,
+      { dimension: u.dimension, ios: Boolean(u.ios), android: Boolean(u.android) },
+    ]),
+  );
   const valueSets = Object.fromEntries(
     Object.entries(registry.valueSets).map(([name, set]) => [
       name,
@@ -52,13 +70,14 @@ async function renderTypeScript(registry) {
         );
       }
       if (t.ios) {
-        entry.ios = {
-          identifier: t.ios.identifier,
-          minOS: t.ios.minOS,
-          writable: t.ios.writable,
-          time: t.ios.time ?? 'any',
-        };
+        entry.ios = { minOS: t.ios.minOS, writable: t.ios.writable, time: t.ios.time ?? 'any' };
+        if (t.ios.identifier) entry.ios = { identifier: t.ios.identifier, ...entry.ios };
         if (t.ios.derivedFrom) entry.ios.derivedFrom = t.ios.derivedFrom;
+        if (t.ios.members) entry.ios.members = t.ios.members;
+        if (t.ios.writeTo) entry.ios.writeTo = t.ios.writeTo;
+        if (t.ios.aggregateOnly) entry.ios.aggregateOnly = true;
+        const metrics = iosMetrics(t, registry);
+        if (metrics) entry.ios.metrics = metrics;
       }
       if (t.android) {
         const a = t.android;
@@ -71,6 +90,9 @@ async function renderTypeScript(registry) {
         };
         if (a.feature) entry.android.feature = a.feature;
         if (a.maxDurationDays) entry.android.maxDurationDays = a.maxDurationDays;
+        if (a.aggregateOnly) entry.android.aggregateOnly = true;
+        const metrics = androidMetrics(t);
+        if (metrics) entry.android.metrics = metrics;
       }
       return [t.id, entry];
     }),
@@ -116,7 +138,23 @@ export type CategoryHealthType = ${idsOfKind('category')};
 export type EventHealthType = ${idsOfKind('event')};
 
 export type RegistryKind = 'quantity' | 'category' | 'event' | 'special';
-export type RegistryGroup = 'reproductiveHealth' | 'symptoms';
+export type RegistryGroup = 'reproductiveHealth' | 'symptoms' | 'activity' | 'vitals' | 'body' | 'other';
+
+/**
+ * A statistic \`aggregate()\` can compute.
+ *
+ * @since 0.2.0
+ */
+export type AggregateMetric = 'sum' | 'avg' | 'min' | 'max' | 'count' | 'duration';
+
+export interface RegistryUnit {
+  /** Units of one type share a dimension. */
+  dimension: string;
+  /** HealthKit has this unit. */
+  ios: boolean;
+  /** Health Connect has this unit. */
+  android: boolean;
+}
 
 export interface RegistryValueSet {
   /** Unified values, in display order. */
@@ -148,12 +186,21 @@ export interface RegistryEntry {
   units?: readonly string[];
   fields?: Readonly<Record<string, RegistryField>>;
   ios?: {
-    identifier: string;
+    /** Absent for combined ids (\`members\`). */
+    identifier?: string;
     minOS: string;
     writable: boolean;
     /** \`instant\`: start must equal end. */
     time: 'any' | 'instant';
     derivedFrom?: HealthType;
+    /** Combined id: the split ids it reads together (decision #14). */
+    members?: readonly HealthType[];
+    /** Combined id: where writes go unless a sample names a member. */
+    writeTo?: HealthType;
+    /** No samples of its own; only \`aggregate()\` serves it. */
+    aggregateOnly?: true;
+    /** \`aggregate()\` metrics HealthKit serves. */
+    metrics?: readonly AggregateMetric[];
   };
   android?: {
     record: string;
@@ -163,8 +210,14 @@ export interface RegistryEntry {
     writable: boolean;
     feature?: string;
     maxDurationDays?: number;
+    /** No readable records; only \`aggregate()\` serves it. */
+    aggregateOnly?: true;
+    /** \`aggregate()\` metrics Health Connect serves. */
+    metrics?: readonly AggregateMetric[];
   };
 }
+
+export const UNITS: Readonly<Record<string, RegistryUnit>> = ${JSON.stringify(units)};
 
 export const VALUE_SETS: Readonly<Record<string, RegistryValueSet>> = ${JSON.stringify(valueSets)};
 
@@ -209,10 +262,17 @@ function renderSwift(registry) {
       return `        ${prefix}${swiftArray(raw, 8, prefix)})`;
     });
 
+  const byId = new Map(registry.types.map((t) => [t.id, t]));
+  const units = Object.entries(registry.units)
+    .filter(([, u]) => u.ios)
+    .map(([id, u]) => `        ${q(id)}: RegistryUnit(${q(u.ios)}${u.percent ? ', percent: true' : ''})`);
+
   const entries = registry.types
     .filter((t) => t.ios)
     .map((t) => {
-      const args = [q(t.id), `.${t.kind}`, q(t.ios.identifier), `minOS: ${q(t.ios.minOS)}`];
+      // A combined id authorizes and resolves through its write member (or first member).
+      const identifier = t.ios.identifier ?? byId.get(t.ios.writeTo ?? t.ios.members[0]).ios.identifier;
+      const args = [q(t.id), `.${t.kind}`, q(identifier), `minOS: ${q(t.ios.minOS)}`];
       const availability = swiftAvailability(t.ios.minOS);
       if (availability) args.push(`isAvailable: ${availability}`);
       if (!t.ios.writable) args.push('writable: false');
@@ -220,6 +280,11 @@ function renderSwift(registry) {
       if (t.values) args.push(`valueSet: ${q(t.values)}`);
       if (t.unit) args.push(`unit: ${q(t.unit)}`, `units: [${t.units.map(q).join(', ')}]`);
       if (t.ios.derivedFrom) args.push(`derivedFrom: ${q(t.ios.derivedFrom)}`);
+      const style = iosMetrics(t, registry);
+      if (style) args.push(`aggregation: .${style[0] === 'sum' ? 'cumulative' : 'discrete'}`);
+      if (t.ios.members) args.push(`members: [${t.ios.members.map(q).join(', ')}]`);
+      if (t.ios.writeTo) args.push(`writeTo: ${q(t.ios.writeTo)}`);
+      if (t.ios.aggregateOnly) args.push('aggregateOnly: true');
       const fields = Object.entries(t.fields ?? {})
         .filter(([, f]) => f.ios)
         .map(([name, f]) => {
@@ -242,6 +307,22 @@ enum RegistryKind {
 
 enum RegistryFieldType {
     case boolean, enumeration
+}
+
+/// A unit's HealthKit form. Unit ids are what apps pass; HealthKit parses \`ios\` with \`HKUnit(from:)\`.
+struct RegistryUnit {
+    let ios: String
+    /// 0–100 across the bridge, 0–1 in HealthKit (decision #15).
+    let percent: Bool
+
+    init(_ ios: String, percent: Bool = false) {
+        self.ios = ios
+        self.percent = percent
+    }
+}
+
+enum RegistryAggregation {
+    case cumulative, discrete
 }
 
 struct RegistryValueSet {
@@ -291,9 +372,17 @@ struct RegistryEntry {
     let units: [String]
     /// Set for types with no HealthKit object of their own (\`menstruationPeriod\`).
     let derivedFrom: String?
+    /// How \`aggregate()\` combines samples (quantity types).
+    let aggregation: RegistryAggregation?
+    /// Combined id (decision #14): the ids it reads together. \`identifier\` is then the write member's.
+    let members: [String]
+    let writeTo: String?
+    /// No samples of its own; only \`aggregate()\` serves it.
+    let aggregateOnly: Bool
     let fields: [RegistryMetadataField]
 
     var isQuantity: Bool { identifier.hasPrefix("HKQuantityTypeIdentifier") }
+    var isCorrelation: Bool { identifier.hasPrefix("HKCorrelationTypeIdentifier") }
 
     init(
         _ typeId: String,
@@ -307,6 +396,10 @@ struct RegistryEntry {
         unit: String? = nil,
         units: [String] = [],
         derivedFrom: String? = nil,
+        aggregation: RegistryAggregation? = nil,
+        members: [String] = [],
+        writeTo: String? = nil,
+        aggregateOnly: Bool = false,
         fields: [RegistryMetadataField] = []
     ) {
         self.typeId = typeId
@@ -320,6 +413,10 @@ struct RegistryEntry {
         self.unit = unit
         self.units = units
         self.derivedFrom = derivedFrom
+        self.aggregation = aggregation
+        self.members = members
+        self.writeTo = writeTo
+        self.aggregateOnly = aggregateOnly
         self.fields = fields
     }
 }
@@ -328,6 +425,10 @@ enum Registry {
     /// Every unified type id, in registry order, including types HealthKit doesn't have.
     static let allTypeIds: [String] = [
 ${registry.types.map((t) => `        ${q(t.id)}`).join(',\n')}
+    ]
+
+    static let units: [String: RegistryUnit] = [
+${units.join(',\n')}
     ]
 
     static let valueSets: [String: RegistryValueSet] = [
@@ -367,7 +468,7 @@ function renderSwiftTest(registry) {
   const functions = [];
   const seen = new Set();
   const identifiers = registry.types
-    .filter((t) => t.ios && !seen.has(t.ios.identifier) && seen.add(t.ios.identifier))
+    .filter((t) => t.ios?.identifier && !seen.has(t.ios.identifier) && seen.add(t.ios.identifier))
     .map((t) => {
       const { swiftType, member } = swiftIdentifier(t.ios.identifier);
       return { minOS: t.ios.minOS, group: t.group, args: [`${swiftType}.${member}.rawValue`, q(t.ios.identifier)] };
@@ -420,6 +521,7 @@ ${functions.join('\n\n')}
 
 function renderKotlin(registry) {
   const imports = new Set([
+    'androidx.health.connect.client.aggregate.AggregateMetric',
     'androidx.health.connect.client.records.Record',
     'java.time.Duration',
     'kotlin.reflect.KClass',
@@ -462,6 +564,13 @@ function renderKotlin(registry) {
         args.push(`feature = HealthConnectFeatures.${a.feature}`);
       }
       if (a.maxDurationDays) args.push(`maxDuration = Duration.ofDays(${a.maxDurationDays})`);
+      if (a.aggregates) {
+        const metrics = METRIC_ORDER.filter((m) => a.aggregates[m]).map(
+          (m) => `${q(m)} to ${a.record}.${a.aggregates[m]}`,
+        );
+        args.push(`aggregates = mapOf(${metrics.join(', ')})`);
+      }
+      if (a.aggregateOnly) args.push('aggregateOnly = true');
       const fields = Object.entries(t.fields ?? {})
         .filter(([, f]) => f.android)
         .map(([name, f]) => {
@@ -479,6 +588,27 @@ function renderKotlin(registry) {
       return `        RegistryEntry(\n${args.map((x) => `            ${x},`).join('\n')}\n        ),`;
     });
 
+  const units = Object.entries(registry.units)
+    .filter(([, u]) => u.android)
+    .map(([id, u]) => {
+      const { class: cls, factory, accessor, scale } = u.android;
+      let read;
+      let build;
+      if (cls === 'Number') {
+        read = '{ (it as Number).toDouble() }';
+        build = '{ it }';
+      } else if (cls === 'Percentage') {
+        imports.add('androidx.health.connect.client.units.Percentage');
+        read = '{ (it as Percentage).value }';
+        build = '{ Percentage(it) }';
+      } else {
+        imports.add(`androidx.health.connect.client.units.${cls}`);
+        read = scale ? `{ (it as ${cls}).${accessor} / ${scale} }` : `{ (it as ${cls}).${accessor} }`;
+        build = scale ? `{ ${cls}.${factory}(it * ${scale}) }` : `{ ${cls}.${factory}(it) }`;
+      }
+      return `        ${q(id)} to RegistryUnit(${q(u.dimension)}, read = ${read}, build = ${build}),`;
+    });
+
   return `// ${HEADER}
 package com.caplugins.health.generated
 
@@ -490,6 +620,16 @@ ${[...imports]
 enum class RegistryKind { QUANTITY, CATEGORY, EVENT, SPECIAL }
 
 enum class RecordTime { INSTANT, INTERVAL, SERIES }
+
+/**
+ * A unit's Health Connect form: [read] turns a record's unit object (or plain number) into a number in
+ * this unit, [build] turns a number in this unit into what the record takes (a plain Double for Number).
+ */
+class RegistryUnit(
+    val dimension: String,
+    val read: (Any) -> Double,
+    val build: (Double) -> Any,
+)
 
 /** Unified value → Health Connect constant. Values Health Connect can't store are absent. */
 class RegistryValueSet(
@@ -528,6 +668,10 @@ class RegistryEntry(
     val feature: Int? = null,
     /** Longest interval the record accepts (inclusive). */
     val maxDuration: Duration? = null,
+    /** aggregate() metric → the record's AggregateMetric. */
+    val aggregates: Map<String, AggregateMetric<*>> = emptyMap(),
+    /** No readable records; only aggregate() serves it (decision #21). */
+    val aggregateOnly: Boolean = false,
     val fields: List<RegistryField> = emptyList(),
 )
 
@@ -535,6 +679,11 @@ object Registry {
     /** Every unified type id, in registry order, including types Health Connect doesn't have. */
     val allTypeIds: List<String> = listOf(
 ${registry.types.map((t) => `        ${q(t.id)},`).join('\n')}
+    )
+
+    /** Units Health Connect can hold, by unified unit id. */
+    val units: Map<String, RegistryUnit> = mapOf(
+${units.join('\n')}
     )
 
     /** Constants keep the value set's display order. */
@@ -574,9 +723,11 @@ function renderReadme(registry, current) {
       .join(', ');
   };
   const rows = registry.types.map((t) => {
-    const ios = t.ios
-      ? `\`${t.ios.identifier.replace(/^HK(Category|Quantity)TypeIdentifier/, '')}\` (iOS ${t.ios.minOS}+${t.ios.writable ? '' : ', read-only'}${t.ios.derivedFrom ? `, derived from \`${t.ios.derivedFrom}\`` : ''})`
-      : '—';
+    const ios = t.ios?.members
+      ? `combined: ${t.ios.members.map((m) => `\`${m}\``).join(' + ')}${t.ios.aggregateOnly ? ' (aggregate only)' : ''}`
+      : t.ios
+        ? `\`${t.ios.identifier.replace(/^HK(Category|Quantity)TypeIdentifier/, '')}\` (iOS ${t.ios.minOS}+${t.ios.writable ? '' : ', read-only'}${t.ios.derivedFrom ? `, derived from \`${t.ios.derivedFrom}\`` : ''})`
+        : '—';
     const android = t.android
       ? `\`${t.android.record}\`: \`${short(t.android.readPermission)}\` / \`${short(t.android.writePermission)}\`${t.android.feature ? ` (needs \`${t.android.feature}\`)` : ''}`
       : '—';

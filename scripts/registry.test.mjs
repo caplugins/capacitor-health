@@ -63,7 +63,7 @@ describe('registry/types.json', () => {
 
   it('gates newer identifiers by the catalog version', () => {
     const catalog = new Map(healthKitIdentifiers().map((x) => [x.identifier, x.ios]));
-    for (const t of registry.types.filter((x) => x.ios)) {
+    for (const t of registry.types.filter((x) => x.ios?.identifier)) {
       expect(t.ios.minOS, t.id).toBe(catalog.get(t.ios.identifier));
     }
   });
@@ -93,6 +93,9 @@ describe('schema and semantic checks reject mistakes', () => {
     ['a malformed permission', (t) => (t.android.readPermission = 'READ_MENSTRUATION')],
     ['an unknown property', (t) => (t.colour = 'red')],
     ['a lowercase identifier prefix', (t) => (t.ios.identifier = 'hkCategoryTypeIdentifierMenstrualFlow')],
+    ['an unknown group', (t) => (t.group = 'misc')],
+    ['an ios mapping with neither identifier nor members', (t) => delete t.ios.identifier],
+    ['an unknown aggregate metric', (t) => (t.android.aggregates = { median: 'X_MEDIAN' })],
   ])('schema rejects %s', (_label, mutate) => {
     const entry = clone(flow);
     mutate(entry);
@@ -105,6 +108,13 @@ describe('schema and semantic checks reject mistakes', () => {
     ['mismatched permissions', (r) => (r.types[0].android.writePermission = 'android.permission.health.WRITE_STEPS'), /different data types/],
     ['a duplicate id', (r) => r.types.push(clone(r.types[0])), /defined twice/],
     ['a quantity type on a category identifier', (r) => (r.types.find((t) => t.id === 'basalBodyTemperature').ios.identifier = 'HKCategoryTypeIdentifierLactation'), /needs an HKQuantityTypeIdentifier/],
+    ['an unknown unit', (r) => (r.types.find((t) => t.id === 'basalBodyTemperature').units.push('furlong')), /unknown unit furlong/],
+    ['units of two dimensions', (r) => (r.types.find((t) => t.id === 'basalBodyTemperature').units.push('kg')), /mix dimensions/],
+    ['a unit missing on one platform', (r) => delete r.units.degF.android, /degF has no Health Connect unit/],
+    ['a combined id with an unknown member', (r) => r.types.push({ id: 'distance', kind: 'quantity', group: 'activity', unit: 'degC', units: ['degC'], ios: { members: ['basalBodyTemperature', 'nope'], minOS: '9.0', writable: false } }), /nope has no ios mapping/],
+    ['a writable combined id without writeTo', (r) => r.types.push({ id: 'combined', kind: 'quantity', group: 'activity', unit: 'degC', units: ['degC'], ios: { members: ['basalBodyTemperature', 'wristTemperature'], minOS: '9.0', writable: true } }), /needs ios.writeTo/],
+    ['aggregates on a category', (r) => (r.types[0].android.aggregates = { sum: 'X_TOTAL' }), /only apply to quantity/],
+    ['a writable aggregate-only type', (r) => Object.assign(r.types.find((t) => t.id === 'basalBodyTemperature').android, { aggregateOnly: true, aggregates: { avg: 'TEMPERATURE_AVG' } }), /aggregate-only type can't be writable/],
   ])('semantic check catches %s', (_label, mutate, message) => {
     const broken = clone(registry);
     mutate(broken);

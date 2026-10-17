@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import types from '../../registry/types.json';
 
-import { HEALTH_TYPES, REGISTRY, VALUE_SETS } from './registry';
+import { HEALTH_TYPES, REGISTRY, UNITS, VALUE_SETS } from './registry';
 
 describe('generated TypeScript registry', () => {
   it('lists every type in registry order', () => {
@@ -29,5 +29,20 @@ describe('generated TypeScript registry', () => {
     expect(REGISTRY.menstrualFlow.android?.readPermission).toBe('android.permission.health.READ_MENSTRUATION');
     expect(REGISTRY.menstruationPeriod.ios?.derivedFrom).toBe('menstrualFlow');
     expect(REGISTRY.menopausalState.ios?.time).toBe('instant');
+  });
+
+  it('only uses units from the unit table, of one dimension per type', () => {
+    for (const entry of Object.values(REGISTRY)) {
+      const dimensions = new Set((entry.units ?? []).map((u) => UNITS[u]?.dimension));
+      expect(dimensions.has(undefined), entry.id).toBe(false);
+      expect(dimensions.size, entry.id).toBeLessThanOrEqual(1);
+    }
+    expect(UNITS['mmol/L']).toEqual({ dimension: 'bloodGlucose', ios: true, android: true });
+    expect(UNITS['kcal/d'].ios).toBe(false);
+  });
+
+  it('derives aggregate metrics from the HealthKit aggregation style', () => {
+    expect(REGISTRY.basalBodyTemperature.ios?.metrics).toEqual(['avg', 'min', 'max']);
+    expect(REGISTRY.menstrualFlow.ios?.metrics).toBeUndefined();
   });
 });

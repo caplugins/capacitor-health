@@ -38,11 +38,31 @@ final class RegistryTests: XCTestCase {
         }
     }
 
-    func testUnitsParse() {
+    func testEveryTypeUnitIsInTheUnitTable() {
         for entry in Registry.entries {
-            guard let unit = entry.unit else { continue }
-            // An unknown unit string raises an Objective-C exception, so only round-trip known ones.
-            XCTAssertEqual(HKUnit(from: unit).unitString, unit, entry.typeId)
+            for unit in entry.units {
+                XCTAssertNotNil(Registry.units[unit], "\(entry.typeId): \(unit)")
+            }
         }
+    }
+
+    func testUnitsAreCompatibleWithTheirTypes() {
+        for entry in Registry.entries where entry.isQuantity && entry.isAvailable() {
+            guard let type = HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier(rawValue: entry.identifier)) else { continue }
+            for unit in entry.units {
+                // An unknown unit string raises an Objective-C exception; the table only holds checked strings.
+                guard let ios = Registry.units[unit]?.ios else { continue }
+                XCTAssertTrue(type.is(compatibleWith: HKUnit(from: ios)), "\(entry.typeId): \(unit)")
+            }
+        }
+    }
+
+    func testUnitStringsRoundTrip() {
+        for (id, unit) in Registry.units where !unit.ios.contains("<") {
+            XCTAssertEqual(HKUnit(from: unit.ios).unitString, unit.ios, id)
+        }
+        // Glucose in mmol/L needs its molar mass; compare with the unit HealthKit builds.
+        let mmol = HKUnit.moleUnit(with: .milli, molarMass: HKUnitMolarMassBloodGlucose).unitDivided(by: .liter())
+        XCTAssertEqual(HKUnit(from: Registry.units["mmol/L"]?.ios ?? ""), mmol)
     }
 }

@@ -10,6 +10,22 @@ enum RegistryFieldType {
     case boolean, enumeration
 }
 
+/// A unit's HealthKit form. Unit ids are what apps pass; HealthKit parses `ios` with `HKUnit(from:)`.
+struct RegistryUnit {
+    let ios: String
+    /// 0–100 across the bridge, 0–1 in HealthKit (decision #15).
+    let percent: Bool
+
+    init(_ ios: String, percent: Bool = false) {
+        self.ios = ios
+        self.percent = percent
+    }
+}
+
+enum RegistryAggregation {
+    case cumulative, discrete
+}
+
 struct RegistryValueSet {
     /// Unified values HealthKit can store, in display order.
     let values: [String]
@@ -57,9 +73,17 @@ struct RegistryEntry {
     let units: [String]
     /// Set for types with no HealthKit object of their own (`menstruationPeriod`).
     let derivedFrom: String?
+    /// How `aggregate()` combines samples (quantity types).
+    let aggregation: RegistryAggregation?
+    /// Combined id (decision #14): the ids it reads together. `identifier` is then the write member's.
+    let members: [String]
+    let writeTo: String?
+    /// No samples of its own; only `aggregate()` serves it.
+    let aggregateOnly: Bool
     let fields: [RegistryMetadataField]
 
     var isQuantity: Bool { identifier.hasPrefix("HKQuantityTypeIdentifier") }
+    var isCorrelation: Bool { identifier.hasPrefix("HKCorrelationTypeIdentifier") }
 
     init(
         _ typeId: String,
@@ -73,6 +97,10 @@ struct RegistryEntry {
         unit: String? = nil,
         units: [String] = [],
         derivedFrom: String? = nil,
+        aggregation: RegistryAggregation? = nil,
+        members: [String] = [],
+        writeTo: String? = nil,
+        aggregateOnly: Bool = false,
         fields: [RegistryMetadataField] = []
     ) {
         self.typeId = typeId
@@ -86,6 +114,10 @@ struct RegistryEntry {
         self.unit = unit
         self.units = units
         self.derivedFrom = derivedFrom
+        self.aggregation = aggregation
+        self.members = members
+        self.writeTo = writeTo
+        self.aggregateOnly = aggregateOnly
         self.fields = fields
     }
 }
@@ -137,6 +169,39 @@ enum Registry {
         "pelvicPain",
         "sleepChanges",
         "vaginalDryness"
+    ]
+
+    static let units: [String: RegistryUnit] = [
+        "count": RegistryUnit("count"),
+        "count/min": RegistryUnit("count/min"),
+        "m": RegistryUnit("m"),
+        "km": RegistryUnit("km"),
+        "cm": RegistryUnit("cm"),
+        "mi": RegistryUnit("mi"),
+        "ft": RegistryUnit("ft"),
+        "in": RegistryUnit("in"),
+        "kcal": RegistryUnit("kcal"),
+        "kJ": RegistryUnit("kJ"),
+        "kg": RegistryUnit("kg"),
+        "g": RegistryUnit("g"),
+        "lb": RegistryUnit("lb"),
+        "degC": RegistryUnit("degC"),
+        "degF": RegistryUnit("degF"),
+        "%": RegistryUnit("%", percent: true),
+        "ms": RegistryUnit("ms"),
+        "s": RegistryUnit("s"),
+        "min": RegistryUnit("min"),
+        "h": RegistryUnit("hr"),
+        "mmHg": RegistryUnit("mmHg"),
+        "mg/dL": RegistryUnit("mg/dL"),
+        "mmol/L": RegistryUnit("mmol<180.15588000005408>/L"),
+        "m/s": RegistryUnit("m/s"),
+        "km/h": RegistryUnit("km/hr"),
+        "mph": RegistryUnit("mi/hr"),
+        "W": RegistryUnit("W"),
+        "mL/(kg·min)": RegistryUnit("mL/min·kg"),
+        "L": RegistryUnit("L"),
+        "mL": RegistryUnit("mL")
     ]
 
     static let valueSets: [String: RegistryValueSet] = [
@@ -213,6 +278,7 @@ enum Registry {
             minOS: "9.0",
             unit: "degC",
             units: ["degC", "degF"],
+            aggregation: .discrete,
             fields: [RegistryMetadataField(
                     "measurementLocation",
                     key: "HKBodyTemperatureSensorLocation",
@@ -228,7 +294,8 @@ enum Registry {
             isAvailable: { if #available(iOS 16.0, *) { return true }; return false },
             writable: false,
             unit: "degC",
-            units: ["degC", "degF"]
+            units: ["degC", "degF"],
+            aggregation: .discrete
         ),
         RegistryEntry(
             "pregnancyTest",

@@ -2,6 +2,7 @@
 package com.caplugins.health.generated
 
 import androidx.health.connect.client.HealthConnectFeatures
+import androidx.health.connect.client.aggregate.AggregateMetric
 import androidx.health.connect.client.records.BasalBodyTemperatureRecord
 import androidx.health.connect.client.records.BodyTemperatureMeasurementLocation
 import androidx.health.connect.client.records.CervicalMucusRecord
@@ -12,12 +13,32 @@ import androidx.health.connect.client.records.OvulationTestRecord
 import androidx.health.connect.client.records.Record
 import androidx.health.connect.client.records.SexualActivityRecord
 import androidx.health.connect.client.records.SkinTemperatureRecord
+import androidx.health.connect.client.units.BloodGlucose
+import androidx.health.connect.client.units.Energy
+import androidx.health.connect.client.units.Length
+import androidx.health.connect.client.units.Mass
+import androidx.health.connect.client.units.Percentage
+import androidx.health.connect.client.units.Power
+import androidx.health.connect.client.units.Pressure
+import androidx.health.connect.client.units.Temperature
+import androidx.health.connect.client.units.Velocity
+import androidx.health.connect.client.units.Volume
 import java.time.Duration
 import kotlin.reflect.KClass
 
 enum class RegistryKind { QUANTITY, CATEGORY, EVENT, SPECIAL }
 
 enum class RecordTime { INSTANT, INTERVAL, SERIES }
+
+/**
+ * A unit's Health Connect form: [read] turns a record's unit object (or plain number) into a number in
+ * this unit, [build] turns a number in this unit into what the record takes (a plain Double for Number).
+ */
+class RegistryUnit(
+    val dimension: String,
+    val read: (Any) -> Double,
+    val build: (Double) -> Any,
+)
 
 /** Unified value → Health Connect constant. Values Health Connect can't store are absent. */
 class RegistryValueSet(
@@ -56,6 +77,10 @@ class RegistryEntry(
     val feature: Int? = null,
     /** Longest interval the record accepts (inclusive). */
     val maxDuration: Duration? = null,
+    /** aggregate() metric → the record's AggregateMetric. */
+    val aggregates: Map<String, AggregateMetric<*>> = emptyMap(),
+    /** No readable records; only aggregate() serves it (decision #21). */
+    val aggregateOnly: Boolean = false,
     val fields: List<RegistryField> = emptyList(),
 )
 
@@ -106,6 +131,38 @@ object Registry {
         "pelvicPain",
         "sleepChanges",
         "vaginalDryness",
+    )
+
+    /** Units Health Connect can hold, by unified unit id. */
+    val units: Map<String, RegistryUnit> = mapOf(
+        "count" to RegistryUnit("count", read = { (it as Number).toDouble() }, build = { it }),
+        "count/min" to RegistryUnit("frequency", read = { (it as Number).toDouble() }, build = { it }),
+        "m" to RegistryUnit("length", read = { (it as Length).inMeters }, build = { Length.meters(it) }),
+        "km" to RegistryUnit("length", read = { (it as Length).inKilometers }, build = { Length.kilometers(it) }),
+        "cm" to RegistryUnit("length", read = { (it as Length).inMeters / 0.01 }, build = { Length.meters(it * 0.01) }),
+        "mi" to RegistryUnit("length", read = { (it as Length).inMiles }, build = { Length.miles(it) }),
+        "ft" to RegistryUnit("length", read = { (it as Length).inFeet }, build = { Length.feet(it) }),
+        "in" to RegistryUnit("length", read = { (it as Length).inInches }, build = { Length.inches(it) }),
+        "kcal" to RegistryUnit("energy", read = { (it as Energy).inKilocalories }, build = { Energy.kilocalories(it) }),
+        "kJ" to RegistryUnit("energy", read = { (it as Energy).inKilojoules }, build = { Energy.kilojoules(it) }),
+        "kg" to RegistryUnit("mass", read = { (it as Mass).inKilograms }, build = { Mass.kilograms(it) }),
+        "g" to RegistryUnit("mass", read = { (it as Mass).inGrams }, build = { Mass.grams(it) }),
+        "lb" to RegistryUnit("mass", read = { (it as Mass).inPounds }, build = { Mass.pounds(it) }),
+        "degC" to RegistryUnit("temperature", read = { (it as Temperature).inCelsius }, build = { Temperature.celsius(it) }),
+        "degF" to RegistryUnit("temperature", read = { (it as Temperature).inFahrenheit }, build = { Temperature.fahrenheit(it) }),
+        "%" to RegistryUnit("percent", read = { (it as Percentage).value }, build = { Percentage(it) }),
+        "ms" to RegistryUnit("duration", read = { (it as Number).toDouble() }, build = { it }),
+        "mmHg" to RegistryUnit("pressure", read = { (it as Pressure).inMillimetersOfMercury }, build = { Pressure.millimetersOfMercury(it) }),
+        "mg/dL" to RegistryUnit("bloodGlucose", read = { (it as BloodGlucose).inMilligramsPerDeciliter }, build = { BloodGlucose.milligramsPerDeciliter(it) }),
+        "mmol/L" to RegistryUnit("bloodGlucose", read = { (it as BloodGlucose).inMillimolesPerLiter }, build = { BloodGlucose.millimolesPerLiter(it) }),
+        "m/s" to RegistryUnit("speed", read = { (it as Velocity).inMetersPerSecond }, build = { Velocity.metersPerSecond(it) }),
+        "km/h" to RegistryUnit("speed", read = { (it as Velocity).inKilometersPerHour }, build = { Velocity.kilometersPerHour(it) }),
+        "mph" to RegistryUnit("speed", read = { (it as Velocity).inMilesPerHour }, build = { Velocity.milesPerHour(it) }),
+        "W" to RegistryUnit("power", read = { (it as Power).inWatts }, build = { Power.watts(it) }),
+        "kcal/d" to RegistryUnit("power", read = { (it as Power).inKilocaloriesPerDay }, build = { Power.kilocaloriesPerDay(it) }),
+        "mL/(kg·min)" to RegistryUnit("vo2Max", read = { (it as Number).toDouble() }, build = { it }),
+        "L" to RegistryUnit("volume", read = { (it as Volume).inLiters }, build = { Volume.liters(it) }),
+        "mL" to RegistryUnit("volume", read = { (it as Volume).inMilliliters }, build = { Volume.milliliters(it) }),
     )
 
     /** Constants keep the value set's display order. */

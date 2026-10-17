@@ -38,4 +38,19 @@ class RegistryTest {
             assertEquals(name, constants.size, constants.toSet().size)
         }
     }
+
+    @Test
+    fun unitsRoundTrip() {
+        for ((id, unit) in Registry.units) {
+            val built = unit.build(12.5)
+            assertEquals(id, 12.5, unit.read(built), 1e-9)
+        }
+    }
+
+    @Test
+    fun typeUnitsAreInTheUnitTable() {
+        for (entry in Registry.entries) {
+            for (unit in entry.units) assertNotNull("${entry.id}: $unit", Registry.units[unit])
+        }
+    }
 }

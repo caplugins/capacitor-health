@@ -117,7 +117,23 @@ export type EventHealthType =
   | 'prolongedMenstrualPeriods';
 
 export type RegistryKind = 'quantity' | 'category' | 'event' | 'special';
-export type RegistryGroup = 'reproductiveHealth' | 'symptoms';
+export type RegistryGroup = 'reproductiveHealth' | 'symptoms' | 'activity' | 'vitals' | 'body' | 'other';
+
+/**
+ * A statistic `aggregate()` can compute.
+ *
+ * @since 0.2.0
+ */
+export type AggregateMetric = 'sum' | 'avg' | 'min' | 'max' | 'count' | 'duration';
+
+export interface RegistryUnit {
+  /** Units of one type share a dimension. */
+  dimension: string;
+  /** HealthKit has this unit. */
+  ios: boolean;
+  /** Health Connect has this unit. */
+  android: boolean;
+}
 
 export interface RegistryValueSet {
   /** Unified values, in display order. */
@@ -149,12 +165,21 @@ export interface RegistryEntry {
   units?: readonly string[];
   fields?: Readonly<Record<string, RegistryField>>;
   ios?: {
-    identifier: string;
+    /** Absent for combined ids (`members`). */
+    identifier?: string;
     minOS: string;
     writable: boolean;
     /** `instant`: start must equal end. */
     time: 'any' | 'instant';
     derivedFrom?: HealthType;
+    /** Combined id: the split ids it reads together (decision #14). */
+    members?: readonly HealthType[];
+    /** Combined id: where writes go unless a sample names a member. */
+    writeTo?: HealthType;
+    /** No samples of its own; only `aggregate()` serves it. */
+    aggregateOnly?: true;
+    /** `aggregate()` metrics HealthKit serves. */
+    metrics?: readonly AggregateMetric[];
   };
   android?: {
     record: string;
@@ -164,8 +189,46 @@ export interface RegistryEntry {
     writable: boolean;
     feature?: string;
     maxDurationDays?: number;
+    /** No readable records; only `aggregate()` serves it. */
+    aggregateOnly?: true;
+    /** `aggregate()` metrics Health Connect serves. */
+    metrics?: readonly AggregateMetric[];
   };
 }
+
+export const UNITS: Readonly<Record<string, RegistryUnit>> = {
+  count: { dimension: 'count', ios: true, android: true },
+  'count/min': { dimension: 'frequency', ios: true, android: true },
+  m: { dimension: 'length', ios: true, android: true },
+  km: { dimension: 'length', ios: true, android: true },
+  cm: { dimension: 'length', ios: true, android: true },
+  mi: { dimension: 'length', ios: true, android: true },
+  ft: { dimension: 'length', ios: true, android: true },
+  in: { dimension: 'length', ios: true, android: true },
+  kcal: { dimension: 'energy', ios: true, android: true },
+  kJ: { dimension: 'energy', ios: true, android: true },
+  kg: { dimension: 'mass', ios: true, android: true },
+  g: { dimension: 'mass', ios: true, android: true },
+  lb: { dimension: 'mass', ios: true, android: true },
+  degC: { dimension: 'temperature', ios: true, android: true },
+  degF: { dimension: 'temperature', ios: true, android: true },
+  '%': { dimension: 'percent', ios: true, android: true },
+  ms: { dimension: 'duration', ios: true, android: true },
+  s: { dimension: 'duration', ios: true, android: false },
+  min: { dimension: 'duration', ios: true, android: false },
+  h: { dimension: 'duration', ios: true, android: false },
+  mmHg: { dimension: 'pressure', ios: true, android: true },
+  'mg/dL': { dimension: 'bloodGlucose', ios: true, android: true },
+  'mmol/L': { dimension: 'bloodGlucose', ios: true, android: true },
+  'm/s': { dimension: 'speed', ios: true, android: true },
+  'km/h': { dimension: 'speed', ios: true, android: true },
+  mph: { dimension: 'speed', ios: true, android: true },
+  W: { dimension: 'power', ios: true, android: true },
+  'kcal/d': { dimension: 'power', ios: false, android: true },
+  'mL/(kg·min)': { dimension: 'vo2Max', ios: true, android: true },
+  L: { dimension: 'volume', ios: true, android: true },
+  mL: { dimension: 'volume', ios: true, android: true },
+};
 
 export const VALUE_SETS: Readonly<Record<string, RegistryValueSet>> = {
   bleeding: {
@@ -350,7 +413,13 @@ export const REGISTRY: Readonly<Record<HealthType, RegistryEntry>> = {
     unit: 'degC',
     units: ['degC', 'degF'],
     fields: { measurementLocation: { type: 'enum', values: 'bodyTemperatureLocation', ios: true, android: 'stored' } },
-    ios: { identifier: 'HKQuantityTypeIdentifierBasalBodyTemperature', minOS: '9.0', writable: true, time: 'any' },
+    ios: {
+      identifier: 'HKQuantityTypeIdentifierBasalBodyTemperature',
+      minOS: '9.0',
+      writable: true,
+      time: 'any',
+      metrics: ['avg', 'min', 'max'],
+    },
     android: {
       record: 'BasalBodyTemperatureRecord',
       time: 'instant',
@@ -370,6 +439,7 @@ export const REGISTRY: Readonly<Record<HealthType, RegistryEntry>> = {
       minOS: '16.0',
       writable: false,
       time: 'any',
+      metrics: ['avg', 'min', 'max'],
     },
   },
   skinTemperature: {

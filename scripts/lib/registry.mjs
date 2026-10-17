@@ -35,7 +35,9 @@ export function schemaErrors(registry) {
 export function semanticErrors(registry) {
   const errors = [];
   const sets = registry.valueSets;
+  const units = registry.units ?? {};
   const ids = new Set();
+  const byId = new Map(registry.types.map((t) => [t.id, t]));
 
   for (const [name, set] of Object.entries(sets)) {
     for (const platform of ['ios', 'android']) {
@@ -68,16 +70,41 @@ export function semanticErrors(registry) {
       }
     }
     if (type.unit && type.units && !type.units.includes(type.unit)) errors.push(`${at}.unit is not in units`);
+    const typeUnits = [...new Set([type.unit, ...(type.units ?? [])].filter(Boolean))];
+    for (const unit of typeUnits) {
+      if (!units[unit]) errors.push(`${at} uses unknown unit ${unit}`);
+    }
+    const dimensions = new Set(typeUnits.map((u) => units[u]?.dimension).filter(Boolean));
+    if (dimensions.size > 1) errors.push(`${at}.units mix dimensions ${[...dimensions].join(', ')}`);
+    for (const unit of typeUnits.filter((u) => units[u])) {
+      if (type.ios && !units[unit].ios) errors.push(`${at}: unit ${unit} has no HealthKit unit`);
+      if (type.android && !type.android.aggregateOnly && !units[unit].android) {
+        errors.push(`${at}: unit ${unit} has no Health Connect unit`);
+      }
+    }
 
     if (type.ios) {
-      const { identifier, aggregation, derivedFrom } = type.ios;
-      const isQuantity = identifier.startsWith('HKQuantityTypeIdentifier');
-      if (type.kind === 'quantity' && !isQuantity) errors.push(`${at}: quantity kind needs an HKQuantityTypeIdentifier`);
+      const { identifier, aggregation, derivedFrom, members, writeTo, aggregateOnly } = type.ios;
+      const isQuantity = Boolean(identifier?.startsWith('HKQuantityTypeIdentifier'));
+      if (members) {
+        for (const member of members) {
+          const target = byId.get(member);
+          if (!target?.ios) errors.push(`${at}.ios.members: ${member} has no ios mapping`);
+          else if (target.ios.members) errors.push(`${at}.ios.members: ${member} is itself combined`);
+          else if (target.kind !== type.kind) errors.push(`${at}.ios.members: ${member} is a ${target.kind}, not a ${type.kind}`);
+        }
+        if (writeTo && !members.includes(writeTo)) errors.push(`${at}.ios.writeTo is not a member`);
+        if (type.ios.writable && !writeTo) errors.push(`${at}: a writable combined id needs ios.writeTo`);
+      } else {
+        if (type.kind === 'quantity' && !isQuantity) errors.push(`${at}: quantity kind needs an HKQuantityTypeIdentifier`);
+        if (isQuantity && !aggregation && !derivedFrom) errors.push(`${at}.ios.aggregation is required for quantity types`);
+      }
+      if (writeTo && !members) errors.push(`${at}.ios.writeTo needs ios.members`);
+      if (aggregateOnly && type.ios.writable) errors.push(`${at}: an aggregate-only type can't be writable`);
       if ((type.kind === 'category' || type.kind === 'event') && isQuantity) {
         errors.push(`${at}: ${type.kind} kind needs an HKCategoryTypeIdentifier`);
       }
-      if (isQuantity && !aggregation && !derivedFrom) errors.push(`${at}.ios.aggregation is required for quantity types`);
-      if (!isQuantity && aggregation) errors.push(`${at}.ios.aggregation only applies to quantity types`);
+      if (identifier && !isQuantity && aggregation) errors.push(`${at}.ios.aggregation only applies to quantity types`);
       if (derivedFrom && !registry.types.some((t) => t.id === derivedFrom)) {
         errors.push(`${at}.ios.derivedFrom references unknown type ${derivedFrom}`);
       }
@@ -94,6 +121,12 @@ export function semanticErrors(registry) {
         errors.push(`${at}.android.valueProperty is required for ${type.kind} types`);
       }
       if (type.kind === 'event' && valueProperty) errors.push(`${at}.android.valueProperty makes no sense for event types`);
+      const { aggregates, aggregateOnly } = type.android;
+      if (aggregates && type.kind !== 'quantity' && type.kind !== 'special') {
+        errors.push(`${at}.android.aggregates only apply to quantity and special types`);
+      }
+      if (aggregateOnly && !aggregates) errors.push(`${at}: an aggregate-only type needs android.aggregates`);
+      if (aggregateOnly && type.android.writable) errors.push(`${at}: an aggregate-only type can't be writable`);
     }
 
     for (const [name, field] of Object.entries(type.fields ?? {})) {
@@ -142,7 +175,7 @@ export function swiftMemberName(suffix) {
 
 /** "HKCategoryTypeIdentifierMenstrualFlow" → { swiftType: "HKCategoryTypeIdentifier", member: "menstrualFlow" }. */
 export function swiftIdentifier(identifier) {
-  const [, swiftType, suffix] = identifier.match(/^(HK(?:Category|Quantity)TypeIdentifier)(.+)$/);
+  const [, swiftType, suffix] = identifier.match(/^(HK(?:Category|Quantity|Correlation)TypeIdentifier)(.+)$/);
   return { swiftType, member: swiftMemberName(suffix) };
 }
 
