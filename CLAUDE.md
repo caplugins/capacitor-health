@@ -6,9 +6,10 @@ first-class citizen. Public MIT package on npm under `@caplugins` (same scope as
 `@caplugins/capacitor-meta-sdk` and `@caplugins/capacitor-clevertap`); repo
 `caplugins/capacitor-health` on GitHub.
 
-**Status (2026-10-17): M1 in progress** (M0 closed: spikes in [docs/spikes/m0.md](docs/spikes/m0.md),
-registry in `registry/`). The next piece of work is always the first unchecked task in
-[docs/tasks.md](docs/tasks.md).
+**Status (2026-10-17): M1 implemented** (T11–T22 done; 0.1.0 release candidate verified in fresh SPM
+and CocoaPods apps, per-type results in [docs/acceptance/m1.md](docs/acceptance/m1.md)). Waiting on
+👤 V1 (push to GitHub), V2 (real-device pass) and V3 (publish 0.1.0); T23 (expand M2) follows V3.
+The next piece of work is always the first unchecked task in [docs/tasks.md](docs/tasks.md).
 
 ## Read first
 

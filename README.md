@@ -245,7 +245,9 @@ out from `menstrualFlow` samples. These rules are a contract, covered by
   even on day 1. The plugin looks 15 days before your range, so a period that started earlier is
   returned whole. A derived period has `derived: true`, `firstDay` / `lastDay` (local dates),
   `startDate` / `endDate` from local midnight of the first day to 23:59:59.999 of the last, the ids of
-  its flow samples, and its first sample's id and source.
+  its flow samples, and its first sample's id and source. Like Apple Health, it merges days from every
+  app: if another app logged days next to yours, they form one period, whose `id`, `source` and
+  `clientId` come from its first day. Look periods up by date, not only by `clientId`.
 - **Writing on iOS:** a period becomes one flow sample per day at local noon (`unspecified` unless you
   pass `flow` for that day), flagged as cycle start on day 1, with `clientId`
   `<your clientId>:<yyyy-mm-dd>`. Writing the same period again updates it, and a shorter period
@@ -965,14 +967,18 @@ Status per type, for the types passed in.
 
 Make all properties in T optional
 
-<code>{ [P in keyof T]?: T[P]; }</code>
+<code>{
+ [P in keyof T]?: T[P];
+ }</code>
 
 
 #### Record
 
 Construct a type with a set of properties K of type T
 
-<code>{ [P in K]: T; }</code>
+<code>{
+ [P in K]: T;
+ }</code>
 
 
 #### AuthorizationStatus
