@@ -1480,7 +1480,8 @@ export interface AggregateOptions {
    * A type whose `getSupportedTypes()` entry is `aggregatable`: quantity types, and `sleepSession`
    * (`duration`: seconds asleep; iOS counts asleep stages with time two apps both record counted
    * once, Android is Health Connect's total: session time minus awake, in-bed and out-of-bed stages,
-   * from apps on the user's sleep priority list).
+   * from apps on the user's sleep priority list), and on Android `workout` (`duration`: Health
+   * Connect's exercise time, session time minus `pause` and `rest` segments).
    *
    * @since 0.2.0
    */

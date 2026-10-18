@@ -3,6 +3,7 @@ package com.caplugins.health
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.changes.DeletionChange
 import androidx.health.connect.client.changes.UpsertionChange
+import androidx.health.connect.client.records.ExerciseSessionRecord
 import androidx.health.connect.client.records.MenstruationFlowRecord
 import androidx.health.connect.client.records.Record
 import androidx.health.connect.client.request.ChangesTokenRequest
@@ -66,8 +67,12 @@ class Changes(
 
     private suspend fun result(upserted: List<Pair<Record, RegistryEntry>>, deleted: JSArray, tokens: Map<String, String>, hasMore: Boolean): JSObject {
         val cycleStarts = samples.cycleStarts(upserted.map { it.first }.filterIsInstance<MenstruationFlowRecord>())
+        val totals = samples.workoutTotals(upserted.map { it.first }.filterIsInstance<ExerciseSessionRecord>())
+        val encoded = upserted.flatMap { (record, entry) ->
+            RecordCodec.encodeAll(record, entry, isCycleStart = cycleStarts[record.metadata.id], totals = totals[record.metadata.id])
+        }
         return JSObject()
-            .put("upserted", JSArray(upserted.flatMap { (record, entry) -> RecordCodec.encodeAll(record, entry, isCycleStart = cycleStarts[record.metadata.id]) }))
+            .put("upserted", JSArray(encoded))
             .put("deleted", deleted)
             .put("nextCursor", encodeBase64(JSONObject().put("v", 1).put("tokens", JSONObject(tokens as Map<*, *>)).toString().toByteArray()))
             .put("hasMore", hasMore)

@@ -5,6 +5,7 @@ package com.caplugins.health
 import androidx.health.connect.client.feature.ExperimentalMindfulnessSessionApi
 import androidx.health.connect.client.records.BloodPressureRecord
 import androidx.health.connect.client.records.CervicalMucusRecord
+import androidx.health.connect.client.records.ExerciseSessionRecord
 import androidx.health.connect.client.records.IntermenstrualBleedingRecord
 import androidx.health.connect.client.records.MenstruationFlowRecord
 import androidx.health.connect.client.records.MenstruationPeriodRecord
@@ -94,8 +95,14 @@ object RecordCodec {
      * several points gives its points ids `<recordId>#<index>` and a `seriesId`; a one-point record reads as a
      * sample with the record's id, like any other record.
      */
-    fun encodeAll(record: Record, entry: RegistryEntry, unit: String? = null, isCycleStart: Boolean? = null): List<JSObject> {
-        val series = Registry.seriesAdapters[record::class] ?: return listOf(encode(record, entry, unit, isCycleStart))
+    fun encodeAll(
+        record: Record,
+        entry: RegistryEntry,
+        unit: String? = null,
+        isCycleStart: Boolean? = null,
+        totals: Workouts.Totals? = null,
+    ): List<JSObject> {
+        val series = Registry.seriesAdapters[record::class] ?: return listOf(encode(record, entry, unit, isCycleStart, totals))
         val outUnit = unit ?: entry.unit ?: return emptyList()
         val points = series.points(record)
         val offset = times(record).startOffset
@@ -110,8 +117,11 @@ object RecordCodec {
         }
     }
 
-    /** `Sample` JSON for a record that isn't a series. [isCycleStart] is decision #16's computed flag for flow records. */
-    fun encode(record: Record, entry: RegistryEntry, unit: String? = null, isCycleStart: Boolean? = null): JSObject {
+    /**
+     * `Sample` JSON for a record that isn't a series. [isCycleStart] is decision #16's computed flag for flow records,
+     * [totals] a workout's (read from other records).
+     */
+    fun encode(record: Record, entry: RegistryEntry, unit: String? = null, isCycleStart: Boolean? = null, totals: Workouts.Totals? = null): JSObject {
         val json = encodeBase(record, entry)
         val native = JSObject().put("type", record::class.simpleName)
         val outUnit = unit ?: entry.unit
@@ -173,6 +183,7 @@ object RecordCodec {
                 json.put("derived", false)
             }
             is SleepSessionRecord -> SleepSessions.encode(record, json, native)
+            is ExerciseSessionRecord -> Workouts.encode(record, json, native, totals)
         }
         return json.put("native", native)
     }
@@ -190,6 +201,7 @@ object RecordCodec {
             is MindfulnessSessionRecord -> RecordTimes(record.startTime, record.startZoneOffset, record.endTime, record.endZoneOffset)
             is MenstruationPeriodRecord -> RecordTimes(record.startTime, record.startZoneOffset, record.endTime, record.endZoneOffset)
             is SleepSessionRecord -> RecordTimes(record.startTime, record.startZoneOffset, record.endTime, record.endZoneOffset)
+            is ExerciseSessionRecord -> RecordTimes(record.startTime, record.startZoneOffset, record.endTime, record.endZoneOffset)
             else -> throw HealthException(HealthException.NATIVE_ERROR, "${record::class.simpleName} has no codec.")
         }
 
@@ -327,6 +339,7 @@ object RecordCodec {
             BloodPressureRecord::class -> decodeBloodPressure(fields, entry, metadata)
             MenstruationPeriodRecord::class -> return decodePeriod(fields, metadata)
             SleepSessionRecord::class -> SleepSessions.decode(fields, metadata)
+            ExerciseSessionRecord::class -> return Workouts.decode(fields, metadata)
             else -> throw HealthException(HealthException.NATIVE_ERROR, "${entry.id} has no codec.")
         }
         return Decoded(record)

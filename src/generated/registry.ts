@@ -2959,6 +2959,7 @@ export const REGISTRY: Readonly<Record<HealthType, RegistryEntry>> = {
       readPermission: 'android.permission.health.READ_EXERCISE',
       writePermission: 'android.permission.health.WRITE_EXERCISE',
       writable: true,
+      metrics: ['duration'],
     },
   },
   sleepSession: {

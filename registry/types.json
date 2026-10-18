@@ -2628,7 +2628,8 @@
         "readPermission": "android.permission.health.READ_EXERCISE",
         "writePermission": "android.permission.health.WRITE_EXERCISE",
         "writable": true,
-        "notes": "Health Connect has no totals on a session: they're the session app's active calories and distance records over the session; written totals are such records (decision #67)"
+        "aggregates": {"duration": "EXERCISE_DURATION_TOTAL"},
+        "notes": "Health Connect has no totals on a session: they're the session app's active calories and distance records over the session; written totals are such records (decision #67). Reads look back 24 hours, as for sleep sessions; duration is EXERCISE_DURATION_TOTAL, session time minus pause and rest segments (decision #69)"
       },
       "notes": "title and notes are Android only, activities iOS only"
     },

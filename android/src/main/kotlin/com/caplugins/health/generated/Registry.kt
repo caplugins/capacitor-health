@@ -1089,6 +1089,7 @@ object Registry {
             readPermission = "android.permission.health.READ_EXERCISE",
             writePermission = "android.permission.health.WRITE_EXERCISE",
             writable = true,
+            aggregates = mapOf("duration" to ExerciseSessionRecord.EXERCISE_DURATION_TOTAL),
         ),
         RegistryEntry(
             id = "sleepSession",
@@ -1879,6 +1880,37 @@ object Registry {
         "yoga" to ExerciseSessionRecord.EXERCISE_TYPE_YOGA,
         "other" to ExerciseSessionRecord.EXERCISE_TYPE_OTHER_WORKOUT,
     )
+
+    /**
+     * Which segment types a session of each activity may hold, `ExerciseSegment.isCompatibleWith` (decision #67):
+     * every type for an activity in [anySegment], the [anyActivity] types for any activity, and an activity's own list.
+     */
+    object WorkoutSegments {
+        val anySegment: Set<String> = setOf("bootCamp", "highIntensityIntervalTraining", "other")
+        val anyActivity: Set<String> = setOf("other", "pause", "rest", "stretching")
+        val activities: Map<String, Set<String>> = mapOf(
+            "calisthenics" to setOf("armCurl", "backExtension", "ballSlam", "barbellShoulderPress", "benchPress", "benchSitUp", "burpee", "crunch", "deadlift", "doubleArmTricepsExtension", "dumbbellCurlLeftArm", "dumbbellCurlRightArm", "dumbbellFrontRaise", "dumbbellLateralRaise", "dumbbellRow", "dumbbellTricepsExtensionLeftArm", "dumbbellTricepsExtensionRightArm", "dumbbellTricepsExtensionTwoArm", "forwardTwist", "frontRaise", "hipThrust", "hulaHoop", "jumpRope", "jumpingJack", "kettlebellSwing", "lateralRaise", "latPullDown", "legCurl", "legExtension", "legPress", "legRaise", "lunge", "mountainClimber", "plank", "pullUp", "punch", "shoulderPress", "singleArmTricepsExtension", "sitUp", "squat", "upperTwist", "weightlifting"),
+            "cycling" to setOf("cycling"),
+            "cyclingStationary" to setOf("cyclingStationary"),
+            "elliptical" to setOf("elliptical"),
+            "exerciseClass" to setOf("yoga", "cyclingStationary", "pilates", "highIntensityIntervalTraining"),
+            "gymnastics" to setOf("armCurl", "backExtension", "ballSlam", "barbellShoulderPress", "benchPress", "benchSitUp", "burpee", "crunch", "deadlift", "doubleArmTricepsExtension", "dumbbellCurlLeftArm", "dumbbellCurlRightArm", "dumbbellFrontRaise", "dumbbellLateralRaise", "dumbbellRow", "dumbbellTricepsExtensionLeftArm", "dumbbellTricepsExtensionRightArm", "dumbbellTricepsExtensionTwoArm", "forwardTwist", "frontRaise", "hipThrust", "hulaHoop", "jumpRope", "jumpingJack", "kettlebellSwing", "lateralRaise", "latPullDown", "legCurl", "legExtension", "legPress", "legRaise", "lunge", "mountainClimber", "plank", "pullUp", "punch", "shoulderPress", "singleArmTricepsExtension", "sitUp", "squat", "upperTwist", "weightlifting"),
+            "hiking" to setOf("walking", "wheelchair"),
+            "pilates" to setOf("pilates"),
+            "rowingMachine" to setOf("rowingMachine"),
+            "running" to setOf("running", "walking"),
+            "runningTreadmill" to setOf("runningTreadmill"),
+            "stairClimbingMachine" to setOf("stairClimbingMachine"),
+            "stairs" to setOf("stairs"),
+            "strengthTraining" to setOf("armCurl", "backExtension", "ballSlam", "barbellShoulderPress", "benchPress", "benchSitUp", "burpee", "crunch", "deadlift", "doubleArmTricepsExtension", "dumbbellCurlLeftArm", "dumbbellCurlRightArm", "dumbbellFrontRaise", "dumbbellLateralRaise", "dumbbellRow", "dumbbellTricepsExtensionLeftArm", "dumbbellTricepsExtensionRightArm", "dumbbellTricepsExtensionTwoArm", "forwardTwist", "frontRaise", "hipThrust", "hulaHoop", "jumpRope", "jumpingJack", "kettlebellSwing", "lateralRaise", "latPullDown", "legCurl", "legExtension", "legPress", "legRaise", "lunge", "mountainClimber", "plank", "pullUp", "punch", "shoulderPress", "singleArmTricepsExtension", "sitUp", "squat", "upperTwist", "weightlifting"),
+            "swimmingOpenWater" to setOf("swimmingOpenWater", "swimmingBackstroke", "swimmingBreaststroke", "swimmingFreestyle", "swimmingButterfly", "swimmingMixed", "swimmingOther"),
+            "swimmingPool" to setOf("swimmingPool", "swimmingBackstroke", "swimmingBreaststroke", "swimmingFreestyle", "swimmingButterfly", "swimmingMixed", "swimmingOther"),
+            "walking" to setOf("walking"),
+            "weightlifting" to setOf("armCurl", "backExtension", "ballSlam", "barbellShoulderPress", "benchPress", "benchSitUp", "burpee", "crunch", "deadlift", "doubleArmTricepsExtension", "dumbbellCurlLeftArm", "dumbbellCurlRightArm", "dumbbellFrontRaise", "dumbbellLateralRaise", "dumbbellRow", "dumbbellTricepsExtensionLeftArm", "dumbbellTricepsExtensionRightArm", "dumbbellTricepsExtensionTwoArm", "forwardTwist", "frontRaise", "hipThrust", "hulaHoop", "jumpRope", "jumpingJack", "kettlebellSwing", "lateralRaise", "latPullDown", "legCurl", "legExtension", "legPress", "legRaise", "lunge", "mountainClimber", "plank", "pullUp", "punch", "shoulderPress", "singleArmTricepsExtension", "sitUp", "squat", "upperTwist", "weightlifting"),
+            "wheelchair" to setOf("wheelchair"),
+            "yoga" to setOf("yoga"),
+        )
+    }
 
     /** NutritionRecord's nutrients, by unified nutrient id. */
     val nutrients: Map<String, RegistryNutrient> = mapOf(

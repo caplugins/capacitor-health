@@ -922,6 +922,9 @@ function renderKotlin(registry) {
   const hcActivities = Object.entries(registry.workoutActivities ?? {}).filter(([, a]) => a.android);
   if (hcActivities.length) recordImport('ExerciseSessionRecord');
   const activities = hcActivities.map(([id, a]) => `        ${q(id)} to ExerciseSessionRecord.${a.android.constant},`);
+  const { anySegment = [], anyActivity = [], activities: segmentActivities = {} } = registry.workoutSegments ?? {};
+  const kotlinSet = (ids) => `setOf(${ids.map(q).join(', ')})`;
+  const segmentLists = Object.entries(segmentActivities).map(([id, list]) => `            ${q(id)} to ${kotlinSet(list)},`);
 
   const units = Object.entries(registry.units)
     .filter(([, u]) => u.android)
@@ -1086,6 +1089,18 @@ ${seriesAdapters.join('\n')}
     val workoutActivities: Map<String, Int> = mapOf(
 ${activities.join('\n')}
     )
+
+    /**
+     * Which segment types a session of each activity may hold, \`ExerciseSegment.isCompatibleWith\` (decision #67):
+     * every type for an activity in [anySegment], the [anyActivity] types for any activity, and an activity's own list.
+     */
+    object WorkoutSegments {
+        val anySegment: Set<String> = ${kotlinSet(anySegment)}
+        val anyActivity: Set<String> = ${kotlinSet(anyActivity)}
+        val activities: Map<String, Set<String>> = mapOf(
+${segmentLists.join('\n')}
+        )
+    }
 
     /** NutritionRecord's nutrients, by unified nutrient id. */
     val nutrients: Map<String, RegistryNutrient> = mapOf(

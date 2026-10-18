@@ -3,6 +3,10 @@ package com.caplugins.health
 import android.util.Base64
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.changes.DeletionChange
+import androidx.health.connect.client.permission.HealthPermission
+import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
+import androidx.health.connect.client.records.DistanceRecord
+import androidx.health.connect.client.records.ExerciseSessionRecord
 import androidx.health.connect.client.records.MenstruationFlowRecord
 import androidx.health.connect.client.records.MenstruationPeriodRecord
 import androidx.health.connect.client.records.Record
@@ -37,6 +41,9 @@ class Samples(
         /** Health Connect's largest read page. */
         const val MAX_PAGE_SIZE = 5000
 
+        /** How far either side of a re-written workout to look for its old version (decision #68). */
+        val REWRITE_SEARCH: Duration = Duration.ofDays(14)
+
         /** Insert at most this many records per call (rate limits, binder size). */
         const val WRITE_CHUNK = 1000
 
@@ -60,10 +67,11 @@ class Samples(
         var token = options.optString("cursor")?.let { decodeCursor(it, typeId) }
         // Health Connect matches interval records by start time only (T16, API 34). For records with a
         // maximum length, query that much earlier and keep the ones that overlap, so reads mean "overlap"
-        // as on iOS; sleep sessions look back a day (decision #66). Other interval records without one
-        // (skin temperature) keep start-time matching.
+        // as on iOS; sleep sessions and workouts look back a day (decisions #66, #69). Other interval records
+        // without one (skin temperature) keep start-time matching.
         val lookBack = when {
             entry.id == SleepSessions.TYPE_ID -> SleepSessions.LOOK_BACK
+            entry.id == Workouts.TYPE_ID -> Workouts.LOOK_BACK
             entry.time == RecordTime.INTERVAL -> entry.maxDuration
             else -> null
         }
@@ -90,8 +98,12 @@ class Samples(
         }
 
         val cycleStarts = if (entry.record == MenstruationFlowRecord::class) cycleStarts(records.filterIsInstance<MenstruationFlowRecord>()) else emptyMap()
+        val totals = workoutTotals(records.filterIsInstance<ExerciseSessionRecord>())
         // A series record gives one sample per point, so a page can hold more samples than `limit` (decision #53).
-        val result = JSObject().put("samples", JSArray(records.flatMap { RecordCodec.encodeAll(it, entry, unit, cycleStarts[it.metadata.id]) }))
+        val result = JSObject().put(
+            "samples",
+            JSArray(records.flatMap { RecordCodec.encodeAll(it, entry, unit, cycleStarts[it.metadata.id], totals[it.metadata.id]) }),
+        )
         token?.let { result.put("nextCursor", encodeCursor(typeId, it)) }
         HealthLog.debug("readSamples $typeId: ${records.size} records")
         return result
@@ -125,6 +137,42 @@ class Samples(
         return all
     }
 
+    /**
+     * Totals of [sessions] (decision #67): the active calories and distance records each session's app wrote over it,
+     * a record partly inside counted in proportion. Each app's sessions are read in windows reaching a day either
+     * side, merged where they meet: Health Connect matches records by start time (T16), and a client that matches
+     * only records inside the range (the Health Connect app, FakeHealthConnectClient) still finds those crossing the
+     * session's edges. A type this app may not read has no totals.
+     */
+    suspend fun workoutTotals(sessions: List<ExerciseSessionRecord>): Map<String, Workouts.Totals> {
+        if (sessions.isEmpty()) return emptyMap()
+        val energy = sumOver(ActiveCaloriesBurnedRecord::class, sessions) { it.energy.inKilocalories }
+        val distance = sumOver(DistanceRecord::class, sessions) { it.distance.inMeters }
+        return sessions.associate { it.metadata.id to Workouts.Totals(energy[it.metadata.id], distance[it.metadata.id]) }
+    }
+
+    private suspend fun <T : Record> sumOver(type: KClass<T>, sessions: List<ExerciseSessionRecord>, value: (T) -> Double): Map<String, Double> =
+        try {
+            sessions.groupBy { it.metadata.dataOrigin.packageName }.flatMap { (app, own) ->
+                val windows = mutableListOf<Pair<Instant, Instant>>()
+                for (session in own.sortedBy { it.startTime }) {
+                    val from = session.startTime.minus(Workouts.LOOK_BACK)
+                    val to = session.endTime.plus(Workouts.LOOK_BACK)
+                    val last = windows.lastOrNull()
+                    if (last != null && !from.isAfter(last.second)) {
+                        windows[windows.lastIndex] = last.first to maxOf(last.second, to)
+                    } else {
+                        windows += from to to
+                    }
+                }
+                val records = windows.flatMap { (from, to) -> readAll(type, from, to, setOf(DataOrigin(app))) }.distinctBy { it.metadata.id }
+                val parts = records.map { record -> RecordCodec.times(record).let { Triple(it.start, it.end, value(record)) } }
+                Workouts.sum(own, parts).entries
+            }.associate { it.key to it.value }
+        } catch (_: SecurityException) {
+            emptyMap()
+        }
+
     /** Wraps Health Connect's page token so a cursor can't be replayed against another type. */
     private fun encodeCursor(typeId: String, pageToken: String): String =
         encodeBase64(JSONObject().put("v", 1).put("t", typeId).put("p", pageToken).toString().toByteArray())
@@ -148,6 +196,7 @@ class Samples(
         val records = mutableListOf<Record>()
         val primaryIndex = IntArray(samples.length())
         val periods = mutableListOf<RecordCodec.Decoded>()
+        val workouts = mutableListOf<RecordCodec.Decoded>()
         for (i in 0 until samples.length()) {
             val fields = Fields(samples.getJSONObject(i), "samples[$i]")
             val decoded = RecordCodec.decode(fields, types.resolveWritable(fields.string("type")))
@@ -155,8 +204,11 @@ class Samples(
             records += decoded.primary
             records += decoded.extras
             if (decoded.primary is MenstruationPeriodRecord && decoded.primary.metadata.clientRecordId != null) periods += decoded
+            if (decoded.primary is ExerciseSessionRecord) workouts += decoded
         }
+        if (workouts.any { it.extras.isNotEmpty() }) requireTotalsAccess(workouts)
         if (periods.isNotEmpty()) deleteReplacedDayFlows(periods)
+        workouts.filter { it.primary.metadata.clientRecordId != null }.takeIf { it.isNotEmpty() }?.let { deleteReplacedTotals(it) }
         val ids = records.chunked(WRITE_CHUNK).flatMap { client.insertRecords(it).recordIdsList }
         return JSObject().put("ids", JSArray(primaryIndex.map { ids[it] }))
     }
@@ -196,6 +248,88 @@ class Samples(
 
     // endregion
 
+    // region Workout totals
+
+    /**
+     * Totals are records of their own types (decision #67). Health Connect rejects the whole insert without write
+     * access to them, with a message that doesn't say which type, so the plugin checks first (as on iOS, #68).
+     */
+    private suspend fun requireTotalsAccess(workouts: List<RecordCodec.Decoded>) {
+        val granted = client.permissionController.getGrantedPermissions()
+        val needed = workouts.flatMap { it.extras }.map { it::class }.distinct()
+        for (record in needed) {
+            if (HealthPermission.getWritePermission(record) in granted) continue
+            val typeId = if (record == DistanceRecord::class) "distance" else "activeEnergy"
+            throw HealthException(
+                HealthException.PERMISSION_DENIED,
+                "Writing a workout's totals needs write access to $typeId.",
+                JSObject().put("type", typeId),
+            )
+        }
+    }
+
+    /**
+     * Before re-writing a workout with a clientId, deletes its old totals the new version lacks. This app's sessions
+     * within 14 days either side are searched for the old version (as on iOS, #68); when it's newer, Health Connect
+     * ignores the write and its totals stay.
+     */
+    private suspend fun deleteReplacedTotals(workouts: List<RecordCodec.Decoded>) {
+        val stale = workouts.flatMap<RecordCodec.Decoded, Pair<String, KClass<out Record>>> { decoded ->
+            val session = decoded.primary as ExerciseSessionRecord
+            val clientId = session.metadata.clientRecordId ?: return@flatMap emptyList()
+            val old = readAll(
+                ExerciseSessionRecord::class,
+                session.startTime.minus(REWRITE_SEARCH),
+                session.endTime.plus(REWRITE_SEARCH),
+                setOf(DataOrigin(ownPackage)),
+            ).firstOrNull { it.metadata.clientRecordId == clientId }
+            if (old != null && session.metadata.clientRecordVersion < old.metadata.clientRecordVersion) return@flatMap emptyList()
+            val kept = decoded.extras.mapNotNull { it.metadata.clientRecordId }.toSet()
+            Workouts.totalClientIds(clientId).filterNot { it in kept }.map { key ->
+                val record: KClass<out Record> = if (key.endsWith(":energy")) ActiveCaloriesBurnedRecord::class else DistanceRecord::class
+                key to record
+            }
+        }
+        stale.groupBy({ it.second }, { it.first }).forEach { (record, keys) -> deleteSkippingMissing(record, keys, byClientId = true) }
+    }
+
+    /**
+     * Deleting workouts deletes the totals this app wrote with them (decision #67): `<clientId>:energy` /
+     * `<clientId>:distance`, and this app's active calories and distance records spanning exactly one of its sessions.
+     * Other apps' data is never touched, nor a type this app may not write (it can't delete it, and the workout's
+     * delete mustn't fail for it; as on iOS, #68).
+     */
+    private suspend fun deleteWorkoutTotals(ids: List<String>?, clientIds: List<String>?, range: Pair<Instant, Instant>?) {
+        val own = setOf(DataOrigin(ownPackage))
+        val sessions: List<ExerciseSessionRecord> = when {
+            ids != null -> ids.mapNotNull { id -> runCatching { client.readRecord(ExerciseSessionRecord::class, id).record }.getOrNull() }
+                .filter { it.metadata.dataOrigin.packageName == ownPackage }
+            range != null -> readAll(ExerciseSessionRecord::class, range.first, range.second, own)
+            else -> emptyList()
+        }
+        val keys = (clientIds.orEmpty() + sessions.mapNotNull { it.metadata.clientRecordId }).flatMap(Workouts::totalClientIds)
+        val unnamed = sessions.filter { it.metadata.clientRecordId == null }
+        val granted = client.permissionController.getGrantedPermissions()
+        val writable = listOf<KClass<out Record>>(ActiveCaloriesBurnedRecord::class, DistanceRecord::class)
+            .filter { HealthPermission.getWritePermission(it) in granted }
+        for (record in writable) {
+            deleteSkippingMissing(record, keys.filter { it.endsWith(if (record == DistanceRecord::class) ":distance" else ":energy") }, byClientId = true)
+            if (unnamed.isEmpty()) continue
+            val spanning = unnamed.flatMap { session ->
+                // A range's end is exclusive where a client matches records inside it.
+                val found = try {
+                    readAll(record, session.startTime, session.endTime.plusSeconds(1), own)
+                } catch (_: SecurityException) {
+                    emptyList()
+                }
+                found.filter { r -> RecordCodec.times(r).let { it.start == session.startTime && it.end == session.endTime } }
+            }
+            deleteSkippingMissing(record, spanning.map { it.metadata.id }, byClientId = false)
+        }
+    }
+
+    // endregion
+
     // region Delete
 
     /**
@@ -220,6 +354,10 @@ class Samples(
                 }
             }
             deleteSkippingMissing(MenstruationFlowRecord::class, targets.flatMap(::dayFlowClientIds), byClientId = true)
+        }
+        if (entry.record == ExerciseSessionRecord::class) {
+            val range = if (ids == null && clientIds == null) options.date("startDate").toInstant() to options.date("endDate").toInstant() else null
+            deleteWorkoutTotals(ids, clientIds, range)
         }
         when {
             ids != null -> deleteSkippingMissing(entry.record, ids, byClientId = false)

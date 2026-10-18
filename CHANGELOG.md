@@ -14,10 +14,12 @@
   `sleepAnalysis` samples and writes them back as an in-bed span plus one sample per stage; Android
   stores `SleepSessionRecord`s with `title` and `notes`. Read, write, delete, `getChanges` and
   `aggregate()` time asleep (`duration`) on both.
-- `workout` (decisions #67–#68): finished workouts with activity type, totals, segments (Health
+- `workout` (decisions #67–#69): finished workouts with activity type, totals, segments (Health
   Connect's segment types, checked against the activity on Android), laps and iOS multisport
-  activities. iOS reads, writes (`HKWorkoutBuilder`, totals associated with the workout), deletes and
-  follows `HKWorkout`s; Android follows. `WORKOUT_ACTIVITIES` and `WORKOUT_SEGMENTS` are exported.
+  activities. Read, write, delete and `getChanges` on both: `HKWorkout`s on iOS (`HKWorkoutBuilder`,
+  totals associated with the workout), `ExerciseSessionRecord`s on Android (totals as the workout
+  app's active calories and distance records, `title` and `notes`). On Android, `aggregate()` gives
+  exercise time (`duration`). `WORKOUT_ACTIVITIES` and `WORKOUT_SEGMENTS` are exported.
 
 ### Changed
 

@@ -1639,19 +1639,28 @@ describe('workout (T46)', () => {
     );
   });
 
-  it('reads, deletes and follows workouts like other types, without aggregates', () => {
+  it('reads, deletes and follows workouts like other types; Android aggregates exercise time', () => {
     for (const platform of ['ios', 'android'] as const) {
       expect(validateReadSamples({ type: 'workout', startDate: START, endDate: END }, platform).type).toBe('workout');
       expect(validateDeleteSamples({ type: 'workout', clientIds: ['run-1'] }, platform)).toEqual({
         type: 'workout',
         clientIds: ['run-1'],
       });
-      rejection(
-        () => validateAggregate({ type: 'workout', startDate: START, endDate: END, metrics: ['duration'] }, platform),
-        'UNSUPPORTED_TYPE',
-        'type',
-        'notAggregatable',
-      );
     }
+    expect(
+      validateAggregate({ type: 'workout', startDate: START, endDate: END, metrics: ['duration'] }, 'android').metrics,
+    ).toEqual(['duration']);
+    rejection(
+      () => validateAggregate({ type: 'workout', startDate: START, endDate: END, metrics: ['sum'] }, 'android'),
+      'INVALID_ARGUMENT',
+      'metrics[0]',
+      'metricUnsupported',
+    );
+    rejection(
+      () => validateAggregate({ type: 'workout', startDate: START, endDate: END, metrics: ['duration'] }, 'ios'),
+      'UNSUPPORTED_TYPE',
+      'type',
+      'notAggregatable',
+    );
   });
 });
