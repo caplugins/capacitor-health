@@ -52,6 +52,9 @@ final class Authorization {
             // Asking to share a type HealthKit disallows raises an exception, so this must never get through.
             let (writable, type) = try HealthTypes.resolveWritable(typeId)
             shareTypes.formUnion(HealthTypes.shareTypes(for: writable, type: type))
+            // Routes are written with workouts but authorized on their own; the workout's status stays its own
+            // (decision #70), so a user who keeps routes private can still be asked for workouts alone.
+            if writable.typeId == Workouts.typeId { shareTypes.insert(HKSeriesType.workoutRoute()) }
         }
         let missing = Self.missingUsageDescriptions(read: !readTypes.isEmpty, write: !shareTypes.isEmpty, info: infoDictionary())
         if !missing.isEmpty {

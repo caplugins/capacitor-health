@@ -7,6 +7,7 @@ import androidx.activity.result.ActivityResult
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.HealthConnectFeatures
 import androidx.health.connect.client.PermissionController
+import androidx.health.connect.client.contracts.ExerciseRouteRequestContract
 import com.caplugins.health.generated.Registry
 import com.getcapacitor.JSArray
 import com.getcapacitor.JSObject
@@ -38,6 +39,8 @@ class CapacitorHealthPlugin : Plugin() {
     private val samples by lazy { Samples(client, types, context.packageName) }
     private val changes by lazy { Changes(client, types, samples, context.packageName, Samples::base64, Samples::unbase64) }
     private val aggregation by lazy { Aggregation(client, types) }
+    private val routes by lazy { WorkoutRoutes(client) }
+    private val routeConsentContract = ExerciseRouteRequestContract()
     private val permissionContract = PermissionController.createRequestPermissionResultContract()
 
     override fun load() {
@@ -122,6 +125,7 @@ class CapacitorHealthPlugin : Plugin() {
             write = call.getArray("write")?.toList<String>() ?: emptyList(),
             history = android.optBoolean("history", false),
             background = android.optBoolean("background", false),
+            exerciseRoutes = android.optBoolean("exerciseRoutes", false),
         )
     }
 
@@ -163,6 +167,44 @@ class CapacitorHealthPlugin : Plugin() {
             requireAvailable()
             samples.delete(Fields(call.data))
         }
+
+    // endregion
+
+    // region Routes
+
+    /**
+     * `readWorkoutRoute` (decision #70). Another app's route without `READ_EXERCISE_ROUTES` needs the user's
+     * consent for this session: Health Connect's screen when the caller asks (`android.requestConsent`), else
+     * `PERMISSION_DENIED`.
+     */
+    @PluginMethod
+    fun readWorkoutRoute(call: PluginCall) {
+        scope.launch {
+            try {
+                requireAvailable()
+                when (val outcome = routes.read(Fields(call.data))) {
+                    is WorkoutRoutes.Outcome.Locations -> call.resolve(outcome.json)
+                    is WorkoutRoutes.Outcome.ConsentRequired -> {
+                        if (call.getObject("android")?.optBoolean("requestConsent", false) != true) throw WorkoutRoutes.consentRequired()
+                        val intent = routeConsentContract.createIntent(context, outcome.sessionId)
+                        withContext(Dispatchers.Main) { startActivityForResult(call, intent, "routeConsentResult") }
+                    }
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Throwable) {
+                call.reject(HealthException.from(e))
+            }
+        }
+    }
+
+    @ActivityCallback
+    private fun routeConsentResult(call: PluginCall?, result: ActivityResult) {
+        if (call == null) return
+        HealthLog.debug("Route consent returned ${result.resultCode}")
+        val route = routeConsentContract.parseResult(result.resultCode, result.data)
+        launch(call) { routes.consented(call.getString("workoutId") ?: "", route) }
+    }
 
     // endregion
 

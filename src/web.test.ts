@@ -25,6 +25,7 @@ describe('CapacitorHealthWeb', () => {
     ['getChanges', (web) => web.getChanges({ types: ['menstrualFlow'] })],
     ['saveSamples', (web) => web.saveSamples({ samples: [{ type: 'menstrualFlow', value: 'light', ...range }] })],
     ['deleteSamples', (web) => web.deleteSamples({ type: 'menstrualFlow', ids: ['x'] })],
+    ['readWorkoutRoute', (web) => web.readWorkoutRoute({ workoutId: 'w' })],
   ];
 
   it.each(calls)('%s rejects with UNAVAILABLE', async (_name, call) => {

@@ -20,6 +20,9 @@
   totals associated with the workout), `ExerciseSessionRecord`s on Android (totals as the workout
   app's active calories and distance records, `title` and `notes`). On Android, `aggregate()` gives
   exercise time (`duration`). `WORKOUT_ACTIVITIES` and `WORKOUT_SEGMENTS` are exported.
+- Workout routes (decision #70): `NewWorkout.route` and `readWorkoutRoute()`, with
+  `requestAuthorization`'s `android.exerciseRoutes`, `AuthorizationResult.exerciseRoutesGranted` and
+  Health Connect's per-workout consent screen (`android.requestConsent`) for other apps' routes.
 
 ### Changed
 

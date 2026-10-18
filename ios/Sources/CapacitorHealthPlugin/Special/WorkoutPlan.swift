@@ -1,3 +1,4 @@
+import CoreLocation
 import Foundation
 import HealthKit
 
@@ -19,6 +20,8 @@ extension WorkoutCodec {
         let totals: [HKQuantitySample]
         let clientId: String?
         let version: Int
+        /// The route's locations, in time order; empty for none (decision #70).
+        var route: [CLLocation] = []
     }
 
     /// The `clientId` of a total written with the workout `clientId` (`energy`, `distance`): `<clientId>:energy`,
@@ -56,7 +59,8 @@ extension WorkoutCodec {
             activity: activity, start: start, end: end, metadata: metadata, device: SampleCodec.device(fields),
             events: events(segments: segments, laps: laps), activities: try activities(fields),
             totals: try totals(fields, activity: activity, active: active(start: start, end: end, pauses: pauses), base: base),
-            clientId: fields.optionalString("clientId"), version: fields.optionalInt("clientVersion") ?? 1
+            clientId: fields.optionalString("clientId"), version: fields.optionalInt("clientVersion") ?? 1,
+            route: try WorkoutRouteCodec.locations(fields)
         )
     }
 

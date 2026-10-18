@@ -3,6 +3,7 @@ package com.caplugins.health
 import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
 import androidx.health.connect.client.records.DistanceRecord
 import androidx.health.connect.client.records.ExerciseLap
+import androidx.health.connect.client.records.ExerciseRoute
 import androidx.health.connect.client.records.ExerciseRouteResult
 import androidx.health.connect.client.records.ExerciseSegment
 import androidx.health.connect.client.records.ExerciseSessionRecord
@@ -140,6 +141,7 @@ object Workouts {
             notes = text(fields, "notes"),
             segments = segments(fields, activity, start.toInstant(), end.toInstant()),
             laps = laps(fields, start.toInstant(), end.toInstant()),
+            exerciseRoute = route(fields, start.toInstant(), end.toInstant()),
         )
         return RecordCodec.Decoded(session, totals(fields, start, end))
     }
@@ -211,6 +213,57 @@ object Workouts {
         children(fields, "laps", start, end, "lapsOverlap") { lap, from, to ->
             ExerciseLap(from, to, if (lap.has("length")) Length.meters(amount(lap, "length")) else null)
         }
+
+    /**
+     * The route (decision #70), checked as `ExerciseRoute` and the session's constructor do: each point at or
+     * after the start and before the end, no two at the same time, coordinates in range, accuracies 0 or more.
+     * None for an empty list.
+     */
+    private fun route(fields: Fields, start: Instant, end: Instant): ExerciseRoute? {
+        val array = fields.optArray("route") ?: return null
+        val points = (0 until array.length()).map { i ->
+            val point = Fields(array.getJSONObject(i), fields.field("route[$i]"))
+            val time = point.date("time").toInstant()
+            if (time.isBefore(start) || !time.isBefore(end)) {
+                throw HealthException.invalidArgument(point.field("time"), "must be at or after the workout starts and before it ends", "outsideSession")
+            }
+            fun bounded(name: String, min: Double, max: Double): Double {
+                val value = point.double(name)
+                if (value < min || value > max) throw HealthException.invalidArgument(point.field(name), "must be from $min to $max", "outOfRange")
+                return value
+            }
+            fun accuracy(name: String) = if (point.has(name)) Length.meters(bounded(name, 0.0, Double.MAX_VALUE)) else null
+            IndexedValue(
+                i,
+                ExerciseRoute.Location(
+                    time = time,
+                    latitude = bounded("latitude", -90.0, 90.0),
+                    longitude = bounded("longitude", -180.0, 180.0),
+                    horizontalAccuracy = accuracy("horizontalAccuracy"),
+                    verticalAccuracy = accuracy("verticalAccuracy"),
+                    altitude = if (point.has("altitude")) Length.meters(point.double("altitude")) else null,
+                ),
+            )
+        }.sortedWith(compareBy({ it.value.time }, { it.index }))
+        points.zipWithNext().forEach { (previous, next) ->
+            if (next.value.time == previous.value.time) {
+                throw HealthException.invalidArgument(fields.field("route[${next.index}].time"), "is the time of route[${previous.index}]", "duplicateTime")
+            }
+        }
+        return if (points.isEmpty()) null else ExerciseRoute(points.map { it.value })
+    }
+
+    /** A route point as `WorkoutRouteLocation` JSON, in [offset]. */
+    fun encodeLocation(location: ExerciseRoute.Location, offset: java.time.ZoneOffset?): JSObject {
+        val json = JSObject()
+            .put("time", DateCoding.format(location.time, offset))
+            .put("latitude", location.latitude)
+            .put("longitude", location.longitude)
+        location.altitude?.let { json.put("altitude", it.inMeters) }
+        location.horizontalAccuracy?.let { json.put("horizontalAccuracy", it.inMeters) }
+        location.verticalAccuracy?.let { json.put("verticalAccuracy", it.inMeters) }
+        return json
+    }
 
     private fun totals(fields: Fields, start: OffsetDateTime, end: OffsetDateTime): List<Record> {
         val json = fields.optObject("totals") ?: return emptyList()

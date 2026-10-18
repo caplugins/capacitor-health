@@ -12,6 +12,7 @@ import {
   validateDeleteSamples,
   validateGetChanges,
   validateReadSamples,
+  validateReadWorkoutRoute,
   validateRequestAuthorization,
   validateSaveSamples,
 } from './validate';
@@ -250,7 +251,7 @@ describe('authorization', () => {
     expect(validateRequestAuthorization({ read: ['menstrualFlow'], android: { history: true } }, 'android')).toEqual({
       read: ['menstrualFlow'],
       write: [],
-      android: { history: true, background: false },
+      android: { history: true, background: false, exerciseRoutes: false },
     });
     rejection(
       () =>
@@ -1101,6 +1102,7 @@ describe('withValidation', () => {
       getChanges: resolved(),
       saveSamples: resolved(),
       deleteSamples: resolved(),
+      readWorkoutRoute: resolved(),
     } satisfies Record<keyof CapacitorHealthPlugin, unknown>;
   }
 
@@ -1140,6 +1142,7 @@ describe('withValidation', () => {
     await plugin.getChanges({ types: ['acne'] });
     await plugin.saveSamples({ samples: [{ type: 'acne', startDate: START, value: 'mild' }] });
     await plugin.deleteSamples({ type: 'acne', ids: ['x'] });
+    await plugin.readWorkoutRoute({ workoutId: 'w' });
     for (const fn of Object.values(native)) expect(fn).toHaveBeenCalledTimes(1);
   });
 });
@@ -1662,5 +1665,91 @@ describe('workout (T46)', () => {
       'type',
       'notAggregatable',
     );
+  });
+});
+
+describe('workout routes (T49)', () => {
+  const run = { type: 'workout', activityType: 'running', startDate: START, endDate: END };
+  const point = (time: string, extra: Record<string, unknown> = {}) => ({
+    time,
+    latitude: 52.5,
+    longitude: 13.4,
+    ...extra,
+  });
+
+  it('normalizes a route and sorts it by time', () => {
+    for (const platform of ['ios', 'android'] as const) {
+      const saved = save(
+        {
+          ...run,
+          route: [
+            point('2026-10-01T08:30:00+05:30', { altitude: 34.5, horizontalAccuracy: 5, verticalAccuracy: 3 }),
+            point('2026-10-01T08:00:00+05:30'),
+          ],
+        },
+        platform,
+      );
+      expect(saved.route).toEqual([
+        { time: '2026-10-01T08:00:00.000+05:30', latitude: 52.5, longitude: 13.4 },
+        {
+          time: '2026-10-01T08:30:00.000+05:30',
+          latitude: 52.5,
+          longitude: 13.4,
+          altitude: 34.5,
+          horizontalAccuracy: 5,
+          verticalAccuracy: 3,
+        },
+      ]);
+    }
+  });
+
+  it("takes Health Connect's rules on both platforms", () => {
+    for (const platform of ['ios', 'android'] as const) {
+      const bad = (route: unknown, field: string, reason?: string) =>
+        rejection(() => save({ ...run, route }, platform), 'INVALID_ARGUMENT', field, reason);
+      // The start is inside, the end isn't.
+      expect((save({ ...run, route: [point(START)] }, platform).route as unknown[]).length).toBe(1);
+      bad([point(END)], 'samples[0].route[0].time', 'outsideSession');
+      bad([point('2026-10-01T07:59:59+05:30')], 'samples[0].route[0].time', 'outsideSession');
+      bad(
+        [point('2026-10-01T08:10:00+05:30'), point('2026-10-01T08:10:00.000+05:30')],
+        'samples[0].route[1].time',
+        'duplicateTime',
+      );
+      bad([point(START, { latitude: 90.1 })], 'samples[0].route[0].latitude', 'outOfRange');
+      bad([point(START, { longitude: -180.5 })], 'samples[0].route[0].longitude', 'outOfRange');
+      bad([point(START, { horizontalAccuracy: -1 })], 'samples[0].route[0].horizontalAccuracy', 'outOfRange');
+      bad([point(START, { verticalAccuracy: -0.1 })], 'samples[0].route[0].verticalAccuracy', 'outOfRange');
+      bad([point(START, { altitude: Number.NaN })], 'samples[0].route[0].altitude');
+      bad([point(START, { speed: 3 })], 'samples[0].route[0].speed', 'notApplicable');
+      bad([{ time: START, latitude: 1 }], 'samples[0].route[0].longitude');
+      bad({}, 'samples[0].route');
+    }
+    expect(save({ ...run, route: [] }, 'android').route).toEqual([]);
+  });
+
+  it('rejects a route on other types', () => {
+    rejection(
+      () => save({ type: 'sleepSession', startDate: START, endDate: END, route: [] }, 'ios'),
+      'INVALID_ARGUMENT',
+      'samples[0].route',
+    );
+  });
+
+  it('validates readWorkoutRoute and the routes permission option', () => {
+    expect(validateReadWorkoutRoute({ workoutId: 'w1' }, 'ios')).toEqual({ workoutId: 'w1' });
+    expect(validateReadWorkoutRoute({ workoutId: 'w1', android: { requestConsent: true } }, 'android')).toEqual({
+      workoutId: 'w1',
+      android: { requestConsent: true },
+    });
+    rejection(() => validateReadWorkoutRoute({ workoutId: '' }, 'ios'), 'INVALID_ARGUMENT', 'workoutId');
+    rejection(
+      () => validateReadWorkoutRoute({ workoutId: 'w', android: { requestConsent: 'yes' as never } }, 'android'),
+      'INVALID_ARGUMENT',
+      'android.requestConsent',
+    );
+    expect(
+      validateRequestAuthorization({ read: ['workout'], android: { exerciseRoutes: true } }, 'android').android,
+    ).toEqual({ history: false, background: false, exerciseRoutes: true });
   });
 });

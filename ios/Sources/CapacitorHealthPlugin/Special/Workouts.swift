@@ -1,12 +1,13 @@
 import Foundation
 import HealthKit
 
-/// `workout` on iOS (decisions #67–#68): `HKWorkout`s read through `WorkoutCodec`, written with
-/// `HKWorkoutBuilder` so the totals it writes are associated with the workout, and deleted with them.
+/// `workout` on iOS (decisions #67–#68, #70): `HKWorkout`s read through `WorkoutCodec`, written with
+/// `HKWorkoutBuilder` so the totals it writes are associated with the workout, and deleted with them and their
+/// routes (`WorkoutRoutes.swift`).
 final class Workouts {
     static let typeId = WorkoutCodec.typeId
 
-    private let store: HKHealthStore
+    let store: HKHealthStore
 
     init(store: HKHealthStore) {
         self.store = store
@@ -46,6 +47,7 @@ final class Workouts {
     /// a step fails: the builder only saves on `finishWorkout`, and the totals' write access is checked first.
     func save(_ plan: WorkoutCodec.Plan) async throws -> HKWorkout {
         try requireTotalsAccess(plan)
+        try requireRouteAccess(plan)
         let builder = HKWorkoutBuilder(healthStore: store, configuration: WorkoutCodec.configuration(plan.activity), device: plan.device)
         let workout: HKWorkout?
         do {
@@ -65,7 +67,11 @@ final class Workouts {
             throw error
         }
         guard let workout else { throw HealthError(.nativeError, "HealthKit didn't save the workout.") }
-        if let clientId = plan.clientId { try await deleteStaleTotals(plan, clientId: clientId) }
+        try await saveRoute(plan, to: workout)
+        if let clientId = plan.clientId {
+            try await deleteStaleTotals(plan, clientId: clientId)
+            try await deleteStaleRoute(plan, clientId: clientId)
+        }
         return workout
     }
 

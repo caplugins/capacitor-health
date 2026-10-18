@@ -10,8 +10,6 @@ import androidx.health.connect.client.records.ExerciseSessionRecord
 import androidx.health.connect.client.records.Record
 import androidx.health.connect.client.records.metadata.Metadata
 import androidx.health.connect.client.request.AggregateRequest
-import androidx.health.connect.client.request.ReadRecordsRequest
-import androidx.health.connect.client.response.ReadRecordResponse
 import androidx.health.connect.client.testing.AggregationResult
 import androidx.health.connect.client.testing.FakeHealthConnectClient
 import androidx.health.connect.client.testing.FakePermissionController
@@ -22,7 +20,6 @@ import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
 import java.util.Base64
-import kotlin.reflect.KClass
 import kotlinx.coroutines.test.runTest
 import org.json.JSONArray
 import org.json.JSONObject
@@ -32,14 +29,6 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
-
-/** FakeHealthConnectClient's `readRecord` finds no record by id (connect-testing 1.0.0-alpha03); this reads it by listing. */
-private class ReadByIdClient(private val fake: FakeHealthConnectClient) : HealthConnectClient by fake {
-    override suspend fun <T : Record> readRecord(recordType: KClass<T>, recordId: String): ReadRecordResponse<T> {
-        val record = fake.readRecords(ReadRecordsRequest(recordType, TimeRangeFilter.after(Instant.EPOCH))).records.firstOrNull { it.metadata.id == recordId }
-        return ReadRecordResponse(record ?: throw IllegalArgumentException("No record $recordId"))
-    }
-}
 
 /** Workouts on Android (T48, decisions #67, #69). */
 class WorkoutsTest {

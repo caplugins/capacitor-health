@@ -1,6 +1,6 @@
 import { Capacitor } from '@capacitor/core';
 import { CapacitorHealth } from '@caplugins/capacitor-health';
-import type { NewWorkout, WorkoutSample } from '@caplugins/capacitor-health';
+import type { NewWorkout, WorkoutRouteLocation, WorkoutSample } from '@caplugins/capacitor-health';
 
 import { localIso } from './roundtrip';
 
@@ -17,6 +17,38 @@ function at(time: string): string {
 }
 
 const span = (start: string, end: string) => ({ startDate: at(start), endDate: at(end) });
+
+/** A short loop, one point every 5 minutes from 07:00 to 07:55, some with altitude and accuracies. */
+function exampleRoute(): WorkoutRouteLocation[] {
+  return Array.from({ length: 12 }, (_, i) => {
+    const angle = (i / 12) * 2 * Math.PI;
+    const point: WorkoutRouteLocation = {
+      time: at(`07:${String(i * 5).padStart(2, '0')}`),
+      latitude: 52.52 + 0.01 * Math.sin(angle),
+      longitude: 13.405 + 0.015 * Math.cos(angle),
+      horizontalAccuracy: 5,
+    };
+    return i % 2 === 0 ? { ...point, altitude: 34 + i, verticalAccuracy: 3 } : point;
+  });
+}
+
+/** Whether `read` has the points of `written`, in order, with the same fields (to a millimetre). */
+function samePoints(written: WorkoutRouteLocation[], read: WorkoutRouteLocation[]): boolean {
+  const close = (a?: number, b?: number) =>
+    a === undefined ? b === undefined : b !== undefined && Math.abs(a - b) < 1e-6;
+  return (
+    written.length === read.length &&
+    written.every(
+      (w, i) =>
+        Date.parse(w.time) === Date.parse(read[i].time) &&
+        close(w.latitude, read[i].latitude) &&
+        close(w.longitude, read[i].longitude) &&
+        close(w.altitude, read[i].altitude) &&
+        close(w.horizontalAccuracy, read[i].horizontalAccuracy) &&
+        close(w.verticalAccuracy, read[i].verticalAccuracy),
+    )
+  );
+}
 
 /**
  * A run written with totals, a pause and laps reads back with them; re-writing it as another activity with
@@ -39,6 +71,7 @@ export async function runWorkoutCheck(keep = true): Promise<string[]> {
   const describe = (w?: WorkoutSample) =>
     w
       ? `${w.activityType} ${w.startDate.slice(11, 16)}–${w.endDate.slice(11, 16)}, totals ${JSON.stringify(w.totals)}, ` +
+        `route ${w.hasRoute ? 'yes' : 'no'}, ` +
         `segments ${w.segments.map((s) => s.segmentType ?? '-').join(',') || 'none'}, laps ${w.laps.map((l) => l.length ?? '-').join(',') || 'none'}`
       : '-';
   const run: NewWorkout = {
@@ -51,6 +84,7 @@ export async function runWorkoutCheck(keep = true): Promise<string[]> {
       { ...span('07:00', '07:30'), length: 4000 },
       { ...span('07:30', '08:00'), length: 4000 },
     ],
+    route: exampleRoute(),
     clientId: WORKOUT_CLIENT_ID,
     recordingMethod: 'manual',
     ...(android ? { title: 'Example run' } : {}),
@@ -73,8 +107,13 @@ export async function runWorkoutCheck(keep = true): Promise<string[]> {
         workout.segments.length === 1 &&
         workout.segments[0].segmentType === 'pause' &&
         workout.laps.map((l) => l.length).join(',') === '4000,4000' &&
-        workout.hasRoute === false,
+        workout.hasRoute === true,
       describe(workout),
+    );
+    const { locations } = await CapacitorHealth.readWorkoutRoute({ workoutId: workout.id });
+    log(
+      samePoints(run.route ?? [], locations),
+      `route → ${locations.length} of ${run.route?.length} points read back as written`,
     );
     log(
       Date.parse(workout?.startDate ?? '') === Date.parse(at('07:00')) &&
@@ -99,6 +138,11 @@ export async function runWorkoutCheck(keep = true): Promise<string[]> {
     workout = workouts[0];
     const distances = await ownTotals('distance', WORKOUT_CLIENT_ID);
     const energies = await ownTotals('activeEnergy', WORKOUT_CLIENT_ID);
+    const rewrittenRoute = (await CapacitorHealth.readWorkoutRoute({ workoutId: workout.id })).locations;
+    log(
+      workout.hasRoute === false && rewrittenRoute.length === 0,
+      `re-written without a route → hasRoute ${workout.hasRoute}, ${rewrittenRoute.length} points`,
+    );
     log(
       workouts.length === 1 &&
         workout.activityType === 'cyclingStationary' &&
@@ -155,9 +199,10 @@ export async function runWorkoutCheck(keep = true): Promise<string[]> {
     // Back to the run (version 3), which stays for Apple Health / Health Connect.
     await CapacitorHealth.saveSamples({ samples: [{ ...run, clientVersion: 3 }] });
     workout = (await own(WORKOUT_CLIENT_ID))[0];
+    const finalRoute = workout ? (await CapacitorHealth.readWorkoutRoute({ workoutId: workout.id })).locations : [];
     log(
-      workout?.activityType === 'running' && workout.clientVersion === 3,
-      `re-written as the run → ${describe(workout)}`,
+      workout?.activityType === 'running' && workout.clientVersion === 3 && samePoints(run.route ?? [], finalRoute),
+      `re-written as the run → ${describe(workout)}, route ${finalRoute.length} points`,
     );
 
     // Every workout of the last 3 days, any app: compare with Apple Health / Health Connect by eye.
@@ -179,6 +224,38 @@ export async function runWorkoutCheck(keep = true): Promise<string[]> {
   } catch (error) {
     const { code, message } = error as { code?: string; message?: string };
     log(false, `threw ${code}: ${message}`);
+  }
+  return lines;
+}
+
+/**
+ * Routes of every app (Android's consent paths): for each workout with a route in the last 3 days, read the
+ * route without asking (another app's gives `routeConsentRequired` unless READ_EXERCISE_ROUTES is granted), then
+ * with `requestConsent` (Health Connect asks the user to share that one route; refusing gives
+ * `routeConsentDenied`).
+ */
+export async function runOtherRoutesCheck(): Promise<string[]> {
+  const lines: string[] = [];
+  const recent = await CapacitorHealth.readSamples({
+    type: 'workout',
+    startDate: localIso(new Date(Date.now() - 3 * 86_400_000)),
+    endDate: localIso(new Date()),
+  });
+  // This app's own routes read without consent; listing them too shows the difference.
+  const withRoutes = (recent.samples as WorkoutSample[]).filter((w) => w.hasRoute);
+  if (withRoutes.length === 0) lines.push('INFO route: no workout with a route in the last 3 days');
+  for (const w of withRoutes) {
+    const attempt = async (requestConsent: boolean) => {
+      try {
+        const { locations } = await CapacitorHealth.readWorkoutRoute({ workoutId: w.id, android: { requestConsent } });
+        return `${locations.length} points`;
+      } catch (error) {
+        const { code, data } = error as { code?: string; data?: { reason?: string } };
+        return `${code} ${data?.reason ?? ''}`.trim();
+      }
+    };
+    lines.push(`INFO route: ${w.source.id} ${w.startDate}: without consent → ${await attempt(false)}`);
+    lines.push(`INFO route: ${w.source.id} ${w.startDate}: asking → ${await attempt(true)}`);
   }
   return lines;
 }

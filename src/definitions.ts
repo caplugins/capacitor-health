@@ -336,6 +336,15 @@ export interface AndroidAuthorizationOptions {
    * @since 0.1.0
    */
   background?: boolean;
+  /**
+   * Also request access to exercise routes: `READ_EXERCISE_ROUTES` when `read` lists `workout`,
+   * `WRITE_EXERCISE_ROUTE` when `write` does. Declare the ones you request in the manifest. Without
+   * `READ_EXERCISE_ROUTES`, reading another app's route needs the user's consent per workout
+   * (`readWorkoutRoute`'s `android.requestConsent`). On iOS routes always come with `workout`.
+   *
+   * @since 0.3.0
+   */
+  exerciseRoutes?: boolean;
 }
 
 /**
@@ -385,6 +394,12 @@ export interface AuthorizationResult {
    * @since 0.1.0
    */
   backgroundGranted?: boolean;
+  /**
+   * Android only: whether `READ_EXERCISE_ROUTES` and `WRITE_EXERCISE_ROUTE` are granted.
+   *
+   * @since 0.3.0
+   */
+  exerciseRoutesGranted?: { read: boolean; write: boolean };
 }
 
 // ------------------------------------------------------------------ samples
@@ -919,6 +934,43 @@ export interface WorkoutLap {
 }
 
 /**
+ * One point of a workout's route.
+ *
+ * Writing, both platforms take Health Connect's rules: `time` at or after the workout's start and
+ * before its end, no two points at the same time, latitude −90 to 90, longitude −180 to 180,
+ * accuracies 0 or more. Points are stored in time order.
+ *
+ * @since 0.3.0
+ */
+export interface WorkoutRouteLocation {
+  /** @since 0.3.0 */
+  time: string;
+  /** @since 0.3.0 */
+  latitude: number;
+  /** @since 0.3.0 */
+  longitude: number;
+  /**
+   * Metres above sea level.
+   *
+   * @since 0.3.0
+   */
+  altitude?: number;
+  /**
+   * Metres. On iOS a point without one is written with 0: HealthKit treats a location without a
+   * horizontal accuracy as invalid.
+   *
+   * @since 0.3.0
+   */
+  horizontalAccuracy?: number;
+  /**
+   * Metres; on iOS only kept with an `altitude`.
+   *
+   * @since 0.3.0
+   */
+  verticalAccuracy?: number;
+}
+
+/**
  * iOS 16+: one activity of a multisport workout (a triathlon's swim, ride and run), HealthKit's
  * `HKWorkoutActivity`.
  *
@@ -1366,6 +1418,15 @@ export interface NewWorkout extends NewSampleBase {
    * @since 0.3.0
    */
   activities?: WorkoutActivityPeriod[];
+  /**
+   * The route, read back with `readWorkoutRoute`. Needs write access to routes: on iOS "Workout
+   * Routes", which the plugin requests with `workout`; on Android `WRITE_EXERCISE_ROUTE`
+   * (`requestAuthorization`'s `android.exerciseRoutes`). Without it the write rejects with
+   * `PERMISSION_DENIED` (reason `routeNotAuthorized`). An empty list writes no route.
+   *
+   * @since 0.3.0
+   */
+  route?: WorkoutRouteLocation[];
 }
 
 export type NewSample =
@@ -1703,6 +1764,42 @@ export interface DeleteSamplesResult {
   deleted: number;
 }
 
+/**
+ * @since 0.3.0
+ */
+export interface ReadWorkoutRouteOptions {
+  /**
+   * The workout's `id`.
+   *
+   * @since 0.3.0
+   */
+  workoutId: string;
+  /** @since 0.3.0 */
+  android?: {
+    /**
+     * When the user hasn't granted `READ_EXERCISE_ROUTES` and the route is another app's, show
+     * Health Connect's screen asking to share this one route. Without it such a read rejects with
+     * `PERMISSION_DENIED` (reason `routeConsentRequired`).
+     *
+     * @since 0.3.0
+     */
+    requestConsent?: boolean;
+  };
+}
+
+/**
+ * @since 0.3.0
+ */
+export interface ReadWorkoutRouteResult {
+  /**
+   * In time order; empty when the workout has no route. On iOS, a workout with several routes
+   * gives all their points, and a route the user didn't share reads as none.
+   *
+   * @since 0.3.0
+   */
+  locations: WorkoutRouteLocation[];
+}
+
 // ------------------------------------------------------------------ plugin
 
 export interface CapacitorHealthPlugin {
@@ -1802,6 +1899,16 @@ export interface CapacitorHealthPlugin {
    * @since 0.1.0
    */
   deleteSamples(options: DeleteSamplesOptions): Promise<DeleteSamplesResult>;
+
+  /**
+   * Reads a workout's route (`WorkoutSample.hasRoute`). A workout this app can't read rejects with
+   * `INVALID_ARGUMENT` (reason `workoutNotFound`). On Android, another app's route needs
+   * `READ_EXERCISE_ROUTES` or the user's consent for this workout (`android.requestConsent`); a
+   * refusal rejects with `PERMISSION_DENIED` (reason `routeConsentDenied`).
+   *
+   * @since 0.3.0
+   */
+  readWorkoutRoute(options: ReadWorkoutRouteOptions): Promise<ReadWorkoutRouteResult>;
 
   // Reserved for a later release (decision D4), so they can be added without a breaking change:
   //   enableBackgroundDelivery(options: { types: HealthType[] }): Promise<void>;

@@ -6,6 +6,7 @@ import androidx.health.connect.client.changes.DeletionChange
 import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
 import androidx.health.connect.client.records.DistanceRecord
+import androidx.health.connect.client.records.ExerciseRouteResult
 import androidx.health.connect.client.records.ExerciseSessionRecord
 import androidx.health.connect.client.records.MenstruationFlowRecord
 import androidx.health.connect.client.records.MenstruationPeriodRecord
@@ -206,7 +207,7 @@ class Samples(
             if (decoded.primary is MenstruationPeriodRecord && decoded.primary.metadata.clientRecordId != null) periods += decoded
             if (decoded.primary is ExerciseSessionRecord) workouts += decoded
         }
-        if (workouts.any { it.extras.isNotEmpty() }) requireTotalsAccess(workouts)
+        if (workouts.any { it.extras.isNotEmpty() || hasRoute(it) }) requireWorkoutAccess(workouts)
         if (periods.isNotEmpty()) deleteReplacedDayFlows(periods)
         workouts.filter { it.primary.metadata.clientRecordId != null }.takeIf { it.isNotEmpty() }?.let { deleteReplacedTotals(it) }
         val ids = records.chunked(WRITE_CHUNK).flatMap { client.insertRecords(it).recordIdsList }
@@ -250,12 +251,23 @@ class Samples(
 
     // region Workout totals
 
+    private fun hasRoute(decoded: RecordCodec.Decoded) =
+        (decoded.primary as ExerciseSessionRecord).exerciseRouteResult is ExerciseRouteResult.Data
+
     /**
-     * Totals are records of their own types (decision #67). Health Connect rejects the whole insert without write
-     * access to them, with a message that doesn't say which type, so the plugin checks first (as on iOS, #68).
+     * Totals are records of their own types (decision #67), and a route needs `WRITE_EXERCISE_ROUTE` (#70). Health
+     * Connect rejects the whole insert without them, with a message that doesn't say which, so the plugin checks
+     * first (as on iOS, #68).
      */
-    private suspend fun requireTotalsAccess(workouts: List<RecordCodec.Decoded>) {
+    private suspend fun requireWorkoutAccess(workouts: List<RecordCodec.Decoded>) {
         val granted = client.permissionController.getGrantedPermissions()
+        if (workouts.any(::hasRoute) && Authorization.WRITE_EXERCISE_ROUTE !in granted) {
+            throw HealthException(
+                HealthException.PERMISSION_DENIED,
+                "Writing a workout's route needs ${Authorization.WRITE_EXERCISE_ROUTE} (requestAuthorization's android.exerciseRoutes).",
+                JSObject().put("type", Workouts.TYPE_ID).put("reason", "routeNotAuthorized"),
+            )
+        }
         val needed = workouts.flatMap { it.extras }.map { it::class }.distinct()
         for (record in needed) {
             if (HealthPermission.getWritePermission(record) in granted) continue

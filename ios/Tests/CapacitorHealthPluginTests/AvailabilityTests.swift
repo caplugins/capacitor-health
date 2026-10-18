@@ -27,7 +27,8 @@ final class AvailabilityTests: XCTestCase {
             "aggregate",
             "getChanges",
             "saveSamples",
-            "deleteSamples"
+            "deleteSamples",
+            "readWorkoutRoute"
         ])
     }
 }

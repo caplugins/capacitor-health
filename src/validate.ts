@@ -19,6 +19,7 @@ import type {
   HealthErrorData,
   NewSample,
   ReadSamplesOptions,
+  ReadWorkoutRouteOptions,
   RecordingMethod,
   SampleDevice,
   SaveSamplesOptions,
@@ -38,7 +39,7 @@ export const MAX_PERIOD_DAYS_ANDROID = 31;
 /** Health Connect's limit for lap lengths, active calories (kcal) and distance (m) alike. */
 export const MAX_WORKOUT_AMOUNT = 1_000_000;
 /** Fields only workouts have. */
-const WORKOUT_ONLY = ['activityType', 'totals', 'segments', 'laps', 'activities'];
+const WORKOUT_ONLY = ['activityType', 'totals', 'segments', 'laps', 'activities', 'route'];
 
 const PLATFORM_NAMES: Record<NativePlatform, string> = { ios: 'iOS', android: 'Android' };
 const RECORDING_METHODS: readonly RecordingMethod[] = ['manual', 'automatic', 'active', 'unknown'];
@@ -325,6 +326,7 @@ export function validateRequestAuthorization(
     result.android = {
       history: optionalBoolean(android.history, 'android.history', false),
       background: optionalBoolean(android.background, 'android.background', false),
+      exerciseRoutes: optionalBoolean(android.exerciseRoutes, 'android.exerciseRoutes', false),
     };
   }
   return result;
@@ -697,6 +699,55 @@ export function segmentAllowed(activity: WorkoutActivity, segmentType: string): 
   );
 }
 
+function routeNumber(value: unknown, field: string, min: number, max: number): number {
+  const n = finiteNumber(value, field);
+  if (n < min || n > max) throw invalid(field, `must be from ${min} to ${max}`, 'outOfRange');
+  return n;
+}
+
+/**
+ * A workout's route, checked as Health Connect's `ExerciseRoute` does on both platforms (decision #70):
+ * each point at or after the start and before the end, no two at the same time, coordinates in range,
+ * accuracies 0 or more. Sorted by time.
+ */
+function route(value: unknown, field: string, [start, end]: [ParsedDate, ParsedDate]): Fields[] {
+  if (!Array.isArray(value)) throw invalid(field, 'must be an array');
+  const points = value.map((raw, i) => {
+    const at = `${field}[${i}]`;
+    const p = object(raw, at);
+    for (const key of Object.keys(p)) {
+      if (!ROUTE_FIELDS.includes(key)) throw invalid(`${at}.${key}`, "isn't a route location field", 'notApplicable');
+    }
+    const time = parseDate(p.time, `${at}.time`);
+    if (time.ms < start.ms || time.ms >= end.ms) {
+      throw invalid(`${at}.time`, 'must be at or after the workout starts and before it ends', 'outsideSession');
+    }
+    const out: Fields = {
+      time: time.iso,
+      latitude: routeNumber(p.latitude, `${at}.latitude`, -90, 90),
+      longitude: routeNumber(p.longitude, `${at}.longitude`, -180, 180),
+    };
+    if (p.altitude !== undefined) out.altitude = finiteNumber(p.altitude, `${at}.altitude`);
+    for (const name of ['horizontalAccuracy', 'verticalAccuracy']) {
+      if (p[name] !== undefined) out[name] = routeNumber(p[name], `${at}.${name}`, 0, Number.MAX_VALUE);
+    }
+    return { index: i, ms: time.ms, out };
+  });
+  points.sort((a, b) => a.ms - b.ms || a.index - b.index);
+  for (let i = 1; i < points.length; i++) {
+    if (points[i].ms === points[i - 1].ms) {
+      throw invalid(
+        `${field}[${points[i].index}].time`,
+        `is the time of ${field.slice(field.lastIndexOf('.') + 1)}[${points[i - 1].index}]`,
+        'duplicateTime',
+      );
+    }
+  }
+  return points.map((p) => p.out);
+}
+
+const ROUTE_FIELDS = ['time', 'latitude', 'longitude', 'altitude', 'horizontalAccuracy', 'verticalAccuracy'];
+
 function newWorkout(s: Fields, at: string, entry: RegistryEntry, platform: NativePlatform): Fields {
   const range = sessionRange(s, at, 'a workout');
   const [start, end] = range;
@@ -765,6 +816,8 @@ function newWorkout(s: Fields, at: string, entry: RegistryEntry, platform: Nativ
       throw invalid(`${at}.laps`, 'of a pool swim must all have the same length, above 0, on iOS', 'poolLapLength');
     }
   }
+
+  if (s.route !== undefined) result.route = route(s.route, `${at}.route`, range);
 
   if (s.activities !== undefined) {
     if (platform === 'android') {
@@ -889,6 +942,22 @@ export function validateDeleteSamples(options: DeleteSamplesOptions, platform: N
     const [start, end] = dateRange(o.startDate, o.endDate, '');
     result.startDate = start.iso;
     result.endDate = end.iso;
+  }
+  return result;
+}
+
+// ------------------------------------------------------------------ routes
+
+export function validateReadWorkoutRoute(
+  options: ReadWorkoutRouteOptions,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _platform: NativePlatform,
+): ReadWorkoutRouteOptions {
+  const o = object(options, 'options');
+  const result: ReadWorkoutRouteOptions = { workoutId: nonEmptyString(o.workoutId, 'workoutId') };
+  if (o.android !== undefined) {
+    const android = object(o.android, 'android');
+    result.android = { requestConsent: optionalBoolean(android.requestConsent, 'android.requestConsent', false) };
   }
   return result;
 }

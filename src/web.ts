@@ -8,6 +8,7 @@ import type {
   DeleteSamplesResult,
   GetChangesResult,
   ReadSamplesResult,
+  ReadWorkoutRouteResult,
   SaveSamplesResult,
   SupportedTypesResult,
 } from './definitions';
@@ -55,6 +56,10 @@ export class CapacitorHealthWeb extends WebPlugin implements CapacitorHealthPlug
   }
 
   async deleteSamples(): Promise<DeleteSamplesResult> {
+    throw this.notOnWeb();
+  }
+
+  async readWorkoutRoute(): Promise<ReadWorkoutRouteResult> {
     throw this.notOnWeb();
   }
 

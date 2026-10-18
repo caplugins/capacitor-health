@@ -13,7 +13,7 @@ import { changes, deleteByClientId, deleteRange, loadTypes, read, updateValues, 
 import { runChangesCheck, runPeriodCheck, runRoundTrips } from './roundtrip';
 import { deleteTestData, seedTestData } from './seed';
 import { SLEEP_CLIENT_ID, runSleepCheck } from './sleep';
-import { WORKOUT_CLIENT_ID, runWorkoutCheck } from './workouts';
+import { WORKOUT_CLIENT_ID, runOtherRoutesCheck, runWorkoutCheck } from './workouts';
 
 /** The example asks for every type the plugin knows; unsupported ones come back `unsupported`. */
 const TYPES: HealthType[] = [...HEALTH_TYPES];
@@ -52,7 +52,11 @@ bind('supported-types', 'supported', async () => {
   };
 });
 bind('request-authorization', 'authorization', async () =>
-  CapacitorHealth.requestAuthorization({ read: TYPES, write: await writableTypes(), android: { history: true } }),
+  CapacitorHealth.requestAuthorization({
+    read: TYPES,
+    write: await writableTypes(),
+    android: { history: true, exerciseRoutes: true },
+  }),
 );
 bind('check-authorization', 'authorization', async () =>
   CapacitorHealth.checkAuthorization({ read: TYPES, write: await writableTypes() }),
@@ -119,6 +123,11 @@ bind('sleep-delete', 'sleep-output', () =>
 
 bind('workout-check', 'workout-output', async () => {
   const lines = await runWorkoutCheck(true);
+  lines.forEach((line) => console.log(`[workout] ${line}`));
+  return lines;
+});
+bind('workout-other-routes', 'workout-output', async () => {
+  const lines = await runOtherRoutesCheck();
   lines.forEach((line) => console.log(`[workout] ${line}`));
   return lines;
 });

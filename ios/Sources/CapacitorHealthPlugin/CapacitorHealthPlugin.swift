@@ -18,7 +18,8 @@ public class CapacitorHealthPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "aggregate", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "getChanges", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "saveSamples", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "deleteSamples", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "deleteSamples", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "readWorkoutRoute", returnType: CAPPluginReturnPromise)
     ]
 
     private let store = HKHealthStore()
@@ -26,6 +27,7 @@ public class CapacitorHealthPlugin: CAPPlugin, CAPBridgedPlugin {
     private lazy var samples = Samples(store: store)
     private lazy var changes = Changes(store: store)
     private lazy var aggregation = Aggregation(store: store)
+    private lazy var workouts = Workouts(store: store)
 
     override public func load() {
         HealthLog.enabled = getConfig().getBoolean("debugLogging", false)
@@ -88,6 +90,12 @@ public class CapacitorHealthPlugin: CAPPlugin, CAPBridgedPlugin {
         guard ensureAvailable(call) else { return }
         let options = JSONFields(call.options as? [String: Any] ?? [:], path: "")
         call.run { try await self.samples.delete(options) }
+    }
+
+    @objc func readWorkoutRoute(_ call: CAPPluginCall) {
+        guard ensureAvailable(call) else { return }
+        let options = JSONFields(call.options as? [String: Any] ?? [:], path: "")
+        call.run { try await self.workouts.route(options) }
     }
 
     // MARK: - Settings

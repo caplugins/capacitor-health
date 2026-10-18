@@ -5,6 +5,7 @@ import {
   validateDeleteSamples,
   validateGetChanges,
   validateReadSamples,
+  validateReadWorkoutRoute,
   validateRequestAuthorization,
   validateSaveSamples,
 } from './validate';
@@ -36,5 +37,6 @@ export function withValidation(native: CapacitorHealthPlugin, getPlatform: () =>
     getChanges: (o) => call(o, validateGetChanges, (v) => native.getChanges(v)),
     saveSamples: (o) => call(o, validateSaveSamples, (v) => native.saveSamples(v)),
     deleteSamples: (o) => call(o, validateDeleteSamples, (v) => native.deleteSamples(v)),
+    readWorkoutRoute: (o) => call(o, validateReadWorkoutRoute, (v) => native.readWorkoutRoute(v)),
   };
 }
