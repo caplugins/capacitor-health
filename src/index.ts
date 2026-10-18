@@ -10,6 +10,20 @@ const NativeCapacitorHealth = registerPlugin<CapacitorHealthPlugin>('CapacitorHe
 const CapacitorHealth: CapacitorHealthPlugin = withValidation(NativeCapacitorHealth, () => Capacitor.getPlatform());
 
 export * from './definitions';
-export { HEALTH_TYPES, REGISTRY, VALUE_SETS, WORKOUT_ACTIVITIES, WORKOUT_SEGMENTS } from './generated/registry';
-export type { RegistryEntry, RegistryField, RegistryGroup, RegistryKind, RegistryValueSet } from './generated/registry';
+export {
+  HEALTH_TYPES,
+  NUTRIENTS,
+  REGISTRY,
+  VALUE_SETS,
+  WORKOUT_ACTIVITIES,
+  WORKOUT_SEGMENTS,
+} from './generated/registry';
+export type {
+  RegistryEntry,
+  RegistryField,
+  RegistryGroup,
+  RegistryKind,
+  RegistryNutrient,
+  RegistryValueSet,
+} from './generated/registry';
 export { CapacitorHealth };

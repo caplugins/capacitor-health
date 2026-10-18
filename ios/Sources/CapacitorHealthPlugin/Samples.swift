@@ -116,7 +116,18 @@ final class Samples {
             }
         }
         let objects = groups.flatMap(\.objects)
+        let foodType = HKCorrelationType(.food)
+        let entries = objects.compactMap { $0 as? HKCorrelation }.filter { $0.correlationType == foodType }
+        var staleMembers: [HKSample] = []
+        if !entries.isEmpty {
+            // Members are samples of their own types: without write access HealthKit fails the whole save (#71).
+            if let typeId = Nutrition.unauthorizedMembers(of: entries, store: store).first {
+                throw HealthError(.permissionDenied, "Writing this nutrition entry needs write access to \(typeId).", data: ["type": typeId])
+            }
+            staleMembers = try await store.staleNutritionMembers(replacedBy: entries, type: foodType)
+        }
         if !objects.isEmpty { try await store.save(objects) }
+        if !staleMembers.isEmpty { try await store.delete(staleMembers) }
         for (index, plan) in workoutPlans.sorted(by: { $0.key < $1.key }) {
             groups[index].objects = [try await workouts.save(plan)]
         }

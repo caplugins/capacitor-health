@@ -10,6 +10,7 @@ import androidx.health.connect.client.records.IntermenstrualBleedingRecord
 import androidx.health.connect.client.records.MenstruationFlowRecord
 import androidx.health.connect.client.records.MenstruationPeriodRecord
 import androidx.health.connect.client.records.MindfulnessSessionRecord
+import androidx.health.connect.client.records.NutritionRecord
 import androidx.health.connect.client.records.OvulationTestRecord
 import androidx.health.connect.client.records.Record
 import androidx.health.connect.client.records.SexualActivityRecord
@@ -184,6 +185,7 @@ object RecordCodec {
             }
             is SleepSessionRecord -> SleepSessions.encode(record, json, native)
             is ExerciseSessionRecord -> Workouts.encode(record, json, native, totals)
+            is NutritionRecord -> Nutrition.encode(record, json)
         }
         return json.put("native", native)
     }
@@ -202,6 +204,7 @@ object RecordCodec {
             is MenstruationPeriodRecord -> RecordTimes(record.startTime, record.startZoneOffset, record.endTime, record.endZoneOffset)
             is SleepSessionRecord -> RecordTimes(record.startTime, record.startZoneOffset, record.endTime, record.endZoneOffset)
             is ExerciseSessionRecord -> RecordTimes(record.startTime, record.startZoneOffset, record.endTime, record.endZoneOffset)
+            is NutritionRecord -> RecordTimes(record.startTime, record.startZoneOffset, record.endTime, record.endZoneOffset)
             else -> throw HealthException(HealthException.NATIVE_ERROR, "${record::class.simpleName} has no codec.")
         }
 
@@ -340,6 +343,7 @@ object RecordCodec {
             MenstruationPeriodRecord::class -> return decodePeriod(fields, metadata)
             SleepSessionRecord::class -> SleepSessions.decode(fields, metadata)
             ExerciseSessionRecord::class -> return Workouts.decode(fields, metadata)
+            NutritionRecord::class -> Nutrition.decode(fields, metadata)
             else -> throw HealthException(HealthException.NATIVE_ERROR, "${entry.id} has no codec.")
         }
         return Decoded(record)

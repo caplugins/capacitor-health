@@ -127,7 +127,12 @@ async function renderTypeScript(registry) {
   const nutrients = Object.fromEntries(
     Object.entries(registry.nutrients ?? {}).map(([id, n]) => [
       id,
-      { unit: n.unit, ios: n.ios ? runtimeIdentifier(n.ios) : null, android: n.android?.property ?? null },
+      {
+        unit: n.unit,
+        ios: n.ios ? runtimeIdentifier(n.ios) : null,
+        android: n.android?.property ?? null,
+        max: n.android?.max ?? null,
+      },
     ]),
   );
 
@@ -241,6 +246,8 @@ export interface RegistryNutrient {
   ios: string | null;
   /** \`NutritionRecord\` property, or \`null\` when Health Connect has none. */
   android: string | null;
+  /** The largest amount Health Connect accepts, in \`unit\`; nutrition entries take it on both platforms. */
+  max: number | null;
 }
 
 /** One child array of a session type (sleep stages, workout segments and laps). */
@@ -912,7 +919,7 @@ function renderKotlin(registry) {
   if (hcNutrients.length) recordImport('NutritionRecord');
   const nutrients = hcNutrients.map(
     ([id, n]) =>
-      `        ${q(id)} to RegistryNutrient(${q(n.unit)}, read = { it.${n.android.property} }, aggregate = NutritionRecord.${n.android.aggregate}),`,
+      `        ${q(id)} to RegistryNutrient(${q(n.unit)}, read = { it.${n.android.property} }, aggregate = NutritionRecord.${n.android.aggregate}, max = ${Number(n.android.max).toFixed(1)}),`,
   );
   const nutritionArgs = hcNutrients.map(([id, n]) => {
     const cls = registry.units[n.unit].android.class;
@@ -1044,6 +1051,8 @@ class RegistryNutrient(
     val unit: String,
     val read: (NutritionRecord) -> Any?,
     val aggregate: AggregateMetric<*>,
+    /** The largest amount NutritionRecord accepts, in [unit]. */
+    val max: Double,
 )
 
 /** One series record class (T28): its times, its points (time and value object), and its constructor. */

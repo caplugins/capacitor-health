@@ -211,6 +211,7 @@ final class RegistryRawValuesTests: XCTestCase {
     }
 
     func testNutritionIdentifiers() {
+        XCTAssertEqual(HKCorrelationTypeIdentifier.food.rawValue, "HKCorrelationTypeIdentifierFood")
         XCTAssertEqual(HKQuantityTypeIdentifier.dietaryWater.rawValue, "HKQuantityTypeIdentifierDietaryWater")
         XCTAssertEqual(HKQuantityTypeIdentifier.dietaryEnergyConsumed.rawValue, "HKQuantityTypeIdentifierDietaryEnergyConsumed")
         XCTAssertEqual(HKQuantityTypeIdentifier.dietaryProtein.rawValue, "HKQuantityTypeIdentifierDietaryProtein")

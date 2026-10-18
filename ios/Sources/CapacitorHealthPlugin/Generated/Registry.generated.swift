@@ -317,6 +317,7 @@ enum Registry {
         "environmentalAudioExposureEvent",
         "headphoneAudioExposureEvent",
         "nikeFuel",
+        "nutrition",
         "hydration",
         "workout",
         "sleepSession",
@@ -1660,6 +1661,7 @@ enum Registry {
             units: ["count"],
             aggregation: .cumulative
         ),
+        RegistryEntry("nutrition", .special, "HKCorrelationTypeIdentifierFood", minOS: "8.0"),
         RegistryEntry(
             "hydration",
             .quantity,

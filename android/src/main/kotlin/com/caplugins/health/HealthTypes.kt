@@ -35,6 +35,8 @@ class HealthTypes(private val features: (Int) -> Boolean) {
             // A sleep session's values are its stages' (`parts.stages`).
             val valueSet = if (typeId == SleepSessions.TYPE_ID) "sleepStage" else entry.valueSet
             valueSet?.let { Registry.valueSets[it] }?.let { result.put("values", JSArray(it.constants.keys)) }
+            // A nutrition entry's values are the nutrients it can hold.
+            if (typeId == Nutrition.TYPE_ID) result.put("values", JSArray(Registry.nutrients.keys))
             if (entry.units.isNotEmpty()) result.put("units", JSArray(entry.units))
         }
         val failure = lookup(typeId).exceptionOrNull() as HealthException?

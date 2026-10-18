@@ -10,6 +10,10 @@
 - `mindfulSession` (HealthKit mindful sessions ⇄ `MindfulnessSessionRecord`, Android only where
   Health Connect has the feature), with `sessionType` on Android.
 - Units `mg`, `mcg`, `oz` and `flOz`.
+- `nutrition` (decision #71): food and meal entries with a name, nutrients (`NUTRIENTS`, now with
+  Health Connect's `max` per nutrient and exported) and Android's meal type: HealthKit `food`
+  correlations of dietary samples ⇄ `NutritionRecord`; read, write, upsert, delete and `getChanges`
+  on both.
 - `sleepSession` (decisions #64–#66): nights and naps with stages. iOS derives sessions from
   `sleepAnalysis` samples and writes them back as an in-bed span plus one sample per stage; Android
   stores `SleepSessionRecord`s with `title` and `notes`. Read, write, delete, `getChanges` and

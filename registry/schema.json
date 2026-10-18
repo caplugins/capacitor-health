@@ -277,11 +277,12 @@
         },
         "android": {
           "type": "object",
-          "required": ["property", "aggregate"],
+          "required": ["property", "aggregate", "max"],
           "additionalProperties": false,
           "properties": {
             "property": { "description": "NutritionRecord property (and constructor argument).", "$ref": "#/$defs/camelId" },
-            "aggregate": { "description": "NutritionRecord AggregateMetric constant summing it.", "$ref": "#/$defs/hcConstant" }
+            "aggregate": { "description": "NutritionRecord AggregateMetric constant summing it.", "$ref": "#/$defs/hcConstant" },
+            "max": { "description": "The largest value NutritionRecord accepts, in the canonical unit (read from connect-client by constructing records).", "type": "number", "exclusiveMinimum": 0 }
           }
         },
         "notes": { "$ref": "#/$defs/notes" }

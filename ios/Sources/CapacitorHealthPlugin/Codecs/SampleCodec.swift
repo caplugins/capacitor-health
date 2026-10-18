@@ -73,7 +73,9 @@ enum SampleCodec {
     }
 
     static func encode(_ sample: HKSample, entry: RegistryEntry, unit: String? = nil) -> [String: Any] {
-        if let correlation = sample as? HKCorrelation { return BloodPressure.encode(correlation, entry: entry) }
+        if let correlation = sample as? HKCorrelation {
+            return entry.typeId == Nutrition.typeId ? Nutrition.encode(correlation, entry: entry) : BloodPressure.encode(correlation, entry: entry)
+        }
         return encodeSample(sample, entry: entry, unit: unit)
     }
 
@@ -252,7 +254,8 @@ enum SampleCodec {
             return HKCategorySample(type: categoryType, value: raw, start: start, end: end, device: device, metadata: metadata)
         case .special:
             guard let correlationType = type as? HKCorrelationType else { break }
-            return try BloodPressure.correlation(fields, type: correlationType, start: start, end: end, metadata: metadata, device: device)
+            let build = entry.typeId == Nutrition.typeId ? Nutrition.correlation : BloodPressure.correlation
+            return try build(fields, correlationType, start, end, metadata, device)
         }
         throw HealthError(.nativeError, "\(entry.typeId) has no generic codec.")
     }

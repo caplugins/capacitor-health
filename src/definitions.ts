@@ -5,6 +5,7 @@ import type {
   CategoryHealthType,
   EventHealthType,
   HealthType,
+  Nutrient,
   QuantityHealthType,
   WorkoutActivity,
 } from './generated/registry';
@@ -14,6 +15,7 @@ export type {
   CategoryHealthType,
   EventHealthType,
   HealthType,
+  Nutrient,
   QuantityHealthType,
   WorkoutActivity,
 } from './generated/registry';
@@ -800,6 +802,53 @@ export interface BloodPressureSample extends SampleBase {
 }
 
 /**
+ * Nutrient amounts by nutrient id, in each nutrient's canonical unit (`NUTRIENTS[id].unit`: `kcal`
+ * for `energy` and `energyFromFat`, `g` for the rest; `0.0005` g of vitamin C is 500 mg).
+ *
+ * @since 0.3.0
+ */
+export type NutrientAmounts = Partial<Record<Nutrient, number>>;
+
+/**
+ * A food or meal entry with its nutrients: a `food` correlation of dietary samples on iOS, a
+ * `NutritionRecord` on Android.
+ *
+ * @since 0.3.0
+ */
+export interface NutritionSample extends SampleBase {
+  /** @since 0.3.0 */
+  kind: 'special';
+  /** @since 0.3.0 */
+  type: 'nutrition';
+  /**
+   * The food's name: `HKMetadataKeyFoodType` on iOS, `NutritionRecord.name` on Android.
+   *
+   * @since 0.3.0
+   */
+  name?: string;
+  /**
+   * Android only: `breakfast`, `lunch`, `dinner` or `snack`; absent when not recorded.
+   *
+   * @since 0.3.0
+   */
+  mealType?: string;
+  /**
+   * The entry's nutrients; nutrients it doesn't record are absent. On iOS, amounts of a nutrient
+   * held twice in one entry are added up.
+   *
+   * @since 0.3.0
+   */
+  nutrients: NutrientAmounts;
+  /**
+   * iOS only: the ids of the dietary samples the entry holds. They also read as single-nutrient
+   * samples (`dietaryProtein`, …).
+   *
+   * @since 0.3.0
+   */
+  memberSampleIds?: string[];
+}
+
+/**
  * A sample of a passthrough type (`hk:…`), with its native value.
  *
  * @since 0.2.0
@@ -1077,7 +1126,8 @@ export type Sample =
   | SkinTemperatureSample
   | BloodPressureSample
   | SleepSessionSample
-  | WorkoutSample;
+  | WorkoutSample
+  | NutritionSample;
 
 // ------------------------------------------------------------------ writing
 
@@ -1289,6 +1339,50 @@ export interface NewBloodPressureSample extends NewSampleBase {
 }
 
 /**
+ * A food or meal entry to write. iOS writes a `food` correlation holding one dietary sample per
+ * nutrient (its sync id `<clientId>#<nutrient>`), so the entry shows as one food in Apple Health and
+ * each nutrient counts in the day's totals; Android writes one `NutritionRecord`. Re-writing with
+ * the same `clientId` replaces the whole entry, nutrients it no longer has included, and deleting it
+ * deletes its nutrient samples too.
+ *
+ * @since 0.3.0
+ */
+export interface NewNutrition extends NewSampleBase {
+  /** @since 0.3.0 */
+  type: 'nutrition';
+  /**
+   * On Android after `startDate` (a `NutritionRecord` covers a period); iOS also takes a single
+   * moment.
+   *
+   * @since 0.3.0
+   */
+  endDate?: string;
+  /**
+   * The food's name; an empty string is dropped.
+   *
+   * @since 0.3.0
+   */
+  name?: string;
+  /**
+   * Android only (`mealType` value set): setting it on iOS rejects with `valueUnsupportedOnPlatform`.
+   *
+   * @since 0.3.0
+   */
+  mealType?: string;
+  /**
+   * At least one. Amounts are 0 or more and at most Health Connect's limit on both platforms
+   * (`NUTRIENTS[id].max`: 100,000 for energy and the macronutrients, 100 g for the others).
+   * Nutrients this platform doesn't store (`NUTRIENTS[id].ios` / `.android` is `null`: iOS has no
+   * `energyFromFat`, `unsaturatedFat`, `transFat` or `folicAcid`) reject with
+   * `valueUnsupportedOnPlatform`. On iOS each needs write access to its dietary type, else the write
+   * rejects with `PERMISSION_DENIED` naming it.
+   *
+   * @since 0.3.0
+   */
+  nutrients: NutrientAmounts;
+}
+
+/**
  * A new sample of a passthrough type (`hk:…`, iOS).
  *
  * @since 0.2.0
@@ -1438,7 +1532,8 @@ export type NewSample =
   | NewSkinTemperatureSample
   | NewBloodPressureSample
   | NewSleepSession
-  | NewWorkout;
+  | NewWorkout
+  | NewNutrition;
 
 // ------------------------------------------------------------------ method options and results
 

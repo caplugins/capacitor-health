@@ -126,6 +126,14 @@ function sampleFor(support: TypeSupport, at: Date, clientId: string, variant: 0 
         endDate: later(at),
         totals: { energy: 50 + variant },
       };
+    case 'nutrition':
+      return {
+        ...base,
+        type: 'nutrition',
+        endDate: later(at),
+        name: 'Acceptance snack',
+        nutrients: { energy: 120 + variant, protein: 3 },
+      };
     case 'insulinDelivery':
       return {
         ...base,
@@ -176,6 +184,10 @@ function sameValue(sample: Sample | undefined, expected: NewSample): boolean {
     );
   }
   if (expected.type === 'workout') return (sample as { activityType?: string }).activityType === expected.activityType;
+  if (expected.type === 'nutrition') {
+    const energy = (sample as { nutrients?: { energy?: number } }).nutrients?.energy;
+    return typeof energy === 'number' && Math.abs(energy - (expected.nutrients.energy ?? 0)) < 0.001;
+  }
   if (expected.type === 'sexualActivity')
     return (sample as { protectionUsed?: boolean }).protectionUsed === expected.protectionUsed;
   return wanted === undefined || actual === wanted;

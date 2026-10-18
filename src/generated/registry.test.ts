@@ -36,7 +36,9 @@ describe('generated TypeScript registry', () => {
       unit: 'g',
       ios: 'HKQuantityTypeIdentifierDietaryCarbohydrates',
       android: 'totalCarbohydrate',
+      max: 100000,
     });
+    expect(NUTRIENTS.caffeine.max).toBe(100);
     expect(NUTRIENTS.transFat.ios).toBeNull();
     expect(VALUE_SETS.sleepStage.ios).not.toContain('outOfBed');
   });

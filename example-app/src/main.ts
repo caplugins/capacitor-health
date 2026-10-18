@@ -13,6 +13,7 @@ import { changes, deleteByClientId, deleteRange, loadTypes, read, updateValues, 
 import { runChangesCheck, runPeriodCheck, runRoundTrips } from './roundtrip';
 import { deleteTestData, seedTestData } from './seed';
 import { SLEEP_CLIENT_ID, runSleepCheck } from './sleep';
+import { NUTRITION_CLIENT_ID, runNutritionCheck } from './nutrition';
 import { WORKOUT_CLIENT_ID, runOtherRoutesCheck, runWorkoutCheck } from './workouts';
 
 /** The example asks for every type the plugin knows; unsupported ones come back `unsupported`. */
@@ -133,6 +134,15 @@ bind('workout-other-routes', 'workout-output', async () => {
 });
 bind('workout-delete', 'workout-output', () =>
   CapacitorHealth.deleteSamples({ type: 'workout', clientIds: [WORKOUT_CLIENT_ID] }),
+);
+
+bind('nutrition-check', 'nutrition-output', async () => {
+  const lines = await runNutritionCheck();
+  lines.forEach((line) => console.log(`[nutrition] ${line}`));
+  return lines;
+});
+bind('nutrition-delete', 'nutrition-output', () =>
+  CapacitorHealth.deleteSamples({ type: 'nutrition', clientIds: [NUTRITION_CLIENT_ID] }),
 );
 
 bind('aggregate-check', 'aggregate-output', async () => {

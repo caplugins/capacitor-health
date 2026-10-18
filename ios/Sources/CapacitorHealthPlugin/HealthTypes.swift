@@ -35,12 +35,18 @@ enum HealthTypes {
         guard sampleType(for: entry) != nil else { return [] }
         // A workout reads whether it has a route, which HealthKit authorizes on its own.
         if entry.typeId == Workouts.typeId { return [HKObjectType.workoutType(), HKSeriesType.workoutRoute()] }
-        return entry.isCorrelation ? BloodPressure.memberTypes : readTypes(for: entry).map(\.1)
+        return entry.isCorrelation ? memberTypes(of: entry) : readTypes(for: entry).map(\.1)
+    }
+
+    /// The types a correlation holds, which HealthKit authorizes in its place: blood pressure's two readings, a
+    /// food entry's dietary types (decision #71).
+    static func memberTypes(of entry: RegistryEntry) -> [HKSampleType] {
+        entry.typeId == Nutrition.typeId ? Nutrition.memberTypes() : BloodPressure.memberTypes
     }
 
     /// The types writing `entry` needs share access to: a correlation's members, else the type writes go to.
     static func shareTypes(for entry: RegistryEntry, type: HKSampleType) -> [HKSampleType] {
-        entry.isCorrelation ? BloodPressure.memberTypes : [type]
+        entry.isCorrelation ? memberTypes(of: entry) : [type]
     }
 
     /// Rejects aggregate-only types (`totalEnergy`), which have no samples to read, follow or delete.
@@ -109,6 +115,7 @@ enum HealthTypes {
         result["minOS"] = entry.minOS
         if let valueSet = entry.valueSet, let set = Registry.valueSets[valueSet] { result["values"] = set.values }
         if typeId == SleepSessions.typeId { result["values"] = SleepSessions.supportedStages() }
+        if typeId == Nutrition.typeId { result["values"] = Nutrition.supportedNutrients() }
         if !entry.units.isEmpty { result["units"] = entry.units }
         if case .failure(let reason) = lookup(typeId, registry: registry) {
             result.merge(["supported": false, "readable": false, "writable": false, "reason": reason.rawValue]) { $1 }

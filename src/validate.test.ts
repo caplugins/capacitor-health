@@ -1753,3 +1753,51 @@ describe('workout routes (T49)', () => {
     ).toEqual({ history: false, background: false, exerciseRoutes: true });
   });
 });
+
+describe('nutrition entries (T50)', () => {
+  const meal = { type: 'nutrition', startDate: START, endDate: END };
+
+  it('normalizes an entry on both platforms', () => {
+    expect(
+      save({ ...meal, name: 'Porridge', nutrients: { energy: 350, protein: 12.5, vitaminC: 0.0005 } }, 'ios'),
+    ).toMatchObject({
+      type: 'nutrition',
+      startDate: '2026-10-01T08:00:00.000+05:30',
+      endDate: '2026-10-01T09:00:00.000+05:30',
+      name: 'Porridge',
+      nutrients: { energy: 350, protein: 12.5, vitaminC: 0.0005 },
+    });
+    const android = save({ ...meal, name: '', mealType: 'breakfast', nutrients: { transFat: 0.2 } }, 'android');
+    expect(android).toMatchObject({ mealType: 'breakfast', nutrients: { transFat: 0.2 } });
+    expect(android.name).toBeUndefined();
+    // iOS takes a single moment; Android needs an interval.
+    expect(save({ type: 'nutrition', startDate: START, nutrients: { energy: 1 } }, 'ios').endDate).toBe(
+      '2026-10-01T08:00:00.000+05:30',
+    );
+    rejection(
+      () => save({ type: 'nutrition', startDate: START, nutrients: { energy: 1 } }, 'android'),
+      'INVALID_ARGUMENT',
+      'samples[0].endDate',
+      'intervalOnly',
+    );
+  });
+
+  it('rejects what a platform cannot store', () => {
+    const bad = (sample: Record<string, unknown>, platform: NativePlatform, field: string, reason?: string) =>
+      rejection(() => save({ ...meal, ...sample }, platform), 'INVALID_ARGUMENT', field, reason);
+    bad({ nutrients: { transFat: 1 } }, 'ios', 'samples[0].nutrients.transFat', 'valueUnsupportedOnPlatform');
+    bad({ mealType: 'lunch', nutrients: { energy: 1 } }, 'ios', 'samples[0].mealType', 'valueUnsupportedOnPlatform');
+    for (const platform of ['ios', 'android'] as const) {
+      bad({ nutrients: {} }, platform, 'samples[0].nutrients', 'required');
+      bad({}, platform, 'samples[0].nutrients');
+      bad({ nutrients: { vitaminZ: 1 } }, platform, 'samples[0].nutrients.vitaminZ', 'unknownValue');
+      bad({ nutrients: { protein: -1 } }, platform, 'samples[0].nutrients.protein', 'outOfRange');
+      bad({ nutrients: { energy: 100_001 } }, platform, 'samples[0].nutrients.energy', 'outOfRange');
+      bad({ nutrients: { caffeine: 100.5 } }, platform, 'samples[0].nutrients.caffeine', 'outOfRange');
+      bad({ nutrients: { sugar: '3' } }, platform, 'samples[0].nutrients.sugar');
+      bad({ name: 3, nutrients: { sugar: 3 } }, platform, 'samples[0].name');
+      bad({ value: 3, nutrients: { sugar: 3 } }, platform, 'samples[0].value', 'notApplicable');
+    }
+    bad({ mealType: 'brunch', nutrients: { energy: 1 } }, 'android', 'samples[0].mealType');
+  });
+});

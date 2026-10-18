@@ -24,8 +24,8 @@ import type {
   SampleDevice,
   SaveSamplesOptions,
 } from './definitions';
-import { REGISTRY, UNITS, VALUE_SETS, WORKOUT_ACTIVITIES, WORKOUT_SEGMENTS } from './generated/registry';
-import type { HealthType, RegistryEntry, WorkoutActivity } from './generated/registry';
+import { NUTRIENTS, REGISTRY, UNITS, VALUE_SETS, WORKOUT_ACTIVITIES, WORKOUT_SEGMENTS } from './generated/registry';
+import type { HealthType, Nutrient, RegistryEntry, WorkoutActivity } from './generated/registry';
 
 export type NativePlatform = 'ios' | 'android';
 
@@ -838,6 +838,57 @@ function newWorkout(s: Fields, at: string, entry: RegistryEntry, platform: Nativ
   return result;
 }
 
+/**
+ * A food or meal entry (decision #71): a name, Android's meal type and at least one nutrient, each in its
+ * canonical unit within Health Connect's limit on both platforms.
+ */
+function newNutrition(s: Fields, at: string, entry: RegistryEntry, platform: NativePlatform): Fields {
+  const start = parseDate(s.startDate, `${at}.startDate`);
+  let end = start;
+  if (s.endDate !== undefined) [, end] = dateRange(s.startDate, s.endDate, `${at}.`);
+  if (platform === 'android' && end.ms <= start.ms) {
+    throw invalid(
+      `${at}.endDate`,
+      'must be after startDate: a nutrition entry covers a period of time on Android',
+      'intervalOnly',
+    );
+  }
+  rejectIfSet(s, at, entry, [
+    'value',
+    'unit',
+    'flow',
+    'deltas',
+    'baseline',
+    'stages',
+    'title',
+    'notes',
+    ...WORKOUT_ONLY,
+  ]);
+  const result: Fields = { type: entry.id, startDate: start.iso, endDate: end.iso };
+  if (s.name !== undefined) {
+    if (typeof s.name !== 'string') throw invalid(`${at}.name`, 'must be a string');
+    if (s.name !== '') result.name = s.name;
+  }
+  const nutrients = object(s.nutrients, `${at}.nutrients`);
+  const out: Fields = {};
+  for (const [id, value] of Object.entries(nutrients)) {
+    const field = `${at}.nutrients.${id}`;
+    if (value === undefined) continue;
+    if (!hasOwn(NUTRIENTS, id)) throw invalid(field, "isn't a nutrient id (NUTRIENTS)", 'unknownValue');
+    const nutrient = NUTRIENTS[id as Nutrient];
+    if (!nutrient[platform]) {
+      throw invalid(field, `can't be stored on ${PLATFORM_NAMES[platform]}`, 'valueUnsupportedOnPlatform');
+    }
+    const amount = finiteNumber(value, field);
+    const max = nutrient.max ?? Number.MAX_VALUE;
+    if (amount < 0 || amount > max) throw invalid(field, `must be from 0 to ${max} ${nutrient.unit}`, 'outOfRange');
+    out[id] = amount;
+  }
+  if (Object.keys(out).length === 0) throw invalid(`${at}.nutrients`, 'must have at least one nutrient', 'required');
+  result.nutrients = out;
+  return Object.assign(result, typedFields(s, at, entry, platform));
+}
+
 function newSample(raw: unknown, i: number, platform: NativePlatform): NewSample {
   const at = `samples[${i}]`;
   const s = object(raw, at);
@@ -854,6 +905,8 @@ function newSample(raw: unknown, i: number, platform: NativePlatform): NewSample
     result = newSleepSession(s, at, entry, platform);
   } else if (entry.id === 'workout') {
     result = newWorkout(s, at, entry, platform);
+  } else if (entry.id === 'nutrition') {
+    result = newNutrition(s, at, entry, platform);
   } else {
     const start = parseDate(s.startDate, `${at}.startDate`);
     let end = start;
