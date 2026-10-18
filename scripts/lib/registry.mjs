@@ -120,6 +120,10 @@ export function semanticErrors(registry) {
   for (const [id, activity] of Object.entries(registry.workoutActivities ?? {})) {
     const at = `workoutActivities.${id}`;
     if (activity.ios) {
+      const { distance } = activity.ios;
+      if (distance && !byId.get('distance')?.ios?.members?.includes(distance)) {
+        errors.push(`${at}.ios.distance: ${distance} is not a member of distance`);
+      }
       const key = `${activity.ios.raw}/${activity.ios.indoor ?? ''}/${activity.ios.swimmingLocation ?? ''}`;
       if (iosActivities.has(key)) errors.push(`${at}.ios matches the same workouts as another activity`);
       iosActivities.add(key);

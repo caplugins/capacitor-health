@@ -405,8 +405,8 @@ stage, so on iOS the plugin works sessions out. These rules are a contract, cove
 
 ### Workouts
 
-> Native reads and writes for workouts are still in progress: until they land, both platforms report
-> `workout` as unsupported (`notOnPlatform`). The model below and its validation are final.
+> Workouts work on iOS. On Android they're still in progress: until then `workout` reports as
+> unsupported there (`notOnPlatform`).
 
 A `workout` is a finished session (no live workouts): HealthKit's `HKWorkout`, Health Connect's
 `ExerciseSessionRecord`. It has an `activityType` (one id for both platforms, see `WORKOUT_ACTIVITIES`;
@@ -426,6 +426,13 @@ writing one this platform lacks rejects), `totals`, `segments`, `laps`, `hasRout
   totals); deleting the workout deletes them.
 - **Everything else recorded during a workout** (heart rate, steps) stays its own data: read it by the
   workout's time range.
+- **iOS details.** Reading workouts asks for "Workouts" and "Workout Routes" (to fill `hasRoute`).
+  Writing `totals` needs write access to `activeEnergy` and the activity's distance type
+  (`distanceCycling` for cycling, `distanceSwimming` for swimming, `distanceWalkingRunning` for most
+  others, …), else it rejects with `PERMISSION_DENIED` naming the type; a multisport workout takes no
+  single distance. Apple Health leaves paused time out of a workout's totals, so the plugin spreads
+  each total over the time between pauses, which reads back as written. A pool swim's laps must all
+  have the same length (the pool's), which HealthKit keeps on the workout.
 
 ### Permissions
 
@@ -1476,7 +1483,11 @@ too, count in the day's totals like any other sample, and are deleted with the w
 `clientId`, they get `&lt;clientId&gt;:energy` and `&lt;clientId&gt;:distance`, so writing the workout again
 replaces them, and a total the new version lacks is deleted.
 
-iOS writes an `HKWorkout` through `HKWorkoutBuilder`, Android an `ExerciseSessionRecord`.
+iOS writes an `HKWorkout` through `HKWorkoutBuilder`, Android an `ExerciseSessionRecord`. On iOS a
+total goes to `activeEnergy` and the activity's distance type (`distanceCycling` for cycling,
+`distanceWalkingRunning` for most), split over the time between pauses since Apple Health leaves
+paused time out of a workout's totals; without write access to those types the write rejects with
+`PERMISSION_DENIED`.
 
 | Prop               | Type                                                        | Description                                                                                                                                   | Since |
 | ------------------ | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
@@ -1487,7 +1498,7 @@ iOS writes an `HKWorkout` through `HKWorkoutBuilder`, Android an `ExerciseSessio
 | **`notes`**        | <code>string</code>                                         | Android only: setting it on iOS rejects with `valueUnsupportedOnPlatform`.                                                                    | 0.3.0 |
 | **`totals`**       | <code><a href="#workouttotals">WorkoutTotals</a></code>     | Each at most 1,000,000 (kcal, m).                                                                                                             | 0.3.0 |
 | **`segments`**     | <code>WorkoutSegment[]</code>                               |                                                                                                                                               | 0.3.0 |
-| **`laps`**         | <code>WorkoutLap[]</code>                                   |                                                                                                                                               | 0.3.0 |
+| **`laps`**         | <code>WorkoutLap[]</code>                                   | On iOS a pool swim's laps must all have the same length above 0, the pool's (`poolLapLength`): HealthKit keeps it on the workout.             | 0.3.0 |
 | **`activities`**   | <code>WorkoutActivityPeriod[]</code>                        | iOS 16+ only: setting it on Android or iOS 15 rejects with `valueUnsupportedOnPlatform`. Activities lie inside the workout and don't overlap. | 0.3.0 |
 
 

@@ -402,6 +402,8 @@ function renderSwift(registry) {
   const nutrients = Object.entries(registry.nutrients ?? {})
     .filter(([, n]) => n.ios)
     .map(([id, n]) => `        ${q(id)}: RegistryNutrient(identifier: ${q(runtimeIdentifier(n.ios))}, unit: ${q(n.unit)})`);
+  // Where a written distance total goes unless the activity names another member (decision #68).
+  const defaultDistance = byId.get('distance')?.ios?.writeTo;
   const activities = Object.entries(registry.workoutActivities ?? {})
     .filter(([, a]) => a.ios)
     .map(([id, a]) => {
@@ -410,6 +412,8 @@ function renderSwift(registry) {
       if (availability) args.push(`isAvailable: ${availability}`);
       if (a.ios.indoor !== undefined) args.push(`indoor: ${a.ios.indoor}`);
       if (a.ios.swimmingLocation) args.push(`swimmingLocation: ${SWIMMING_LOCATIONS[a.ios.swimmingLocation]}`);
+      if (a.ios.distance === false) args.push('distance: nil');
+      else if (a.ios.distance && a.ios.distance !== defaultDistance) args.push(`distance: ${q(a.ios.distance)}`);
       return swiftCall('RegistryWorkoutActivity', args, 8);
     });
   const units = Object.entries(registry.units)
@@ -507,13 +511,23 @@ struct RegistryWorkoutActivity {
     let indoor: Bool?
     /// \`HKWorkoutSwimmingLocationType\` raw value it matches and writes.
     let swimmingLocation: Int?
+    /// The distance type a written distance total goes to; nil when the activity takes none (decision #68).
+    let distance: String?
 
-    init(_ id: String, raw: UInt, isAvailable: @escaping () -> Bool = { true }, indoor: Bool? = nil, swimmingLocation: Int? = nil) {
+    init(
+        _ id: String,
+        raw: UInt,
+        isAvailable: @escaping () -> Bool = { true },
+        indoor: Bool? = nil,
+        swimmingLocation: Int? = nil,
+        distance: String? = ${q(defaultDistance ?? 'distanceWalkingRunning')}
+    ) {
         self.id = id
         self.raw = raw
         self.isAvailable = isAvailable
         self.indoor = indoor
         self.swimmingLocation = swimmingLocation
+        self.distance = distance
     }
 }
 

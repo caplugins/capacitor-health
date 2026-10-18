@@ -30,9 +30,11 @@ enum HealthTypes {
     }
 
     /// The types HealthKit authorizes reading `entry` through: a correlation's member types (HealthKit doesn't
-    /// authorize correlation types), a combined id's members, or the type itself.
+    /// authorize correlation types), a combined id's members, a workout with its routes, or the type itself.
     static func authorizationTypes(for entry: RegistryEntry) -> [HKSampleType] {
         guard sampleType(for: entry) != nil else { return [] }
+        // A workout reads whether it has a route, which HealthKit authorizes on its own.
+        if entry.typeId == Workouts.typeId { return [HKObjectType.workoutType(), HKSeriesType.workoutRoute()] }
         return entry.isCorrelation ? BloodPressure.memberTypes : readTypes(for: entry).map(\.1)
     }
 
@@ -78,8 +80,6 @@ enum HealthTypes {
     static func lookup(_ typeId: String, registry: [String: RegistryEntry] = Registry.byId)
         -> Result<(RegistryEntry, HKSampleType), Unavailability> {
         guard let entry = entry(typeId, registry: registry) else { return .failure(.notOnPlatform) }
-        // Workouts are registered for the TypeScript model (T46); reads and writes arrive in T47.
-        if entry.typeId == "workout" { return .failure(.notOnPlatform) }
         guard let type = sampleType(for: entry) else { return .failure(.osVersion) }
         return .success((entry, type))
     }

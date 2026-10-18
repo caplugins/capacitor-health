@@ -2,11 +2,18 @@ import { CapacitorHealth, HEALTH_TYPES } from '@caplugins/capacitor-health';
 import type { HealthType } from '@caplugins/capacitor-health';
 
 import { runAcceptance } from './acceptance';
-import { loadAggregateTypes, runAggregate, runAggregateCheck, runPassthroughCheck, updateAggregateOptions } from './aggregate';
+import {
+  loadAggregateTypes,
+  runAggregate,
+  runAggregateCheck,
+  runPassthroughCheck,
+  updateAggregateOptions,
+} from './aggregate';
 import { changes, deleteByClientId, deleteRange, loadTypes, read, updateValues, write } from './explore';
 import { runChangesCheck, runPeriodCheck, runRoundTrips } from './roundtrip';
 import { deleteTestData, seedTestData } from './seed';
 import { SLEEP_CLIENT_ID, runSleepCheck } from './sleep';
+import { WORKOUT_CLIENT_ID, runWorkoutCheck } from './workouts';
 
 /** The example asks for every type the plugin knows; unsupported ones come back `unsupported`. */
 const TYPES: HealthType[] = [...HEALTH_TYPES];
@@ -110,6 +117,15 @@ bind('sleep-delete', 'sleep-output', () =>
   CapacitorHealth.deleteSamples({ type: 'sleepSession', clientIds: [SLEEP_CLIENT_ID] }),
 );
 
+bind('workout-check', 'workout-output', async () => {
+  const lines = await runWorkoutCheck(true);
+  lines.forEach((line) => console.log(`[workout] ${line}`));
+  return lines;
+});
+bind('workout-delete', 'workout-output', () =>
+  CapacitorHealth.deleteSamples({ type: 'workout', clientIds: [WORKOUT_CLIENT_ID] }),
+);
+
 bind('aggregate-check', 'aggregate-output', async () => {
   const lines = await runAggregateCheck();
   lines.forEach((line) => console.log(`[aggregate] ${line}`));
@@ -129,6 +145,7 @@ bind('passthrough-check', 'passthrough-output', async () => {
   runChangesCheck,
   runPeriodCheck,
   runSleepCheck,
+  runWorkoutCheck,
   runAcceptance,
   runAggregateCheck,
   runPassthroughCheck,

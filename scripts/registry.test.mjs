@@ -164,6 +164,7 @@ describe('schema and semantic checks reject mistakes', () => {
     ['two activities matching the same workouts', (r) => (r.workoutActivities.runningTreadmill.ios.indoor = false), /matches the same workouts/],
     ['two activities on one exercise type', (r) => (r.workoutActivities.walking.android.constant = 'EXERCISE_TYPE_RUNNING'), /constant is used twice/],
     ['no other activity', (r) => delete r.workoutActivities.other.android, /other must exist on both platforms/],
+    ['a distance total in a type that is no distance', (r) => (r.workoutActivities.cycling.ios.distance = 'steps'), /steps is not a member of distance/],
     ['a segment rule for an iOS-only activity', (r) => (r.workoutSegments.activities.archery = ['pause']), /archery is not a Health Connect workout activity/],
     ['a segment rule with an unknown segment type', (r) => r.workoutSegments.anyActivity.push('sprint'), /sprint is not a workoutSegmentType value/],
     ['a value set map missing a value', (r) => delete r.valueSets.bleeding.ios.map.heavy, /missing heavy/],

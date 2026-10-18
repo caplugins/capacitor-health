@@ -1308,7 +1308,11 @@ export interface NewSleepSession extends NewSampleBase {
  * `clientId`, they get `<clientId>:energy` and `<clientId>:distance`, so writing the workout again
  * replaces them, and a total the new version lacks is deleted.
  *
- * iOS writes an `HKWorkout` through `HKWorkoutBuilder`, Android an `ExerciseSessionRecord`.
+ * iOS writes an `HKWorkout` through `HKWorkoutBuilder`, Android an `ExerciseSessionRecord`. On iOS a
+ * total goes to `activeEnergy` and the activity's distance type (`distanceCycling` for cycling,
+ * `distanceWalkingRunning` for most), split over the time between pauses since Apple Health leaves
+ * paused time out of a workout's totals; without write access to those types the write rejects with
+ * `PERMISSION_DENIED`.
  *
  * @since 0.3.0
  */
@@ -1348,7 +1352,12 @@ export interface NewWorkout extends NewSampleBase {
   totals?: WorkoutTotals;
   /** @since 0.3.0 */
   segments?: WorkoutSegment[];
-  /** @since 0.3.0 */
+  /**
+   * On iOS a pool swim's laps must all have the same length above 0, the pool's
+   * (`poolLapLength`): HealthKit keeps it on the workout.
+   *
+   * @since 0.3.0
+   */
   laps?: WorkoutLap[];
   /**
    * iOS 16+ only: setting it on Android or iOS 15 rejects with `valueUnsupportedOnPlatform`.

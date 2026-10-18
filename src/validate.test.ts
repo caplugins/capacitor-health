@@ -1602,6 +1602,20 @@ describe('workout (T46)', () => {
     );
   });
 
+  it('needs one lap length for a pool swim on iOS', () => {
+    const pool = { ...run, activityType: 'swimmingPool' };
+    expect(save({ ...pool, laps: [span(0, 2, { length: 25 }), span(2, 4, { length: 25 })] }).laps).toHaveLength(2);
+    for (const laps of [
+      [span(0, 2, { length: 25 }), span(2, 4, { length: 50 })],
+      [span(0, 2)],
+      [span(0, 2, { length: 0 })],
+    ]) {
+      rejection(() => save({ ...pool, laps }), 'INVALID_ARGUMENT', 'samples[0].laps', 'poolLapLength');
+      expect(save({ ...pool, laps }, 'android').laps).toHaveLength(laps.length);
+    }
+    expect(save({ ...run, activityType: 'swimmingOpenWater', laps: [span(0, 2)] }).laps).toHaveLength(1);
+  });
+
   it('keeps workout fields off other types', () => {
     rejection(() => save({ ...run, value: 1 }), 'INVALID_ARGUMENT', 'samples[0].value', 'notApplicable');
     rejection(() => save({ ...run, stages: [] }), 'INVALID_ARGUMENT', 'samples[0].stages', 'notApplicable');

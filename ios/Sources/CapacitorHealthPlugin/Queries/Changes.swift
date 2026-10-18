@@ -96,13 +96,7 @@ final class Changes {
             }
             let page = try await anchoredQuery(type, anchor: anchor, predicate: nil, limit: limit)
             let changed = page.samples.filter { !excludeOwn || $0.sourceRevision.source != ownSource }
-            if entry.typeId == SleepSessions.typeId {
-                // A session is derived from several samples: report the sessions holding changed samples, whole
-                // (decision #65). Deleted entries name the deleted sample: a session id or one of its stageSampleIds.
-                upserted += try await SleepSessions(store: store).sessions(containing: changed)
-            } else {
-                upserted += changed.map { SampleCodec.encode($0, entry: entry) }
-            }
+            upserted += try await encode(changed, entry: entry)
             deleted += page.deleted.map { object in
                 var json: [String: Any] = ["type": entry.typeId, "id": object.uuid.uuidString]
                 // Deleted objects keep their sync identifier (T06 S4).
@@ -118,6 +112,17 @@ final class Changes {
         }
         HealthLog.debug("getChanges: \(upserted.count) upserted, \(deleted.count) deleted")
         return ["upserted": upserted, "deleted": deleted, "nextCursor": ChangesCursor(anchors: anchors).encoded(), "hasMore": hasMore]
+    }
+
+    /// Changed samples as the bridge returns them. A sleep session is derived from several samples: report the
+    /// sessions holding changed samples, whole (decision #65); deleted entries then name the deleted sample, a
+    /// session id or one of its stageSampleIds.
+    private func encode(_ changed: [HKSample], entry: RegistryEntry) async throws -> [[String: Any]] {
+        switch entry.typeId {
+        case SleepSessions.typeId: return try await SleepSessions(store: store).sessions(containing: changed)
+        case Workouts.typeId: return try await Workouts(store: store).encode(changed)
+        default: return changed.map { SampleCodec.encode($0, entry: entry) }
+        }
     }
 
     /// An anchor for "now" without reading history: a nil anchor returns every sample and every tombstone

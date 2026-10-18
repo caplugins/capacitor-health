@@ -755,6 +755,17 @@ function newWorkout(s: Fields, at: string, entry: RegistryEntry, platform: Nativ
     return out;
   });
 
+  // HealthKit raises an exception for a pool swim's lap events unless the workout carries the pool's length,
+  // which iOS writes from the laps (decision #68).
+  const laps = result.laps as Fields[];
+  if (platform === 'ios' && activityType === 'swimmingPool' && laps.length > 0) {
+    const lengths = new Set(laps.map((lap) => lap.length));
+    const [length] = lengths;
+    if (lengths.size !== 1 || typeof length !== 'number' || length <= 0) {
+      throw invalid(`${at}.laps`, 'of a pool swim must all have the same length, above 0, on iOS', 'poolLapLength');
+    }
+  }
+
   if (s.activities !== undefined) {
     if (platform === 'android') {
       throw invalid(`${at}.activities`, "can't be stored on Android", 'valueUnsupportedOnPlatform');

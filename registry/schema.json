@@ -241,7 +241,11 @@
             "raw": { "type": "integer", "minimum": 0 },
             "minOS": { "$ref": "#/$defs/osVersion" },
             "indoor": { "description": "HKMetadataKeyIndoorWorkout: true matches and writes indoor; false matches absent or false and writes false.", "type": "boolean" },
-            "swimmingLocation": { "description": "HKMetadataKeySwimmingLocationType it matches and writes.", "enum": ["pool", "openWater"] }
+            "swimmingLocation": { "description": "HKMetadataKeySwimmingLocationType it matches and writes.", "enum": ["pool", "openWater"] },
+            "distance": {
+              "description": "The distance member a written distance total goes to, when not the distance type's writeTo (decision #68). false: the activity takes no distance total (multisport).",
+              "oneOf": [{ "$ref": "#/$defs/camelId" }, { "const": false }]
+            }
           },
           "not": { "required": ["indoor", "swimmingLocation"] }
         },

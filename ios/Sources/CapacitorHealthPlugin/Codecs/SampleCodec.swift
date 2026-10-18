@@ -96,22 +96,28 @@ enum SampleCodec {
         json["native"] = native
 
         let metadata = sample.metadata ?? [:]
-        var consumed = consumedKeys
         for field in entry.fields {
-            consumed.insert(field.key)
             guard let number = metadata[field.key] as? NSNumber else { continue }
             switch field.type {
             case .boolean: json[field.name] = number.boolValue
             case .enumeration: json[field.name] = unifiedValue(raw: number.intValue, valueSet: field.valueSet)
             }
         }
-        for (key, value) in metadata where !consumed.contains(key) {
+        extra.merge(extraMetadata(sample, consumed: Set(entry.fields.map(\.key)))) { $1 }
+        if !extra.isEmpty { json["metadata"] = extra }
+        return json
+    }
+
+    /// The sample's metadata the unified shape doesn't carry, as `hk.` keys, with its source's product type and
+    /// version. `consumed` names further keys the caller encoded itself.
+    static func extraMetadata(_ sample: HKSample, consumed: Set<String>) -> [String: Any] {
+        var extra: [String: Any] = [:]
+        for (key, value) in sample.metadata ?? [:] where !consumedKeys.contains(key) && !consumed.contains(key) {
             extra["hk.\(key)"] = MetadataValue.bridge(value)
         }
         if let productType = sample.sourceRevision.productType { extra["hk.productType"] = productType }
         if let version = sample.sourceRevision.version { extra["hk.sourceVersion"] = version }
-        if !extra.isEmpty { json["metadata"] = extra }
-        return json
+        return extra
     }
 
     static func kindName(_ kind: RegistryKind) -> String {

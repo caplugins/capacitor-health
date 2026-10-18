@@ -118,6 +118,14 @@ function sampleFor(support: TypeSupport, at: Date, clientId: string, variant: 0 
         endDate: later(at),
         ...(platform === 'android' ? { sessionType: variant === 0 ? 'meditation' : 'breathing' } : {}),
       };
+    case 'workout':
+      return {
+        ...base,
+        type: 'workout',
+        activityType: variant === 0 ? 'running' : 'walking',
+        endDate: later(at),
+        totals: { energy: 50 + variant },
+      };
     case 'insulinDelivery':
       return {
         ...base,
@@ -163,8 +171,11 @@ function sameValue(sample: Sample | undefined, expected: NewSample): boolean {
     return reading.systolic === expected.systolic && reading.diastolic === expected.diastolic;
   }
   if (expected.type === 'mindfulSession') {
-    return (sample as { sessionType?: string }).sessionType === expected.sessionType && sample.endDate !== sample.startDate;
+    return (
+      (sample as { sessionType?: string }).sessionType === expected.sessionType && sample.endDate !== sample.startDate
+    );
   }
+  if (expected.type === 'workout') return (sample as { activityType?: string }).activityType === expected.activityType;
   if (expected.type === 'sexualActivity')
     return (sample as { protectionUsed?: boolean }).protectionUsed === expected.protectionUsed;
   return wanted === undefined || actual === wanted;

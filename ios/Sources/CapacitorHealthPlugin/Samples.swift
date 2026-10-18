@@ -9,6 +9,7 @@ final class Samples {
     private let store: HKHealthStore
     private lazy var periods = try? MenstruationPeriods(store: store)
     private lazy var sleep = try? SleepSessions(store: store)
+    private lazy var workouts = Workouts(store: store)
 
     init(store: HKHealthStore) {
         self.store = store
@@ -70,7 +71,10 @@ final class Samples {
         }
         let fetched = Self.merge(lists, ascending: ascending)
         let page = Array(fetched.dropFirst(skip).prefix(limit))
-        var result: [String: Any] = ["samples": page.map { SampleCodec.encode($0, entry: entry, unit: unit) }]
+        let encoded = typeId == Workouts.typeId
+            ? try await workouts.encode(page)
+            : page.map { SampleCodec.encode($0, entry: entry, unit: unit) }
+        var result: [String: Any] = ["samples": encoded]
         let next = ReadCursor.next(typeId: typeId, pageStarts: page.map(\.startDate), hasMore: fetched.count > skip + limit, previous: cursor)
         if let next { result["nextCursor"] = next.encoded() }
         HealthLog.debug("readSamples \(typeId): \(page.count) samples")
@@ -93,8 +97,10 @@ final class Samples {
     func save(_ samples: [[String: Any]]) async throws -> [String: Any] {
         guard !samples.isEmpty else { throw HealthError.invalidArgument("samples", "must be a non-empty array") }
         // Each input sample becomes one object, one per day for a period (decision #29), or a span plus one
-        // per stage for a sleep session (decision #64).
+        // per stage for a sleep session (decision #64). Workouts are built after the rest is saved, one by
+        // one, since HKWorkoutBuilder saves as it goes (decision #68).
         var groups: [(objects: [HKSample], periodClientId: String?, sleepClientId: String?)] = []
+        var workoutPlans: [Int: WorkoutCodec.Plan] = [:]
         for (index, json) in samples.enumerated() {
             let fields = JSONFields(json, path: "samples[\(index)]")
             let (entry, type) = try HealthTypes.resolveWritable(try fields.string("type"))
@@ -102,12 +108,18 @@ final class Samples {
                 groups.append((try periodService().expand(fields), fields.optionalString("clientId"), nil))
             } else if entry.typeId == SleepSessions.typeId {
                 groups.append((try sleepService().expand(fields), nil, fields.optionalString("clientId")))
+            } else if entry.typeId == Workouts.typeId {
+                workoutPlans[index] = try WorkoutCodec.plan(fields)
+                groups.append(([], nil, nil))
             } else {
                 groups.append(([try SampleCodec.decode(fields, entry: entry, type: type)], nil, nil))
             }
         }
         let objects = groups.flatMap(\.objects)
-        try await store.save(objects)
+        if !objects.isEmpty { try await store.save(objects) }
+        for (index, plan) in workoutPlans.sorted(by: { $0.key < $1.key }) {
+            groups[index].objects = [try await workouts.save(plan)]
+        }
         for group in groups {
             let version = (group.objects.first?.metadata?[HKMetadataKeySyncVersion] as? NSNumber)?.intValue ?? 1
             if let clientId = group.periodClientId {
@@ -149,6 +161,9 @@ final class Samples {
         }
         if typeId == SleepSessions.typeId {
             return ["deleted": try await sleepService().delete(options)]
+        }
+        if typeId == Workouts.typeId {
+            return ["deleted": try await workouts.delete(options)]
         }
         let predicate = try Self.deletePredicate(options)
         if let correlationType = type as? HKCorrelationType {

@@ -56,13 +56,23 @@ struct RegistryWorkoutActivity {
     let indoor: Bool?
     /// `HKWorkoutSwimmingLocationType` raw value it matches and writes.
     let swimmingLocation: Int?
+    /// The distance type a written distance total goes to; nil when the activity takes none (decision #68).
+    let distance: String?
 
-    init(_ id: String, raw: UInt, isAvailable: @escaping () -> Bool = { true }, indoor: Bool? = nil, swimmingLocation: Int? = nil) {
+    init(
+        _ id: String,
+        raw: UInt,
+        isAvailable: @escaping () -> Bool = { true },
+        indoor: Bool? = nil,
+        swimmingLocation: Int? = nil,
+        distance: String? = "distanceWalkingRunning"
+    ) {
         self.id = id
         self.raw = raw
         self.isAvailable = isAvailable
         self.indoor = indoor
         self.swimmingLocation = swimmingLocation
+        self.distance = distance
     }
 }
 
@@ -493,13 +503,13 @@ enum Registry {
         RegistryWorkoutActivity("cooldown", raw: 80),
         RegistryWorkoutActivity("coreTraining", raw: 59),
         RegistryWorkoutActivity("cricket", raw: 10),
-        RegistryWorkoutActivity("crossCountrySkiing", raw: 60),
+        RegistryWorkoutActivity("crossCountrySkiing", raw: 60, distance: "distanceCrossCountrySkiing"),
         RegistryWorkoutActivity("crossTraining", raw: 11),
         RegistryWorkoutActivity("curling", raw: 12),
-        RegistryWorkoutActivity("cycling", raw: 13, indoor: false),
-        RegistryWorkoutActivity("cyclingStationary", raw: 13, indoor: true),
+        RegistryWorkoutActivity("cycling", raw: 13, indoor: false, distance: "distanceCycling"),
+        RegistryWorkoutActivity("cyclingStationary", raw: 13, indoor: true, distance: "distanceCycling"),
         RegistryWorkoutActivity("discSports", raw: 75),
-        RegistryWorkoutActivity("downhillSkiing", raw: 61),
+        RegistryWorkoutActivity("downhillSkiing", raw: 61, distance: "distanceDownhillSnowSports"),
         RegistryWorkoutActivity("elliptical", raw: 16),
         RegistryWorkoutActivity("equestrianSports", raw: 17),
         RegistryWorkoutActivity("fencing", raw: 18),
@@ -509,7 +519,7 @@ enum Registry {
         RegistryWorkoutActivity("functionalStrengthTraining", raw: 20),
         RegistryWorkoutActivity("golf", raw: 21),
         RegistryWorkoutActivity("gymnastics", raw: 22),
-        RegistryWorkoutActivity("handCycling", raw: 74),
+        RegistryWorkoutActivity("handCycling", raw: 74, distance: "distanceCycling"),
         RegistryWorkoutActivity("handball", raw: 23),
         RegistryWorkoutActivity("highIntensityIntervalTraining", raw: 63),
         RegistryWorkoutActivity("hiking", raw: 24),
@@ -521,21 +531,21 @@ enum Registry {
         RegistryWorkoutActivity("martialArts", raw: 28),
         RegistryWorkoutActivity("mindAndBody", raw: 29),
         RegistryWorkoutActivity("mixedCardio", raw: 73),
-        RegistryWorkoutActivity("paddleSports", raw: 31),
+        RegistryWorkoutActivity("paddleSports", raw: 31, distance: "distancePaddleSports"),
         RegistryWorkoutActivity("pickleball", raw: 79),
         RegistryWorkoutActivity("pilates", raw: 66),
         RegistryWorkoutActivity("play", raw: 32),
         RegistryWorkoutActivity("preparationAndRecovery", raw: 33),
         RegistryWorkoutActivity("racquetball", raw: 34),
-        RegistryWorkoutActivity("rowing", raw: 35, indoor: false),
-        RegistryWorkoutActivity("rowingMachine", raw: 35, indoor: true),
+        RegistryWorkoutActivity("rowing", raw: 35, indoor: false, distance: "distanceRowing"),
+        RegistryWorkoutActivity("rowingMachine", raw: 35, indoor: true, distance: "distanceRowing"),
         RegistryWorkoutActivity("rugby", raw: 36),
         RegistryWorkoutActivity("running", raw: 37, indoor: false),
         RegistryWorkoutActivity("runningTreadmill", raw: 37, indoor: true),
         RegistryWorkoutActivity("sailing", raw: 38),
-        RegistryWorkoutActivity("skatingSports", raw: 39),
+        RegistryWorkoutActivity("skatingSports", raw: 39, distance: "distanceSkatingSports"),
         RegistryWorkoutActivity("snowSports", raw: 40),
-        RegistryWorkoutActivity("snowboarding", raw: 67),
+        RegistryWorkoutActivity("snowboarding", raw: 67, distance: "distanceDownhillSnowSports"),
         RegistryWorkoutActivity("soccer", raw: 41),
         RegistryWorkoutActivity("socialDance", raw: 78),
         RegistryWorkoutActivity("softball", raw: 42),
@@ -545,23 +555,33 @@ enum Registry {
         RegistryWorkoutActivity("stepTraining", raw: 69),
         RegistryWorkoutActivity("strengthTraining", raw: 50),
         RegistryWorkoutActivity("surfing", raw: 45),
-        RegistryWorkoutActivity("swimBikeRun", raw: 82, isAvailable: { if #available(iOS 16.0, *) { return true }; return false }),
-        RegistryWorkoutActivity("swimming", raw: 46),
-        RegistryWorkoutActivity("swimmingOpenWater", raw: 46, swimmingLocation: 2),
-        RegistryWorkoutActivity("swimmingPool", raw: 46, swimmingLocation: 1),
+        RegistryWorkoutActivity(
+            "swimBikeRun",
+            raw: 82,
+            isAvailable: { if #available(iOS 16.0, *) { return true }; return false },
+            distance: nil
+        ),
+        RegistryWorkoutActivity("swimming", raw: 46, distance: "distanceSwimming"),
+        RegistryWorkoutActivity("swimmingOpenWater", raw: 46, swimmingLocation: 2, distance: "distanceSwimming"),
+        RegistryWorkoutActivity("swimmingPool", raw: 46, swimmingLocation: 1, distance: "distanceSwimming"),
         RegistryWorkoutActivity("tableTennis", raw: 47),
         RegistryWorkoutActivity("taiChi", raw: 72),
         RegistryWorkoutActivity("tennis", raw: 48),
         RegistryWorkoutActivity("trackAndField", raw: 49),
-        RegistryWorkoutActivity("transition", raw: 83, isAvailable: { if #available(iOS 16.0, *) { return true }; return false }),
+        RegistryWorkoutActivity(
+            "transition",
+            raw: 83,
+            isAvailable: { if #available(iOS 16.0, *) { return true }; return false },
+            distance: nil
+        ),
         RegistryWorkoutActivity("underwaterDiving", raw: 84, isAvailable: { if #available(iOS 17.0, *) { return true }; return false }),
         RegistryWorkoutActivity("volleyball", raw: 51),
         RegistryWorkoutActivity("walking", raw: 52),
         RegistryWorkoutActivity("waterFitness", raw: 53),
         RegistryWorkoutActivity("waterPolo", raw: 54),
         RegistryWorkoutActivity("waterSports", raw: 55),
-        RegistryWorkoutActivity("wheelchairRunPace", raw: 71),
-        RegistryWorkoutActivity("wheelchairWalkPace", raw: 70),
+        RegistryWorkoutActivity("wheelchairRunPace", raw: 71, distance: "distanceWheelchair"),
+        RegistryWorkoutActivity("wheelchairWalkPace", raw: 70, distance: "distanceWheelchair"),
         RegistryWorkoutActivity("wrestling", raw: 56),
         RegistryWorkoutActivity("yoga", raw: 57),
         RegistryWorkoutActivity("other", raw: 3000)
