@@ -319,7 +319,7 @@ export type RegistryGroup = 'reproductiveHealth' | 'symptoms' | 'activity' | 'vi
 /**
  * A statistic `aggregate()` can compute.
  *
- * @since 0.2.0
+ * @since 0.1.0
  */
 export type AggregateMetric = 'sum' | 'avg' | 'min' | 'max' | 'count' | 'duration';
 

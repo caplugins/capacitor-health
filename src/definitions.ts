@@ -23,9 +23,17 @@ export type {
  * is reserved: every record of the Health Connect library the plugin uses is registered, so `hc:`
  * ids reject with `UNSUPPORTED_TYPE` for now.
  *
- * @since 0.2.0
+ * @since 0.1.0
  */
 export type PassthroughType = `hk:${string}` | `hc:${string}`;
+
+/**
+ * Any type a call accepts: a unified type id (see `HealthType` and docs/supported-types.md) or a
+ * passthrough id.
+ *
+ * @since 0.1.0
+ */
+export type HealthTypeOrPassthrough = HealthType | PassthroughType;
 
 declare module '@capacitor/cli' {
   export interface PluginsConfig {
@@ -38,7 +46,7 @@ declare module '@capacitor/cli' {
        *
        * Health Connect links to that screen from its permission dialog ("privacy policy") and won't
        * show the dialog at all when an app has no such screen. Without this setting the screen
-       * closes straight away. Apps can replace the screen with their own (see the README).
+       * closes straight away. Apps can replace the screen with their own (see docs/setup-android.md).
        *
        * @since 0.1.0
        * @example "https://example.com/privacy"
@@ -187,7 +195,7 @@ export interface AvailabilityResult {
  * - `featureUnavailable`: Android, this device's Health Connect doesn't have the feature the type needs.
  * - `readOnly`: the type can be read but the platform doesn't let apps write it.
  * - `aggregateOnly`: the platform has no samples of the type, only aggregates (`totalEnergy` on iOS,
- *   `basalEnergy` on Android). Since 0.2.0.
+ *   `basalEnergy` on Android).
  *
  * @since 0.1.0
  */
@@ -210,8 +218,7 @@ export interface TypeSupport {
   /** @since 0.1.0 */
   writable: boolean;
   /**
-   * Whether `aggregate()` works for the type on this device (always `false` in 0.1.0, which had no
-   * `aggregate()`).
+   * Whether `aggregate()` works for the type on this device.
    *
    * @since 0.1.0
    */
@@ -219,7 +226,7 @@ export interface TypeSupport {
   /**
    * The metrics `aggregate()` computes for the type here. Set when `aggregatable` is `true`.
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   metrics?: AggregateMetric[];
   /**
@@ -289,7 +296,7 @@ export type AuthorizationStatus = 'granted' | 'notGranted' | 'notDetermined' | '
  *
  * @since 0.1.0
  */
-export type AuthorizationStatusMap = Partial<Record<HealthType | PassthroughType, AuthorizationStatus>>;
+export type AuthorizationStatusMap = Partial<Record<HealthTypeOrPassthrough, AuthorizationStatus>>;
 
 /**
  * @since 0.1.0
@@ -300,13 +307,13 @@ export interface AuthorizationOptions {
    *
    * @since 0.1.0
    */
-  read?: (HealthType | PassthroughType)[];
+  read?: HealthTypeOrPassthrough[];
   /**
    * Types to write. Read-only types reject with `READ_ONLY_TYPE`.
    *
    * @since 0.1.0
    */
-  write?: (HealthType | PassthroughType)[];
+  write?: HealthTypeOrPassthrough[];
   /**
    * Android only. Extra Health Connect permissions, requested only when set and supported by the
    * device (see `getSupportedTypes().android`). The app's manifest must declare them too.
@@ -341,9 +348,9 @@ export interface AndroidAuthorizationOptions {
  */
 export interface CheckAuthorizationOptions {
   /** @since 0.1.0 */
-  read?: (HealthType | PassthroughType)[];
+  read?: HealthTypeOrPassthrough[];
   /** @since 0.1.0 */
-  write?: (HealthType | PassthroughType)[];
+  write?: HealthTypeOrPassthrough[];
 }
 
 /**
@@ -499,7 +506,7 @@ export interface SampleBase {
    */
   id: string;
   /** @since 0.1.0 */
-  type: HealthType | PassthroughType;
+  type: HealthTypeOrPassthrough;
   /** @since 0.1.0 */
   startDate: string;
   /**
@@ -536,7 +543,7 @@ export interface SampleBase {
    * share the record's `clientId`; a deletion in `getChanges` names the record, so it matches their
    * `seriesId`.
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   seriesId?: string;
   /**
@@ -579,38 +586,38 @@ export interface QuantitySample extends SampleBase {
   /**
    * `vo2Max`, iOS: how the value was measured or estimated (`vo2MaxTestType` values).
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   testType?: string;
   /**
    * `vo2Max`, Android: how the value was measured (`vo2MaxMeasurementMethod` values).
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   measurementMethod?: string;
   /**
    * `bloodGlucose`: when the reading was taken relative to a meal. iOS stores only `beforeMeal` and
    * `afterMeal`.
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   relationToMeal?: string;
   /**
    * `bloodGlucose`, Android: the meal the reading relates to.
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   mealType?: string;
   /**
    * `bloodGlucose`, Android: what the reading was taken from (capillary blood, interstitial fluid, …).
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   specimenSource?: string;
   /**
    * `insulinDelivery`, iOS: `basal` or `bolus`.
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   reason?: string;
 }
@@ -667,7 +674,7 @@ export interface EventSample extends SampleBase {
 
 /**
  * A menstruation period. Android stores periods as records. iOS has no period object: the plugin
- * derives periods from `menstrualFlow` samples (rules in the README).
+ * derives periods from `menstrualFlow` samples (rules in docs/reproductive-health.md).
  *
  * @since 0.1.0
  */
@@ -747,29 +754,29 @@ export interface SkinTemperatureSample extends SampleBase {
  * A blood pressure reading. iOS stores it as a correlation of a systolic and a diastolic sample
  * (what Apple Health shows as one reading), Android as a `BloodPressureRecord`.
  *
- * @since 0.2.0
+ * @since 0.1.0
  */
 export interface BloodPressureSample extends SampleBase {
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   kind: 'special';
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   type: 'bloodPressure';
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   systolic: number;
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   diastolic: number;
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   unit: 'mmHg';
   /**
    * Android: `standingUp`, `sittingDown`, `lyingDown` or `reclining`. Absent when not recorded.
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   bodyPosition?: string;
   /**
    * Android: `leftWrist`, `rightWrist`, `leftUpperArm` or `rightUpperArm`. Absent when not recorded.
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   measurementLocation?: string;
 }
@@ -777,24 +784,24 @@ export interface BloodPressureSample extends SampleBase {
 /**
  * A sample of a passthrough type (`hk:…`), with its native value.
  *
- * @since 0.2.0
+ * @since 0.1.0
  */
 export interface PassthroughSample extends SampleBase {
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   kind: 'quantity' | 'category';
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   type: PassthroughType;
   /**
    * A quantity in `unit`, or a category's raw HealthKit value.
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   value: number;
   /**
    * Quantities: the unit asked for in `readSamples()`, else the first unit of the plugin's unit table
    * that fits the HealthKit type.
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   unit?: string;
 }
@@ -876,20 +883,20 @@ export interface NewQuantitySample extends NewSampleBase {
   unit?: string;
   /** @since 0.1.0 */
   measurementLocation?: string;
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   testType?: string;
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   measurementMethod?: string;
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   relationToMeal?: string;
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   mealType?: string;
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   specimenSource?: string;
   /**
    * `insulinDelivery`: required on iOS, which rejects the sample without it.
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   reason?: string;
 }
@@ -998,41 +1005,41 @@ export interface NewSkinTemperatureSample extends NewSampleBase {
  * A blood pressure reading, in mmHg. Android takes a single moment (`endDate` equal to `startDate`
  * or absent).
  *
- * @since 0.2.0
+ * @since 0.1.0
  */
 export interface NewBloodPressureSample extends NewSampleBase {
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   type: 'bloodPressure';
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   systolic: number;
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   diastolic: number;
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   unit?: 'mmHg';
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   bodyPosition?: string;
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   measurementLocation?: string;
 }
 
 /**
  * A new sample of a passthrough type (`hk:…`, iOS).
  *
- * @since 0.2.0
+ * @since 0.1.0
  */
 export interface NewPassthroughSample extends NewSampleBase {
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   type: PassthroughType;
   /**
    * Quantities: the amount in `unit`. Categories: HealthKit's raw value (0 for types without values).
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   value: number;
   /**
    * Quantities: required, one of the plugin's unit ids that fits the HealthKit type (`mL`, `kcal`, …).
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   unit?: string;
 }
@@ -1059,7 +1066,7 @@ export interface ReadSamplesOptions {
    *
    * @since 0.1.0
    */
-  type: HealthType | PassthroughType;
+  type: HealthTypeOrPassthrough;
   /**
    * Returns samples that overlap `startDate`–`endDate` (on Android, records covering a period of time
    * other than menstruation periods match by start time). ISO 8601 with an offset.
@@ -1120,45 +1127,45 @@ export interface ReadSamplesResult {
 /**
  * Bucket length for `aggregate()`.
  *
- * @since 0.2.0
+ * @since 0.1.0
  */
 export type AggregateBucketUnit = 'minute' | 'hour' | 'day' | 'week' | 'month';
 
 /**
- * @since 0.2.0
+ * @since 0.1.0
  */
 export interface AggregateBucketOptions {
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   unit: AggregateBucketUnit;
   /**
    * How many `unit`s each bucket spans.
    *
-   * @since 0.2.0
+   * @since 0.1.0
    * @default 1
    */
   size?: number;
 }
 
 /**
- * @since 0.2.0
+ * @since 0.1.0
  */
 export interface AggregateOptions {
   /**
    * A quantity type (or `bloodPressure`, later) whose `getSupportedTypes()` entry is `aggregatable`.
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   type: HealthType;
   /**
    * Start of the range and of the first bucket. ISO 8601 with an offset.
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   startDate: string;
   /**
    * End of the range; the last bucket stops here.
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   endDate: string;
   /**
@@ -1166,7 +1173,7 @@ export interface AggregateOptions {
    * for the others, `count` (number of readings) where the platform has it. `TypeSupport.metrics`
    * lists them per type.
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   metrics: AggregateMetric[];
   /**
@@ -1175,50 +1182,50 @@ export interface AggregateOptions {
    * follow the calendar in the device's time zone, so a day across a daylight-saving change lasts 23
    * or 25 hours. At most 5,000 buckets.
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   bucket?: AggregateBucketOptions;
   /**
    * Unit for `sum`, `avg`, `min` and `max`; one of the type's units. Defaults to its canonical unit.
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   unit?: string;
   /**
    * Only data written by these apps (bundle ids / package names).
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   sourceIds?: string[];
 }
 
 /**
- * @since 0.2.0
+ * @since 0.1.0
  */
 export interface AggregateBucket {
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   startDate: string;
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   endDate: string;
   /**
    * The metrics asked for; a metric is absent when the bucket has no data for it. `count` is a
    * number of readings, `duration` seconds; the others are in `unit`.
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   values: Partial<Record<AggregateMetric, number>>;
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   unit: string;
 }
 
 /**
- * @since 0.2.0
+ * @since 0.1.0
  */
 export interface AggregateResult {
   /**
    * Every bucket of the range in order, including empty ones.
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   buckets: AggregateBucket[];
 }
@@ -1232,7 +1239,7 @@ export interface GetChangesOptions {
    *
    * @since 0.1.0
    */
-  types: (HealthType | PassthroughType)[];
+  types: HealthTypeOrPassthrough[];
   /**
    * `nextCursor` from the previous call. Without it, the call returns no changes, only a cursor
    * marking "now": read existing data with `readSamples()` first, then follow changes from there.
@@ -1263,7 +1270,7 @@ export interface GetChangesOptions {
  */
 export interface DeletedSample {
   /** @since 0.1.0 */
-  type: HealthType | PassthroughType;
+  type: HealthTypeOrPassthrough;
   /**
    * The deleted sample's id. On Android, a deleted series record gives one deletion whose id is the
    * record's: remove the samples whose `id` or `seriesId` equals it.
@@ -1334,7 +1341,7 @@ export interface SaveSamplesResult {
  */
 export interface DeleteSamplesOptions {
   /** @since 0.1.0 */
-  type: HealthType | PassthroughType;
+  type: HealthTypeOrPassthrough;
   /**
    * Sample ids. On Android, the id of a point in a series record (`<seriesId>#<index>`) deletes the
    * whole record, every point of it.
@@ -1386,7 +1393,7 @@ export interface CapacitorHealthPlugin {
    *
    * Declare what you request first, or the call rejects with `MISSING_DECLARATION`: iOS needs
    * `NSHealthShareUsageDescription` (read) and `NSHealthUpdateUsageDescription` (write) in
-   * `Info.plist`; Android needs each permission in `AndroidManifest.xml` (see the README).
+   * `Info.plist`; Android needs each permission in `AndroidManifest.xml` (see docs/setup-ios.md and docs/setup-android.md).
    *
    * iOS shows its sheet only for types the user hasn't been asked about; read results are
    * `unknown` afterwards. Android stops showing its dialog after the user refused twice: when
@@ -1436,7 +1443,7 @@ export interface CapacitorHealthPlugin {
    * activity types (steps, distance, energy, floors…), using the user's app priority; for other types
    * its aggregates cover every app's data.
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   aggregate(options: AggregateOptions): Promise<AggregateResult>;
 
