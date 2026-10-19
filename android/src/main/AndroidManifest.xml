@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!--
-      No health permissions here, ever: apps declare the ones they use (docs/decisions.md #9).
+      No health permissions here, ever: apps declare the ones they use (decision #9 in the project wiki).
       The plugin checks the app's manifest at runtime and rejects with MISSING_DECLARATION.
     -->
     <queries>
