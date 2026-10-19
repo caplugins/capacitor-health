@@ -4,7 +4,7 @@ ext {
     androidxJunitVersion = project.hasProperty('androidxJunitVersion') ? rootProject.ext.androidxJunitVersion : '1.3.0'
     androidxEspressoCoreVersion = project.hasProperty('androidxEspressoCoreVersion') ? rootProject.ext.androidxEspressoCoreVersion : '3.7.0'
     androidxCoreKTXVersion = project.hasProperty('androidxCoreKTXVersion') ? rootProject.ext.androidxCoreKTXVersion : '1.17.0'
-    // Health Connect. 1.2.x alphas need compileSdk 37 / AGP 9.1; see docs/decisions.md #8.
+    // Health Connect. 1.2.x alphas need compileSdk 37 / AGP 9.1; see decision #8 in the project wiki.
     androidxHealthConnectVersion = project.hasProperty('androidxHealthConnectVersion') ? rootProject.ext.androidxHealthConnectVersion : '1.1.0'
     // connect-testing pins a connect-client version; alpha03 is the last on the 1.1 line (alpha04 pulls 1.2.0-alpha05).
     androidxHealthConnectTestingVersion = project.hasProperty('androidxHealthConnectTestingVersion') ? rootProject.ext.androidxHealthConnectTestingVersion : '1.0.0-alpha03'

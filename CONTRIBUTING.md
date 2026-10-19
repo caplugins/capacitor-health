@@ -1,9 +1,11 @@
 # Contributing
 
-The design record lives in [`docs/`](docs/README.md); the next piece of work is the first unchecked
-task in [`docs/tasks.md`](docs/tasks.md). Read [`CLAUDE.md`](CLAUDE.md) for the standing rules
-(no health permissions in the plugin manifest, no logging of health values, every type goes
-through the registry, gate by OS version).
+User documentation lives in [`docs/`](docs/README.md). The design record (architecture, decisions,
+type mapping, platform research) lives in the
+[wiki](https://github.com/caplugins/capacitor-health/wiki), and planned work in
+[issues](https://github.com/caplugins/capacitor-health/issues). Read [`CLAUDE.md`](CLAUDE.md) for
+the standing rules (no health permissions in the plugin manifest, no logging of health values,
+every type goes through the registry, gate by OS version).
 
 ## Setup
 
@@ -16,7 +18,7 @@ To build the native code you also need:
 - **Android:** JDK 21 and the Android SDK. Android Studio's bundled JDK works:
   `export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"` and
   `export ANDROID_HOME="$HOME/Library/Android/sdk"` (or an `android/local.properties` with `sdk.dir`).
-- **iOS:** Xcode 26 or later (the plugin is built against the iOS 27 SDK) and an iPhone 17 Pro
+- **iOS:** Xcode 27 or later (the plugin uses iOS 27 SDK APIs) and an iPhone 17 Pro
   simulator on the latest runtime, or set `IOS_DESTINATION` (see below).
 - **SwiftLint:** `brew install swiftlint`.
 
@@ -24,7 +26,7 @@ To build the native code you also need:
 
 | Script | What it does |
 | --- | --- |
-| `npm run build` | Compiles `src/` to `dist/` and regenerates the API section of `README.md` from the JSDoc in `src/definitions.ts`. |
+| `npm run build` | Compiles `src/` to `dist/` and regenerates [`docs/api.md`](docs/api.md) from the JSDoc in `src/definitions.ts`. |
 | `npm test` | TypeScript unit tests (Vitest, `src/**/*.test.ts`). |
 | `npm run test:ios` | XCTest on a simulator. Defaults to `iPhone 17 Pro` on the latest runtime; override with `IOS_DESTINATION="platform=iOS Simulator,id=<udid>"`. |
 | `npm run test:android` | JUnit tests (`android/src/test`), using `FakeHealthConnectClient` from `connect-testing`. |
@@ -36,17 +38,20 @@ on a keychain prompt for github.com credentials. The only package dependency is 
 
 ## Making changes
 
-- **Docs:** edit the JSDoc in `src/definitions.ts`, then run `npm run build`. Don't edit the API
-  section of `README.md` by hand; it's between the `docgen` markers and gets overwritten.
+- **Docs:** guides are plain Markdown in `docs/`. The API reference (`docs/api.md`) is generated:
+  edit the JSDoc in `src/definitions.ts`, then run `npm run build`. The type table in
+  `docs/supported-types.md` is generated from the registry by `npm run registry:gen`. Don't edit
+  either between their markers by hand. Behaviour changes need the guides updated in the same PR.
 - **Adding a method:** add it to `src/definitions.ts`, `src/web.ts`, `CapacitorHealthPlugin.kt` (as a
   `@PluginMethod`) and `CapacitorHealthPlugin.swift` (both the method and the `pluginMethods`
   list). A method missing from one platform rejects with "not implemented" at runtime.
 - **Adding a type:** add it to [`registry/types.json`](registry/types.json) (format:
   [`registry/schema.json`](registry/schema.json)), not to a bridge method, then run
   `npm run registry:gen` and commit the generated files. `npm test` and `npm run test:ios` check the
-  entry against the schema and the HealthKit SDK; `npm run registry:coverage` shows what's left. See
-  [`docs/04-type-mapping.md`](docs/04-type-mapping.md) and the per-type acceptance checklist in
-  [`docs/06-testing.md`](docs/06-testing.md).
+  entry against the schema and the HealthKit SDK; `npm run registry:coverage` shows what's left. See the
+  wiki's Type Mapping page and the per-type acceptance checklist on its Development and Testing
+  page. The HealthKit and Health Connect catalogs the registry is checked against are in
+  [`registry/catalogs/`](registry/catalogs).
 - **Android plugin methods must not throw.** Capacitor rethrows exceptions from `@PluginMethod`s on
   its plugin thread, which crashes the app. Catch and `call.reject(...)` with an error code instead.
 - **Dependency versions:** Android defaults are in the `ext` block of `android/build.gradle` and can

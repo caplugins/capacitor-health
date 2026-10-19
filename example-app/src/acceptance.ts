@@ -4,7 +4,7 @@ import type { HealthType, NewSample, Sample, TypeSupport } from '@caplugins/capa
 
 import { localIso } from './roundtrip';
 
-/** One row of the per-type acceptance checklist (docs/06-testing.md). */
+/** One row of the per-type acceptance checklist (Development and Testing page of the project wiki). */
 export interface AcceptanceRow {
   type: HealthType;
   platform: string;

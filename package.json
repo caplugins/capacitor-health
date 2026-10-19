@@ -1,6 +1,6 @@
 {
   "name": "@caplugins/capacitor-health",
-  "version": "0.2.0",
+  "version": "0.1.0",
   "description": "Apple HealthKit and Google Health Connect for Capacitor: every data type, read and write, with reproductive health first",
   "main": "dist/plugin.cjs.js",
   "module": "dist/esm/index.js",
@@ -56,7 +56,7 @@
     "eslint": "eslint . --ext ts",
     "prettier": "prettier \"**/*.{css,html,ts,js,java}\" --plugin=prettier-plugin-java",
     "swiftlint": "node-swiftlint",
-    "docgen": "docgen --api CapacitorHealthPlugin --output-readme README.md --output-json dist/docs.json",
+    "docgen": "docgen --api CapacitorHealthPlugin --output-readme docs/api.md --output-json dist/docs.json",
     "build": "npm run clean && npm run docgen && tsc && rollup -c rollup.config.mjs",
     "clean": "rimraf ./dist",
     "watch": "tsc --watch",

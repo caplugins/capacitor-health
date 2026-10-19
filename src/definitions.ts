@@ -27,9 +27,17 @@ export type {
  * is reserved: every record of the Health Connect library the plugin uses is registered, so `hc:`
  * ids reject with `UNSUPPORTED_TYPE` for now.
  *
- * @since 0.2.0
+ * @since 0.1.0
  */
 export type PassthroughType = `hk:${string}` | `hc:${string}`;
+
+/**
+ * Any type a call accepts: a unified type id (see `HealthType` and docs/supported-types.md) or a
+ * passthrough id.
+ *
+ * @since 0.1.0
+ */
+export type HealthTypeOrPassthrough = HealthType | PassthroughType;
 
 declare module '@capacitor/cli' {
   export interface PluginsConfig {
@@ -42,7 +50,7 @@ declare module '@capacitor/cli' {
        *
        * Health Connect links to that screen from its permission dialog ("privacy policy") and won't
        * show the dialog at all when an app has no such screen. Without this setting the screen
-       * closes straight away. Apps can replace the screen with their own (see the README).
+       * closes straight away. Apps can replace the screen with their own (see docs/setup-android.md).
        *
        * @since 0.1.0
        * @example "https://example.com/privacy"
@@ -191,7 +199,7 @@ export interface AvailabilityResult {
  * - `featureUnavailable`: Android, this device's Health Connect doesn't have the feature the type needs.
  * - `readOnly`: the type can be read but the platform doesn't let apps write it.
  * - `aggregateOnly`: the platform has no samples of the type, only aggregates (`totalEnergy` on iOS,
- *   `basalEnergy` on Android). Since 0.2.0.
+ *   `basalEnergy` on Android).
  *
  * @since 0.1.0
  */
@@ -214,8 +222,7 @@ export interface TypeSupport {
   /** @since 0.1.0 */
   writable: boolean;
   /**
-   * Whether `aggregate()` works for the type on this device (always `false` in 0.1.0, which had no
-   * `aggregate()`).
+   * Whether `aggregate()` works for the type on this device.
    *
    * @since 0.1.0
    */
@@ -223,7 +230,7 @@ export interface TypeSupport {
   /**
    * The metrics `aggregate()` computes for the type here. Set when `aggregatable` is `true`.
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   metrics?: AggregateMetric[];
   /**
@@ -293,7 +300,7 @@ export type AuthorizationStatus = 'granted' | 'notGranted' | 'notDetermined' | '
  *
  * @since 0.1.0
  */
-export type AuthorizationStatusMap = Partial<Record<HealthType | PassthroughType, AuthorizationStatus>>;
+export type AuthorizationStatusMap = Partial<Record<HealthTypeOrPassthrough, AuthorizationStatus>>;
 
 /**
  * @since 0.1.0
@@ -304,13 +311,13 @@ export interface AuthorizationOptions {
    *
    * @since 0.1.0
    */
-  read?: (HealthType | PassthroughType)[];
+  read?: HealthTypeOrPassthrough[];
   /**
    * Types to write. Read-only types reject with `READ_ONLY_TYPE`.
    *
    * @since 0.1.0
    */
-  write?: (HealthType | PassthroughType)[];
+  write?: HealthTypeOrPassthrough[];
   /**
    * Android only. Extra Health Connect permissions, requested only when set and supported by the
    * device (see `getSupportedTypes().android`). The app's manifest must declare them too.
@@ -344,7 +351,7 @@ export interface AndroidAuthorizationOptions {
    * `READ_EXERCISE_ROUTES`, reading another app's route needs the user's consent per workout
    * (`readWorkoutRoute`'s `android.requestConsent`). On iOS routes always come with `workout`.
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   exerciseRoutes?: boolean;
 }
@@ -354,9 +361,9 @@ export interface AndroidAuthorizationOptions {
  */
 export interface CheckAuthorizationOptions {
   /** @since 0.1.0 */
-  read?: (HealthType | PassthroughType)[];
+  read?: HealthTypeOrPassthrough[];
   /** @since 0.1.0 */
-  write?: (HealthType | PassthroughType)[];
+  write?: HealthTypeOrPassthrough[];
 }
 
 /**
@@ -399,7 +406,7 @@ export interface AuthorizationResult {
   /**
    * Android only: whether `READ_EXERCISE_ROUTES` and `WRITE_EXERCISE_ROUTE` are granted.
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   exerciseRoutesGranted?: { read: boolean; write: boolean };
 }
@@ -518,7 +525,7 @@ export interface SampleBase {
    */
   id: string;
   /** @since 0.1.0 */
-  type: HealthType | PassthroughType;
+  type: HealthTypeOrPassthrough;
   /** @since 0.1.0 */
   startDate: string;
   /**
@@ -555,7 +562,7 @@ export interface SampleBase {
    * share the record's `clientId`; a deletion in `getChanges` names the record, so it matches their
    * `seriesId`.
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   seriesId?: string;
   /**
@@ -598,38 +605,38 @@ export interface QuantitySample extends SampleBase {
   /**
    * `vo2Max`, iOS: how the value was measured or estimated (`vo2MaxTestType` values).
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   testType?: string;
   /**
    * `vo2Max`, Android: how the value was measured (`vo2MaxMeasurementMethod` values).
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   measurementMethod?: string;
   /**
    * `bloodGlucose`: when the reading was taken relative to a meal. iOS stores only `beforeMeal` and
    * `afterMeal`.
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   relationToMeal?: string;
   /**
    * `bloodGlucose`, Android: the meal the reading relates to.
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   mealType?: string;
   /**
    * `bloodGlucose`, Android: what the reading was taken from (capillary blood, interstitial fluid, …).
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   specimenSource?: string;
   /**
    * `insulinDelivery`, iOS: `basal` or `bolus`.
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   reason?: string;
 }
@@ -687,14 +694,14 @@ export interface EventSample extends SampleBase {
    * when not recorded; HealthKit mindful sessions have no type. Health Connect's title and notes read as
    * `metadata['hc.title']` / `metadata['hc.notes']`.
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   sessionType?: string;
 }
 
 /**
  * A menstruation period. Android stores periods as records. iOS has no period object: the plugin
- * derives periods from `menstrualFlow` samples (rules in the README).
+ * derives periods from `menstrualFlow` samples (rules in docs/reproductive-health.md).
  *
  * @since 0.1.0
  */
@@ -774,29 +781,29 @@ export interface SkinTemperatureSample extends SampleBase {
  * A blood pressure reading. iOS stores it as a correlation of a systolic and a diastolic sample
  * (what Apple Health shows as one reading), Android as a `BloodPressureRecord`.
  *
- * @since 0.2.0
+ * @since 0.1.0
  */
 export interface BloodPressureSample extends SampleBase {
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   kind: 'special';
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   type: 'bloodPressure';
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   systolic: number;
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   diastolic: number;
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   unit: 'mmHg';
   /**
    * Android: `standingUp`, `sittingDown`, `lyingDown` or `reclining`. Absent when not recorded.
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   bodyPosition?: string;
   /**
    * Android: `leftWrist`, `rightWrist`, `leftUpperArm` or `rightUpperArm`. Absent when not recorded.
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   measurementLocation?: string;
 }
@@ -805,7 +812,7 @@ export interface BloodPressureSample extends SampleBase {
  * Nutrient amounts by nutrient id, in each nutrient's canonical unit (`NUTRIENTS[id].unit`: `kcal`
  * for `energy` and `energyFromFat`, `g` for the rest; `0.0005` g of vitamin C is 500 mg).
  *
- * @since 0.3.0
+ * @since 0.2.0
  */
 export type NutrientAmounts = Partial<Record<Nutrient, number>>;
 
@@ -813,37 +820,37 @@ export type NutrientAmounts = Partial<Record<Nutrient, number>>;
  * A food or meal entry with its nutrients: a `food` correlation of dietary samples on iOS, a
  * `NutritionRecord` on Android.
  *
- * @since 0.3.0
+ * @since 0.2.0
  */
 export interface NutritionSample extends SampleBase {
-  /** @since 0.3.0 */
+  /** @since 0.2.0 */
   kind: 'special';
-  /** @since 0.3.0 */
+  /** @since 0.2.0 */
   type: 'nutrition';
   /**
    * The food's name: `HKMetadataKeyFoodType` on iOS, `NutritionRecord.name` on Android.
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   name?: string;
   /**
    * Android only: `breakfast`, `lunch`, `dinner` or `snack`; absent when not recorded.
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   mealType?: string;
   /**
    * The entry's nutrients; nutrients it doesn't record are absent. On iOS, amounts of a nutrient
    * held twice in one entry are added up.
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   nutrients: NutrientAmounts;
   /**
    * iOS only: the ids of the dietary samples the entry holds. They also read as single-nutrient
    * samples (`dietaryProtein`, …).
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   memberSampleIds?: string[];
 }
@@ -851,24 +858,24 @@ export interface NutritionSample extends SampleBase {
 /**
  * A sample of a passthrough type (`hk:…`), with its native value.
  *
- * @since 0.2.0
+ * @since 0.1.0
  */
 export interface PassthroughSample extends SampleBase {
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   kind: 'quantity' | 'category';
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   type: PassthroughType;
   /**
    * A quantity in `unit`, or a category's raw HealthKit value.
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   value: number;
   /**
    * Quantities: the unit asked for in `readSamples()`, else the first unit of the plugin's unit table
    * that fits the HealthKit type.
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   unit?: string;
 }
@@ -876,19 +883,19 @@ export interface PassthroughSample extends SampleBase {
 /**
  * One stage of a sleep session.
  *
- * @since 0.3.0
+ * @since 0.2.0
  */
 export interface SleepStage {
   /**
    * `inBed`, `asleep`, `awake`, `light`, `deep` or `rem`; Android also `outOfBed` and `unknown`
    * (`getSupportedTypes()` lists what this platform stores). `light`, `deep` and `rem` need iOS 16.
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   stage: string;
-  /** @since 0.3.0 */
+  /** @since 0.2.0 */
   startDate: string;
-  /** @since 0.3.0 */
+  /** @since 0.2.0 */
   endDate: string;
 }
 
@@ -899,37 +906,37 @@ export interface SleepStage {
  * Stages are in time order and never overlap; they may leave gaps. On iOS, time in bed that no other
  * stage covers reads as `inBed` stages.
  *
- * @since 0.3.0
+ * @since 0.2.0
  */
 export interface SleepSessionSample extends SampleBase {
-  /** @since 0.3.0 */
+  /** @since 0.2.0 */
   kind: 'special';
-  /** @since 0.3.0 */
+  /** @since 0.2.0 */
   type: 'sleepSession';
-  /** @since 0.3.0 */
+  /** @since 0.2.0 */
   stages: SleepStage[];
   /**
    * Android only.
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   title?: string;
   /**
    * Android only.
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   notes?: string;
   /**
    * `true` when the plugin worked the session out from stage samples (iOS).
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   derived: boolean;
   /**
    * iOS: the ids of the `sleepAnalysis` samples the session was derived from, `inBed` ones included.
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   stageSampleIds?: string[];
 }
@@ -940,12 +947,12 @@ export interface SleepSessionSample extends SampleBase {
  * Segments lie inside the workout and don't overlap on Android; on iOS, segments other apps wrote may
  * overlap (HealthKit allows it).
  *
- * @since 0.3.0
+ * @since 0.2.0
  */
 export interface WorkoutSegment {
-  /** @since 0.3.0 */
+  /** @since 0.2.0 */
   startDate: string;
-  /** @since 0.3.0 */
+  /** @since 0.2.0 */
   endDate: string;
   /**
    * A `workoutSegmentType` value (`pause`, `rest`, `squat`, `swimmingFreestyle`, …); absent for a
@@ -953,13 +960,13 @@ export interface WorkoutSegment {
    * segment is a HealthKit segment event, which has no type. Android takes only the types the
    * workout's activity allows (`WORKOUT_SEGMENTS`).
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   segmentType?: string;
   /**
    * Android only: repetitions done in the segment.
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   repetitions?: number;
 }
@@ -967,17 +974,17 @@ export interface WorkoutSegment {
 /**
  * One lap of a workout.
  *
- * @since 0.3.0
+ * @since 0.2.0
  */
 export interface WorkoutLap {
-  /** @since 0.3.0 */
+  /** @since 0.2.0 */
   startDate: string;
-  /** @since 0.3.0 */
+  /** @since 0.2.0 */
   endDate: string;
   /**
    * Metres, 0 to 1,000,000. HealthKit stores it as the lap event's `HKMetadataKeyLapLength`.
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   length?: number;
 }
@@ -989,32 +996,32 @@ export interface WorkoutLap {
  * before its end, no two points at the same time, latitude −90 to 90, longitude −180 to 180,
  * accuracies 0 or more. Points are stored in time order.
  *
- * @since 0.3.0
+ * @since 0.2.0
  */
 export interface WorkoutRouteLocation {
-  /** @since 0.3.0 */
+  /** @since 0.2.0 */
   time: string;
-  /** @since 0.3.0 */
+  /** @since 0.2.0 */
   latitude: number;
-  /** @since 0.3.0 */
+  /** @since 0.2.0 */
   longitude: number;
   /**
    * Metres above sea level.
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   altitude?: number;
   /**
    * Metres. On iOS a point without one is written with 0: HealthKit treats a location without a
    * horizontal accuracy as invalid.
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   horizontalAccuracy?: number;
   /**
    * Metres; on iOS only kept with an `altitude`.
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   verticalAccuracy?: number;
 }
@@ -1023,14 +1030,14 @@ export interface WorkoutRouteLocation {
  * iOS 16+: one activity of a multisport workout (a triathlon's swim, ride and run), HealthKit's
  * `HKWorkoutActivity`.
  *
- * @since 0.3.0
+ * @since 0.2.0
  */
 export interface WorkoutActivityPeriod {
-  /** @since 0.3.0 */
+  /** @since 0.2.0 */
   activityType: WorkoutActivity;
-  /** @since 0.3.0 */
+  /** @since 0.2.0 */
   startDate: string;
-  /** @since 0.3.0 */
+  /** @since 0.2.0 */
   endDate: string;
 }
 
@@ -1040,19 +1047,19 @@ export interface WorkoutActivityPeriod {
  * Android the active calories and distance records the workout's app wrote over its time, a record
  * partly inside counted in proportion. A total is absent when there's nothing to sum.
  *
- * @since 0.3.0
+ * @since 0.2.0
  */
 export interface WorkoutTotals {
   /**
    * Active energy, kcal.
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   energy?: number;
   /**
    * Metres.
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   distance?: number;
 }
@@ -1063,56 +1070,56 @@ export interface WorkoutTotals {
  * Samples recorded during a workout (heart rate, steps, …) aren't part of it: read them by the
  * workout's time range.
  *
- * @since 0.3.0
+ * @since 0.2.0
  */
 export interface WorkoutSample extends SampleBase {
-  /** @since 0.3.0 */
+  /** @since 0.2.0 */
   kind: 'special';
-  /** @since 0.3.0 */
+  /** @since 0.2.0 */
   type: 'workout';
   /**
    * Native activities without a unified id read as `other`, with the raw value in `native.value`.
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   activityType: WorkoutActivity;
   /**
    * Android only.
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   title?: string;
   /**
    * Android only.
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   notes?: string;
-  /** @since 0.3.0 */
+  /** @since 0.2.0 */
   totals: WorkoutTotals;
   /**
    * In time order.
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   segments: WorkoutSegment[];
   /**
    * In time order.
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   laps: WorkoutLap[];
   /**
    * iOS 16+, in time order; absent on Android and for workouts with a single activity.
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   activities?: WorkoutActivityPeriod[];
   /**
    * Whether a route was recorded with the workout. On Android it's also `true` when this app may
    * not read the route without the user's consent.
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   hasRoute: boolean;
 }
@@ -1197,20 +1204,20 @@ export interface NewQuantitySample extends NewSampleBase {
   unit?: string;
   /** @since 0.1.0 */
   measurementLocation?: string;
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   testType?: string;
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   measurementMethod?: string;
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   relationToMeal?: string;
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   mealType?: string;
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   specimenSource?: string;
   /**
    * `insulinDelivery`: required on iOS, which rejects the sample without it.
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   reason?: string;
 }
@@ -1252,7 +1259,7 @@ export interface NewEventSample extends NewSampleBase {
   type: EventHealthType;
   /** @since 0.1.0 */
   protectionUsed?: boolean;
-  /** `mindfulSession`, Android only. @since 0.3.0 */
+  /** `mindfulSession`, Android only. @since 0.2.0 */
   sessionType?: string;
 }
 
@@ -1321,20 +1328,20 @@ export interface NewSkinTemperatureSample extends NewSampleBase {
  * A blood pressure reading, in mmHg. Android takes a single moment (`endDate` equal to `startDate`
  * or absent).
  *
- * @since 0.2.0
+ * @since 0.1.0
  */
 export interface NewBloodPressureSample extends NewSampleBase {
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   type: 'bloodPressure';
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   systolic: number;
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   diastolic: number;
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   unit?: 'mmHg';
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   bodyPosition?: string;
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   measurementLocation?: string;
 }
 
@@ -1345,28 +1352,28 @@ export interface NewBloodPressureSample extends NewSampleBase {
  * the same `clientId` replaces the whole entry, nutrients it no longer has included, and deleting it
  * deletes its nutrient samples too.
  *
- * @since 0.3.0
+ * @since 0.2.0
  */
 export interface NewNutrition extends NewSampleBase {
-  /** @since 0.3.0 */
+  /** @since 0.2.0 */
   type: 'nutrition';
   /**
    * On Android after `startDate` (a `NutritionRecord` covers a period); iOS also takes a single
    * moment.
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   endDate?: string;
   /**
    * The food's name; an empty string is dropped.
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   name?: string;
   /**
    * Android only (`mealType` value set): setting it on iOS rejects with `valueUnsupportedOnPlatform`.
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   mealType?: string;
   /**
@@ -1377,7 +1384,7 @@ export interface NewNutrition extends NewSampleBase {
    * `valueUnsupportedOnPlatform`. On iOS each needs write access to its dietary type, else the write
    * rejects with `PERMISSION_DENIED` naming it.
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   nutrients: NutrientAmounts;
 }
@@ -1385,21 +1392,21 @@ export interface NewNutrition extends NewSampleBase {
 /**
  * A new sample of a passthrough type (`hk:…`, iOS).
  *
- * @since 0.2.0
+ * @since 0.1.0
  */
 export interface NewPassthroughSample extends NewSampleBase {
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   type: PassthroughType;
   /**
    * Quantities: the amount in `unit`. Categories: HealthKit's raw value (0 for types without values).
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   value: number;
   /**
    * Quantities: required, one of the plugin's unit ids that fits the HealthKit type (`mL`, `kcal`, …).
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   unit?: string;
 }
@@ -1413,33 +1420,33 @@ export interface NewPassthroughSample extends NewSampleBase {
  * `<clientId>:inBed`, so writing the same session again replaces its stages. Time the stages don't
  * cover reads back as `inBed`. Android writes one `SleepSessionRecord`.
  *
- * @since 0.3.0
+ * @since 0.2.0
  */
 export interface NewSleepSession extends NewSampleBase {
-  /** @since 0.3.0 */
+  /** @since 0.2.0 */
   type: 'sleepSession';
   /**
    * Required, after `startDate`.
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   endDate: string;
   /**
    * Defaults to none.
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   stages?: SleepStage[];
   /**
    * Android only: setting it on iOS rejects with `valueUnsupportedOnPlatform`.
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   title?: string;
   /**
    * Android only: setting it on iOS rejects with `valueUnsupportedOnPlatform`.
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   notes?: string;
 }
@@ -1460,56 +1467,56 @@ export interface NewSleepSession extends NewSampleBase {
  * paused time out of a workout's totals; without write access to those types the write rejects with
  * `PERMISSION_DENIED`.
  *
- * @since 0.3.0
+ * @since 0.2.0
  */
 export interface NewWorkout extends NewSampleBase {
-  /** @since 0.3.0 */
+  /** @since 0.2.0 */
   type: 'workout';
   /**
    * Required, after `startDate`.
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   endDate: string;
   /**
    * An id this platform stores (`WORKOUT_ACTIVITIES`); others reject with
    * `valueUnsupportedOnPlatform`.
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   activityType: WorkoutActivity;
   /**
    * Android only: setting it on iOS rejects with `valueUnsupportedOnPlatform`.
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   title?: string;
   /**
    * Android only: setting it on iOS rejects with `valueUnsupportedOnPlatform`.
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   notes?: string;
   /**
    * Each at most 1,000,000 (kcal, m).
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   totals?: WorkoutTotals;
-  /** @since 0.3.0 */
+  /** @since 0.2.0 */
   segments?: WorkoutSegment[];
   /**
    * On iOS a pool swim's laps must all have the same length above 0, the pool's
    * (`poolLapLength`): HealthKit keeps it on the workout.
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   laps?: WorkoutLap[];
   /**
    * iOS 16+ only: setting it on Android or iOS 15 rejects with `valueUnsupportedOnPlatform`.
    * Activities lie inside the workout and don't overlap.
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   activities?: WorkoutActivityPeriod[];
   /**
@@ -1518,7 +1525,7 @@ export interface NewWorkout extends NewSampleBase {
    * (`requestAuthorization`'s `android.exerciseRoutes`). Without it the write rejects with
    * `PERMISSION_DENIED` (reason `routeNotAuthorized`). An empty list writes no route.
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   route?: WorkoutRouteLocation[];
 }
@@ -1548,7 +1555,7 @@ export interface ReadSamplesOptions {
    *
    * @since 0.1.0
    */
-  type: HealthType | PassthroughType;
+  type: HealthTypeOrPassthrough;
   /**
    * Returns samples that overlap `startDate`–`endDate` (on Android, records covering a period of time
    * other than menstruation periods match by start time). ISO 8601 with an offset.
@@ -1609,27 +1616,27 @@ export interface ReadSamplesResult {
 /**
  * Bucket length for `aggregate()`.
  *
- * @since 0.2.0
+ * @since 0.1.0
  */
 export type AggregateBucketUnit = 'minute' | 'hour' | 'day' | 'week' | 'month';
 
 /**
- * @since 0.2.0
+ * @since 0.1.0
  */
 export interface AggregateBucketOptions {
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   unit: AggregateBucketUnit;
   /**
    * How many `unit`s each bucket spans.
    *
-   * @since 0.2.0
+   * @since 0.1.0
    * @default 1
    */
   size?: number;
 }
 
 /**
- * @since 0.2.0
+ * @since 0.1.0
  */
 export interface AggregateOptions {
   /**
@@ -1639,19 +1646,19 @@ export interface AggregateOptions {
    * from apps on the user's sleep priority list), and on Android `workout` (`duration`: Health
    * Connect's exercise time, session time minus `pause` and `rest` segments).
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   type: HealthType;
   /**
    * Start of the range and of the first bucket. ISO 8601 with an offset.
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   startDate: string;
   /**
    * End of the range; the last bucket stops here.
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   endDate: string;
   /**
@@ -1659,7 +1666,7 @@ export interface AggregateOptions {
    * for the others, `count` (number of readings) where the platform has it. `TypeSupport.metrics`
    * lists them per type.
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   metrics: AggregateMetric[];
   /**
@@ -1668,50 +1675,50 @@ export interface AggregateOptions {
    * follow the calendar in the device's time zone, so a day across a daylight-saving change lasts 23
    * or 25 hours. At most 5,000 buckets.
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   bucket?: AggregateBucketOptions;
   /**
    * Unit for `sum`, `avg`, `min` and `max`; one of the type's units. Defaults to its canonical unit.
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   unit?: string;
   /**
    * Only data written by these apps (bundle ids / package names).
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   sourceIds?: string[];
 }
 
 /**
- * @since 0.2.0
+ * @since 0.1.0
  */
 export interface AggregateBucket {
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   startDate: string;
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   endDate: string;
   /**
    * The metrics asked for; a metric is absent when the bucket has no data for it. `count` is a
    * number of readings, `duration` seconds; the others are in `unit`.
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   values: Partial<Record<AggregateMetric, number>>;
-  /** @since 0.2.0 */
+  /** @since 0.1.0 */
   unit: string;
 }
 
 /**
- * @since 0.2.0
+ * @since 0.1.0
  */
 export interface AggregateResult {
   /**
    * Every bucket of the range in order, including empty ones.
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   buckets: AggregateBucket[];
 }
@@ -1725,7 +1732,7 @@ export interface GetChangesOptions {
    *
    * @since 0.1.0
    */
-  types: (HealthType | PassthroughType)[];
+  types: HealthTypeOrPassthrough[];
   /**
    * `nextCursor` from the previous call. Without it, the call returns no changes, only a cursor
    * marking "now": read existing data with `readSamples()` first, then follow changes from there.
@@ -1756,7 +1763,7 @@ export interface GetChangesOptions {
  */
 export interface DeletedSample {
   /** @since 0.1.0 */
-  type: HealthType | PassthroughType;
+  type: HealthTypeOrPassthrough;
   /**
    * The deleted sample's id. On Android, a deleted series record gives one deletion whose id is the
    * record's: remove the samples whose `id` or `seriesId` equals it. iOS `sleepSession`: the id of a
@@ -1831,7 +1838,7 @@ export interface SaveSamplesResult {
  */
 export interface DeleteSamplesOptions {
   /** @since 0.1.0 */
-  type: HealthType | PassthroughType;
+  type: HealthTypeOrPassthrough;
   /**
    * Sample ids. On Android, the id of a point in a series record (`<seriesId>#<index>`) deletes the
    * whole record, every point of it.
@@ -1860,37 +1867,37 @@ export interface DeleteSamplesResult {
 }
 
 /**
- * @since 0.3.0
+ * @since 0.2.0
  */
 export interface ReadWorkoutRouteOptions {
   /**
    * The workout's `id`.
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   workoutId: string;
-  /** @since 0.3.0 */
+  /** @since 0.2.0 */
   android?: {
     /**
      * When the user hasn't granted `READ_EXERCISE_ROUTES` and the route is another app's, show
      * Health Connect's screen asking to share this one route. Without it such a read rejects with
      * `PERMISSION_DENIED` (reason `routeConsentRequired`).
      *
-     * @since 0.3.0
+     * @since 0.2.0
      */
     requestConsent?: boolean;
   };
 }
 
 /**
- * @since 0.3.0
+ * @since 0.2.0
  */
 export interface ReadWorkoutRouteResult {
   /**
    * In time order; empty when the workout has no route. On iOS, a workout with several routes
    * gives all their points, and a route the user didn't share reads as none.
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   locations: WorkoutRouteLocation[];
 }
@@ -1919,7 +1926,7 @@ export interface CapacitorHealthPlugin {
    *
    * Declare what you request first, or the call rejects with `MISSING_DECLARATION`: iOS needs
    * `NSHealthShareUsageDescription` (read) and `NSHealthUpdateUsageDescription` (write) in
-   * `Info.plist`; Android needs each permission in `AndroidManifest.xml` (see the README).
+   * `Info.plist`; Android needs each permission in `AndroidManifest.xml` (see docs/setup-ios.md and docs/setup-android.md).
    *
    * iOS shows its sheet only for types the user hasn't been asked about; read results are
    * `unknown` afterwards. Android stops showing its dialog after the user refused twice: when
@@ -1969,7 +1976,7 @@ export interface CapacitorHealthPlugin {
    * activity types (steps, distance, energy, floors…), using the user's app priority; for other types
    * its aggregates cover every app's data.
    *
-   * @since 0.2.0
+   * @since 0.1.0
    */
   aggregate(options: AggregateOptions): Promise<AggregateResult>;
 
@@ -2001,7 +2008,7 @@ export interface CapacitorHealthPlugin {
    * `READ_EXERCISE_ROUTES` or the user's consent for this workout (`android.requestConsent`); a
    * refusal rejects with `PERMISSION_DENIED` (reason `routeConsentDenied`).
    *
-   * @since 0.3.0
+   * @since 0.2.0
    */
   readWorkoutRoute(options: ReadWorkoutRouteOptions): Promise<ReadWorkoutRouteResult>;
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Lists the HealthKit identifiers and Health Connect records that the registry doesn't cover yet,
-// from the reference catalogs in docs/reference/. Milestone planning reads this (T23 and later).
+// from the reference catalogs in registry/catalogs/. Milestone planning reads this.
 //
 //   node scripts/coverage.mjs          human-readable report
 //   node scripts/coverage.mjs --json   machine-readable

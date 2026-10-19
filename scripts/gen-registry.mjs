@@ -19,8 +19,8 @@ const runtimeIdentifier = (ios) => ios.rawValue ?? ios.identifier;
 const WORKOUT_IDENTIFIER = 'HKWorkoutTypeIdentifier';
 
 export const OUTPUTS = {
-  readme: join(ROOT, 'README.md'),
-  typeMapping: join(ROOT, 'docs/04-type-mapping.md'),
+  readme: join(ROOT, 'docs/supported-types.md'),
+  typeMapping: join(ROOT, 'docs/workout-activities.md'),
   ts: join(ROOT, 'src/generated/registry.ts'),
   swift: join(ROOT, 'ios/Sources/CapacitorHealthPlugin/Generated/Registry.generated.swift'),
   swiftTest: join(ROOT, 'ios/Tests/CapacitorHealthPluginTests/Generated/RegistryRawValuesTests.generated.swift'),
@@ -217,7 +217,7 @@ export type Nutrient = (typeof NUTRIENT_IDS)[number];
 /**
  * A statistic \`aggregate()\` can compute.
  *
- * @since 0.2.0
+ * @since 0.1.0
  */
 export type AggregateMetric = 'sum' | 'avg' | 'min' | 'max' | 'count' | 'duration';
 
@@ -461,6 +461,7 @@ function renderSwift(registry) {
     });
 
   return `// ${HEADER}
+// swiftlint:disable file_length type_body_length line_length
 
 import Foundation
 
@@ -767,6 +768,7 @@ function renderSwiftTest(registry) {
   );
 
   return `// ${HEADER}
+// swiftlint:disable type_body_length
 
 import HealthKit
 import XCTest
@@ -1132,12 +1134,12 @@ ${nutritionArgs.map((a) => `            ${a},`).join('\n')}
 `;
 }
 
-// ---------------------------------------------------------------- README type table
+// ---------------------------------------------------------------- Type table (docs/supported-types.md)
 
 const README_START = '<!-- registry-types:start -->';
 const README_END = '<!-- registry-types:end -->';
 
-/** The README's type table, between its markers; the rest of the README is left as it is. */
+/** The type table in docs/supported-types.md, between its markers; the rest of the file is left as it is. */
 function renderReadme(registry, current) {
   if (!current?.includes(README_START) || !current.includes(README_END)) return current;
   const short = (permission) => permission.replace('android.permission.health.', '');
