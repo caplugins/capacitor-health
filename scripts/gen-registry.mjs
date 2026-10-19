@@ -571,6 +571,7 @@ function renderSwiftTest(registry) {
   );
 
   return `// ${HEADER}
+// swiftlint:disable type_body_length
 
 import HealthKit
 import XCTest
